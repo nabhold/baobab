@@ -1,0 +1,26 @@
+name: Move Card on Milestone Change
+
+on:
+  issues:
+    types: [milestoned] # Triggers explicitly when a milestone is added or changed
+
+jobs:
+  update-kanban-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Move Issue to Sprint Column
+        uses: github/update-project-action@v2
+        with:
+          # Your Personal Access Token stored safely in secrets
+          github_token: ${{ secrets.MY_PROJECT_PAT }}
+          
+          # Use your GitHub username or organization name
+          organization: "YOUR_GITHUB_USERNAME"
+          
+          # The number found at the very end of your GitHub project URL 
+          # Example: ://github.com -> number is 3
+          project_number: 3 
+          
+          # The target Kanban column you want it pushed into
+          field: Status
+          value: Sprint
