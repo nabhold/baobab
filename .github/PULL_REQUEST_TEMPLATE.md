@@ -1,4 +1,5 @@
 
+<<<<<<< HEAD
 # Pull Request
 
 ## Summary
@@ -206,3 +207,5 @@ Examples:
 ## Additional Notes
 
 Include anything reviewers should know before approving this Pull Request.
+=======
+>>>>>>> 109c301 (Create PULL_REQUEST_TEMPLATE.md)
