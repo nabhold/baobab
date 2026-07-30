@@ -166,9 +166,9 @@ Issues = "https://github.com/nabhold/baobab/issues"
 
 docs = [
 
-    "mkdocs>=1.7",
+    "mkdocs>=1.6.1",
 
-    "mkdocs-material>=10",
+    "mkdocs-material>=9.0.0",
 
     "mkdocstrings[python]>=0.30",
 
