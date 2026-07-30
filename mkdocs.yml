@@ -12,10 +12,10 @@
 site_name: Baobab Platform Documentation
 
 # Summary description used for SEO meta tags and search indexing.
-site_description: Technical Specifications & Architectural Governance for NABHOLD Group Africa & Thamani Global
+site_description: Baobab Technical Specifications & Architectural Governance
 
 # Target URL where GitHub Pages hosts the static site output.
-site_url: https://<organization>.github.io/baobab/
+site_url: https://nabhold.github.io/baobab/
 
 # Directory containing the source Markdown files (defaults to docs/ in repository root).
 docs_dir: docs
