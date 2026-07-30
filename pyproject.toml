@@ -1,134 +1,389 @@
-# ==============================================================================
-# Baobab Enterprise Platform
-# ==============================================================================
 #
-# File        : pyproject.toml
-# Repository  : https://github.com/nabhold/baobab
-# Organization: NABHOLD Group Africa
 #
-# ------------------------------------------------------------------------------
+#                         BAOBAB ENTERPRISE PLATFORM
+#
+#    ------------------------------------------------------------------
+#
+# File
+# ----
+#     pyproject.toml
+#
+# Repository
+# ----------
+#     https://github.com/nabhold/baobab
+#
+# Organization
+# ------------
+#     NABHOLD Group Africa
+#
+# Repository Type
+# ---------------
+#     Enterprise Monorepo
+#
+# Python Package Manager
+# ----------------------
+#     uv
+#
+# Build Backend
+# -------------
+#     Hatchling
+#
+# Configuration Standard
+# ----------------------
+#     PEP 517
+#     PEP 518
+#     PEP 621
+#
+#
 # PURPOSE
-# ------------------------------------------------------------------------------
+# ---------------
 #
 # This file is the authoritative Python project configuration for the Baobab
-# Enterprise Platform monorepo.
+# Enterprise Platform repository.
 #
-# Responsibilities
-# ----------------
-# • Project metadata (PEP 621)
-# • Build backend configuration
-# • Python version requirements
-# • Dependency management
-# • Dependency groups (PEP 735)
-# • uv configuration
-# • Repository metadata
+# It provides:
 #
-# Non-Responsibilities
-# --------------------
-# The following tools intentionally maintain their own configuration files:
+#   • Project metadata
+#   • Build system configuration
+#   • Python dependency management
+#   • Development tooling
+#   • Documentation tooling
+#   • Testing tooling
+#   • Security tooling
+#   • Release tooling
+#   • UV workspace configuration
 #
-#   mkdocs.yml                 Documentation
-#   ruff.toml                  Ruff Linter
-#   pytest.ini                 Pytest
-#   .pre-commit-config.yaml    Git Hooks
-#   taplo.toml                 TOML Formatter
-#   .markdownlint.jsonc        Markdown Linting
-#   .yamllint.yml              YAML Linting
+# This file intentionally contains NO configuration for individual tools such
+# as Ruff, Pytest, MkDocs, or Pre-Commit. Each tool owns its own dedicated
+# configuration file to improve maintainability, reduce coupling, and simplify
+# upgrades.
 #
-# Keeping each tool isolated reduces coupling and allows independent evolution.
 #
-# ------------------------------------------------------------------------------
-# PLATFORM
-# ------------------------------------------------------------------------------
+# REPOSITORY PHILOSOPHY
+# ----------------------
 #
-# Python        : 3.14+
-# Package Tool  : uv
-# Build Backend : Hatchling
+# Baobab is designed as a long-lived enterprise software platform rather than
+# a single Python application.
 #
-# ==============================================================================
+# The repository is organized as a monorepo containing multiple independently
+# evolving applications, services, SDKs, shared libraries, plugins, and
+# deployment assets.
+#
+# Examples include:
+#
+#   • Django backend services
+#   • AI services
+#   • Background workers
+#   • Flutter mobile applications
+#   • Next.js web applications
+#   • Shared Python libraries
+#   • TypeScript packages
+#   • SDKs
+#
+# The root of the repository serves as the coordination layer for the entire
+# platform rather than as the runtime environment for any individual service.
+#
+#
+# PYTHON WORKSPACE PHILOSOPHY
+# -----------------------------------------------------------
+# The root pyproject.toml intentionally contains no production runtime
+# dependencies for application services.
+#
+# Instead:
+#
+#   • Each Python service owns its own pyproject.toml
+#   • Each Python package manages its own runtime dependencies
+#   • The repository root manages developer tooling only
+#
+# This separation allows services to:
+#
+#   • evolve independently
+#   • release independently
+#   • maintain isolated dependency graphs
+#   • minimise dependency conflicts
+#   • improve build reproducibility
+#
+#
+# ARCHITECTURE PRINCIPLES
+# ---------------------------
+#
+# The Baobab repository follows these engineering principles:
+#
+#   1. Separation of Concerns
+#      Every service owns its own lifecycle.
+#
+#   2. Single Source of Truth
+#      Configuration belongs to the tool responsible for it.
+#
+#   3. Monorepo by Design
+#      Multiple applications share one repository while remaining loosely
+#      coupled.
+#
+#   4. Explicit Dependencies
+#      Dependencies are declared close to the projects that require them.
+#
+#   5. Developer Experience First
+#      A new developer should be able to clone, bootstrap, build, test and
+#      contribute with minimal setup.
+#
+#   6. Infrastructure as Code
+#      Build, deployment and development environments are fully reproducible.
+#
+#   7. Documentation as Code
+#      Repository governance and technical documentation are maintained under
+#      version control alongside the source code.
+#
+#
+# SCALABILITY STRATEGY
+# ----------------------------
+#
+# This configuration is designed to support future expansion without requiring
+# structural changes to the repository.
+#
+# Planned future workspace members include:
+#
+#     services/backend/
+#     services/ai/
+#     services/worker/
+#     shared/python/
+#     packages/python/
+#     sdk/python/
+#
+# As additional Python services are introduced, they should each contain their
+# own pyproject.toml and become members of the UV workspace.
+#
+#
+# MAINTENANCE POLICY
+# -----------------------
+#
+# This file should remain focused on:
+#
+#   • Project metadata
+#   • Dependency management
+#   • Build configuration
+#   • Workspace configuration
+#
+# Tool-specific configuration MUST remain in dedicated configuration files,
+# including but not limited to:
+#
+#     ruff.toml
+#     pytest.ini
+#     mkdocs.yml
+#     .pre-commit-config.yaml
+#     .markdownlint.jsonc
+#     .yamllint.yml
+#     taplo.toml
+#
+# Keeping configuration separated reduces complexity, improves readability,
+# and allows individual tools to evolve independently over time.
+#
+#
+# BUILD SYSTEM
+# ------------------
 
-# ==============================================================================
-# Build System
-# ==============================================================================
+# The Build System defines how Python packages within the Baobab Platform are
+# built and packaged in accordance with modern Python packaging standards.
+#
+# Baobab adopts Hatchling as the default build backend because it is:
+#
+#   • Lightweight and standards-compliant
+#   • Fully compatible with PEP 517 and PEP 518
+#   • Well supported by uv
+#   • Fast and dependency-light
+#   • Suitable for monorepo-based development
+#
+# The root repository itself is not intended to be published as a Python
+# package. Instead, individual Python services and libraries (such as the
+# backend, AI service, worker service, SDKs, and shared libraries) maintain
+# their own build configuration and release lifecycle.
+#
+# Future Python projects within the repository should also adopt Hatchling
+# unless a compelling architectural reason exists to use an alternative build
+# backend.
+#
+# ---------------------
 
 [build-system]
+
 requires = [
-    "hatchling>=1.27"
+    "hatchling>=1.27.0",
 ]
+
 build-backend = "hatchling.build"
 
-# ==============================================================================
-# Project Metadata (PEP 621)
-# ==============================================================================
-
+#
+# PROJECT METADATA (PEP 621)
+# ---------------------------------
+#
+# The following section defines the canonical metadata for the Baobab Platform.
+#
+# Metadata declared here is used by packaging tools, dependency managers,
+# documentation generators, IDEs, and continuous integration pipelines.
+#
+# Baobab follows PEP 621 to ensure consistent and interoperable project
+# metadata across the Python ecosystem.
+#
+#  PROJECT METADATA (PEP 621)
+#  ----------------
+# PEP 621 standardises project metadata for Python packages.
+#
+# Although the Baobab repository root is not itself intended to be published to
+# the Python Package Index (PyPI), maintaining complete metadata provides
+# several benefits:
+#
+#   • Consistent project identification
+#   • Better IDE integration
+#   • Improved tooling compatibility
+#   • Future packaging flexibility
+#   • Rich documentation metadata
+#   • Standardised dependency management
+#
+# The repository root represents the Baobab Platform workspace rather than a
+# deployable application.
+#
+# Individual Python services, SDKs and libraries define their own project
+# metadata within their respective pyproject.toml files.
+#
 [project]
 
+#  Basic Information
+#
 name = "baobab"
 
 version = "0.1.0"
 
-description = "Enterprise Multi-Tenant Digital Commerce Platform"
+description = "An enterprise-grade, AI-enabled, multi-tenant digital business platform."
 
 readme = "README.md"
 
 requires-python = ">=3.14"
 
-license = { text = "Proprietary" }
+license = { file = "LICENSE" }
 
+# Authors
+# ---------
+# The authors section identifies the primary creators of the platform.
+#
+# Future contributors should be recognised through Git history, contributor
+# documentation and release notes rather than modifying this section.
+#
 authors = [
-    { name = "NABHOLD Group Africa" }
+    { name = "NABHOLD Group Africa" },
 ]
 
+# Maintainers
+# -----------
+# Maintainers are responsible for long-term stewardship of the repository,
+# reviewing contributions, coordinating releases and ensuring architectural
+# consistency.
+#
 maintainers = [
-    { name = "Baobab Engineering Team" }
+    { name = "NABHOLD Group Africa" },
 ]
 
+# Project Keywords
+# ------------------------
+# Keywords improve discoverability and provide additional metadata for package
+# managers, IDEs and documentation tooling.
+#
 keywords = [
+
+    "ai",
+    "analytics",
+    "business",
+    "commerce",
+    "digital-platform",
+    "django",
     "enterprise",
     "erp",
-    "crm",
-    "commerce",
-    "ai",
-    "payments",
-    "django",
-    "fastapi",
     "multi-tenant",
-    "platform"
+    "payments",
+    "platform",
+    "project-management",
+    "python",
+    "saas",
+    "workflow",
+
 ]
 
+#
+# Project Classifiers
+# --------------------
+# Trove Classifiers provide a standardised way of describing the project's
+# maturity, supported environments and intended audience.
+#
+# Additional classifiers may be introduced as the platform evolves.
+#
+
 classifiers = [
+
+    # -------------------------------------------------------------------------
+    # Development Status
+    # -------------------------------------------------------------------------
+
     "Development Status :: 3 - Alpha",
 
+    # -------------------------------------------------------------------------
+    # Intended Audience
+    # -------------------------------------------------------------------------
+
     "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+
+    # -------------------------------------------------------------------------
+    # License
+    # -------------------------------------------------------------------------
 
     "License :: Other/Proprietary License",
 
+    # -------------------------------------------------------------------------
+    # Operating Systems
+    # -------------------------------------------------------------------------
+
     "Operating System :: OS Independent",
 
-    "Programming Language :: Python :: 3",
+    # -------------------------------------------------------------------------
+    # Natural Language
+    # -------------------------------------------------------------------------
 
+    "Natural Language :: English",
+
+    # -------------------------------------------------------------------------
+    # Python
+    # -------------------------------------------------------------------------
+
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.14",
 
+    # -------------------------------------------------------------------------
+    # Typing
+    # -------------------------------------------------------------------------
+
+    "Typing :: Typed",
+
+    # -------------------------------------------------------------------------
+    # Topics
+    # -------------------------------------------------------------------------
+
     "Topic :: Office/Business",
-
+    "Topic :: Scientific/Engineering",
     "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 
-    "Typing :: Typed"
 ]
 
-# ------------------------------------------------------------------------------
-# Runtime Dependencies
 #
-# Shared runtime dependencies only.
-#
-# Service-specific dependencies belong within each service/application.
-# ------------------------------------------------------------------------------
-
-dependencies = []
-
-# ==============================================================================
 # Project URLs
-# ==============================================================================
+# --------------------------
+#
+# These links provide a single source of truth for project resources.
+#
+# They are displayed by packaging tools and are used throughout the development
+# lifecycle.
+#
 
 [project.urls]
 
@@ -140,142 +395,481 @@ Documentation = "https://nabhold.github.io/baobab"
 
 Issues = "https://github.com/nabhold/baobab/issues"
 
-# ==============================================================================
-# Dependency Groups (PEP 735)
+Discussions = "https://github.com/nabhold/baobab/discussions"
+
+Security = "https://github.com/nabhold/baobab/security"
+
+Changelog = "https://github.com/nabhold/baobab/blob/main/CHANGELOG.md"
+
+#
+# RUNTIME DEPENDENCIES
+# --------------------
+#
+# The repository root intentionally contains NO runtime dependencies.
+#
+# Runtime dependencies belong exclusively to the individual Python services
+# within the monorepo.
+#
+# Examples:
+#
+#     services/backend/
+#     services/ai/
+#     services/worker/
+#     shared/python/
+#     sdk/python/
+#     packages/python/
+#
+# This design keeps the repository root lightweight while allowing each service
+# to evolve independently with its own dependency graph and release cadence.
+#
+
+#  RUNTIME DEPENDENCIES
+#  ------------------------
+# The Baobab repository root intentionally declares NO runtime dependencies.
+#
+# This repository serves as the workspace and orchestration layer for the
+# platform rather than a deployable Python application.
+#
+# Runtime dependencies such as Django, FastAPI, Celery, Redis clients,
+# PostgreSQL drivers, AI frameworks and cloud SDKs belong exclusively to the
+# individual Python services that require them.
 #
 # Examples
 # --------
 #
-#   uv sync
+#     services/backend/
+#         Django
+#         Django REST Framework
+#         django-tenants
+#         psycopg
 #
-#   uv sync --group dev
+#     services/ai/
+#         FastAPI
+#         LangChain
+#         OpenAI
+#         LiteLLM
+#         LlamaIndex
 #
-#   uv sync --group docs
+#     services/worker/
+#         Celery
+#         Redis
 #
-#   uv sync --group test
+#     shared/python/
+#         Shared platform libraries
 #
-#   uv sync --all-groups
+# This approach provides:
 #
-# ==============================================================================
+#   • Independent dependency graphs
+#   • Independent service releases
+#   • Faster dependency resolution
+#   • Reduced dependency conflicts
+#   • Cleaner security auditing
+#   • Improved maintainability
+#
 
-[dependency-groups]
+dependencies = []
 
-# ------------------------------------------------------------------------------
-# Documentation
-# ------------------------------------------------------------------------------
+#  OPTIONAL DEPENDENCY GROUPS
+#
+# Optional dependency groups provide tooling for developers without polluting
+# production runtime environments.
+#
+# Dependency groups can be installed independently using uv.
+#
+# Examples
+# --------
+#
+# Install all default development tools:
+#
+#     uv sync
+#
+# Install documentation tools only:
+#
+#     uv sync --group docs
+#
+# Install testing tools only:
+#
+#     uv sync --group test
+#
+# Install security tools only:
+#
+#     uv sync --group security
+#
+# Install release tooling only:
+#
+#     uv sync --group release
+#
+# Install every available group:
+#
+#     uv sync --all-groups
+#
+#
+[project.optional-dependencies]
 
-docs = [
-
-    "mkdocs>=1.6.1",
-    "mkdocs-material>=9.0.0",
-    "mkdocstrings[python]>=0.30",
-    "mkdocs-mermaid2-plugin>=1.2",
-    "mkdocs-git-revision-date-localized-plugin>=1.4",
-    "mkdocs-minify-plugin>=0.8",
-    "pymdown-extensions>=10.16",
-    "mkdocs-redirects >= 1.2.3"
-
-]
-
-# ------------------------------------------------------------------------------
-# Development
-# ------------------------------------------------------------------------------
+#  DEVELOPMENT TOOLS
+# ---------------------
+# These packages improve the local developer experience.
+#
+# They are not required in production deployments.
+#
+# Responsibilities
+# ----------------
+#
+#   • Interactive Python shell
+#   • Git hooks
+#   • Rich terminal output
+#   • Automatic file watching
+#
 
 dev = [
 
-    "ipython>=9.4",
+    # Interactive Python REPL
+    "ipython>=8.0",
 
-    "pre-commit>=4.3",
+    # Git hook management
+    "pre-commit>=4.0",
 
-    "watchfiles>=1.1"
+    # Rich terminal output
+    "rich>=14.0",
+
+    # Automatic file monitoring
+    "watchdog>=6.0",
 
 ]
 
-# ------------------------------------------------------------------------------
-# Testing
-# ------------------------------------------------------------------------------
+#  CODE QUALITY
+# --------------
+# Static analysis and code quality tools.
+#
+# These tools enforce coding standards and detect potential issues before code
+# reaches production.
+#
+quality = [
 
+    # Linting and formatting
+    "ruff>=0.12",
+
+    # Static type checking
+    "pyright>=1.1",
+
+]
+
+#  DOCUMENTATION
+# -------------
+# Documentation tooling used to build the Baobab documentation portal.
+#
+# Documentation is generated using MkDocs Material.
+#
+# Version ranges intentionally remain within the current major release family
+# to avoid unplanned breaking changes.
+#
+docs = [
+
+    # Documentation engine
+    "mkdocs>=1.6,<1.7",
+
+    # Documentation theme
+    "mkdocs-material>=9,<10",
+
+    # API documentation
+    "mkdocstrings>=1.0.6",
+    "mkdocstrings[python]>=1.0.6",
+
+    # Markdown extensions
+    "pymdown-extensions>=11.0.1",
+
+    # Versioned documentation
+    "mike>=2.2.0",
+
+    # Redirect support
+    "mkdocs-redirects>=1.2.0",
+
+    # Last modified dates
+    "mkdocs-git-revision-date-localized-plugin>=0",
+
+    # HTML optimisation
+    "mkdocs-minify-plugin>=0.8.0",
+
+]
+
+#  TESTING
+#  ----------
+# Testing frameworks and supporting tools.
+#
+# These packages support:
+#
+#   • Unit testing
+#   • Integration testing
+#   • Parallel execution
+#   • Coverage reporting
+#
 test = [
 
-    "pytest>=8.4",
+    "pytest>=8.0",
 
-    "pytest-cov>=7",
+    "pytest-cov>=6.0",
 
-    "pytest-xdist>=3.8"
-
-]
-
-# ------------------------------------------------------------------------------
-# Formatting
-# ------------------------------------------------------------------------------
-
-format = [
-
-    "black>=25"
+    "pytest-xdist>=3.0",
 
 ]
 
-# ------------------------------------------------------------------------------
-# Linting
-# ------------------------------------------------------------------------------
-
-lint = [
-
-    "ruff>=0.13"
-
-]
-
-# ------------------------------------------------------------------------------
-# Static Type Checking
-# ------------------------------------------------------------------------------
-
-typecheck = [
-
-    "pyright>=1.1"
-
-]
-
-# ------------------------------------------------------------------------------
-# Security
-# ------------------------------------------------------------------------------
-
+#  SECURITY
+# -----------------
+# Security tooling executed locally and within CI/CD pipelines.
+#
+# Responsibilities
+# ----------------
+#
+#   • Static security analysis
+#   • Dependency vulnerability scanning
+#   • Secret detection
+#
 security = [
 
+    # Security linting
     "bandit>=1.8",
 
+    # Secret detection
     "detect-secrets>=1.5",
 
-    "pip-audit>=2.9"
+    # Dependency vulnerability auditing
+    "pip-audit>=2.9",
 
 ]
 
-# ------------------------------------------------------------------------------
-# Release & Packaging
-# ------------------------------------------------------------------------------
-
+#  RELEASE TOOLING
+# ----------------
+# Packages used for packaging and publishing Python distributions.
+#
+# While the repository root is not distributed, individual packages within the
+# workspace may use these tools during release pipelines.
+#
 release = [
 
+    # Package builder
     "build>=1.3",
 
-    "twine>=6.2"
+    # Package publishing
+    "twine>=6.1",
 
 ]
 
-# ==============================================================================
-# uv Configuration
-# ==============================================================================
+#  UV CONFIGURATION
+#
+# UV is the official Python package manager for the Baobab Enterprise Platform.
+#
+# It is responsible for:
+#
+#   • Dependency resolution
+#   • Virtual environment management
+#   • Lock file generation
+#   • Reproducible development environments
+#   • Workspace management
+#
+# Baobab standardises on UV to provide a fast, reliable and reproducible
+# development workflow across all Python services.
+#
+# Documentation
+# -------------
+#
+#     https://docs.astral.sh/uv/
+#
+#
 
 [tool.uv]
 
-# ------------------------------------------------------------------------------
-# Baobab is a monorepo rather than a distributable Python package.
+#  Repository Packaging Strategy
+# ---------------------------
+# The repository root is NOT a distributable Python package.
 #
-# Setting package=false prevents accidental wheel creation while still allowing
-# uv to manage dependency groups and lock files.
-# ------------------------------------------------------------------------------
-
+# Instead, it acts as the workspace root responsible for coordinating multiple
+# independent Python projects.
+#
+# Therefore:
+#
+#     package = false
+#
+# prevents accidental packaging or publishing of the repository root while
+# still allowing dependency management and workspace operations.
+#
+#
 package = false
 
-# ==============================================================================
-# End of File
-# ==============================================================================
+#  Default Dependency Groups
+#-------------
+# These dependency groups are installed automatically when developers execute:
+#
+#     uv sync
+#
+# This provides a fully configured development environment without installing
+# optional release or security tooling unless explicitly requested.
+#
+#
+default-groups = [
+
+    "dev",
+    "quality",
+    "docs",
+    "test",
+
+]
+
+#  Dependency Management Philosophy
+# --------------------
+# The repository root manages ONLY developer tooling.
+#
+# Runtime dependencies belong exclusively to individual Python projects.
+#
+# Example
+# -------
+#
+#     services/backend/
+#         pyproject.toml
+#
+#     services/ai/
+#         pyproject.toml
+#
+#     services/worker/
+#         pyproject.toml
+#
+#     shared/python/
+#         pyproject.toml
+#
+#     sdk/python/
+#         pyproject.toml
+#
+#     packages/python/
+#         pyproject.toml
+#
+# This separation provides:
+#
+#   • Independent releases
+#   • Independent dependency graphs
+#   • Smaller environments
+#   • Faster dependency resolution
+#   • Better security auditing
+#
+#    FUTURE UV WORKSPACE
+#   ---------------------
+# The Baobab Platform is architected as a scalable enterprise monorepo.
+#
+# As individual Python components mature into standalone packages, they should
+# be enrolled into a shared UV workspace.
+#
+# Workspace members remain independently buildable while sharing dependency
+# resolution and lock file management.
+#
+# NOTE
+# ----
+#
+# This section is intentionally commented until every listed directory contains
+# a complete Python project with its own pyproject.toml.
+#
+#
+# [tool.uv.workspace]
+#
+# members = [
+#
+#     # ---------------------------------------------------------------
+#     # Core Platform Services
+#     # ---------------------------------------------------------------
+#
+#     "services/backend",
+#     "services/ai",
+#     "services/worker",
+#
+#     # ---------------------------------------------------------------
+#     # Shared Platform Libraries
+#     # ---------------------------------------------------------------
+#
+#     "shared/python",
+#
+#     # ---------------------------------------------------------------
+#     # Reusable Python Packages
+#     # ---------------------------------------------------------------
+#
+#     "packages/python",
+#
+#     # ---------------------------------------------------------------
+#     # Public SDK
+#     # ---------------------------------------------------------------
+#
+#     "sdk/python",
+#
+# ]
+#
+#  FUTURE SCALING
+#
+# As the platform evolves, additional Python projects may be added to the UV
+# workspace without requiring changes to the repository architecture.
+#
+# Examples
+# --------
+#
+#     services/reporting
+#     services/search
+#     services/payments
+#     services/analytics
+#     services/integration
+#     packages/data-science
+#     sdk/python-enterprise
+#
+# The repository architecture has been intentionally designed so that adding a
+# new Python service is primarily a matter of creating a new project directory
+# with its own pyproject.toml and registering it as a workspace member.
+#
+#  MAINTENANCE GUIDELINES
+#
+# Repository Maintainers
+# ----------------------
+#
+# • Keep dependency groups focused and minimal.
+# • Prefer version ranges over exact version pins unless strict reproducibility
+#   is required.
+# • Review dependency updates regularly.
+# • Regenerate the UV lock file after dependency changes.
+# • Avoid adding application runtime dependencies to the repository root.
+#
+# Developer Workflow
+# ------------------
+#
+# Initial setup
+#
+#     uv sync
+#
+# Install every optional dependency
+#
+#     uv sync --all-groups
+#
+# Documentation
+#
+#     uv sync --group docs
+#
+# Testing
+#
+#     uv sync --group test
+#
+# Security
+#
+#     uv sync --group security
+#
+# Lock dependencies
+#
+#     uv lock
+#
+# Update dependencies
+#
+#     uv lock --upgrade
+#
+#  END OF CONFIGURATION
+# ---------------------
+# The sections above define the repository-level Python configuration for the
+# Baobab Enterprise Platform.
+#
+# Individual Python services, SDKs and shared libraries should maintain their
+# own pyproject.toml files for runtime dependencies, packaging and release
+# configuration.
+#
+# This separation ensures the repository remains modular, maintainable and
+# scalable as the platform grows.
+#
