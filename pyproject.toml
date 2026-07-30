@@ -1,1 +1,47 @@
 
+# ==============================================================================
+# Baobab Monorepo Python Project & Dependency Configuration
+# File Location: baobab/pyproject.toml
+# Rationale: Uses PEP 621 metadata and PEP 735 dependency groups to define
+#            isolated documentation dependencies for building the MkDocs site.
+# ==============================================================================
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# ------------------------------------------------------------------------------
+# 1. Project Core Metadata (PEP 621 Compliant)
+# ------------------------------------------------------------------------------
+[project]
+name = "baobab-platform"
+version = "1.0.0"
+description = "NABHOLD Group Africa Multi-Tenant Digital Commerce Platform"
+readme = "README.md"
+requires-python = "~=3.14" # Pins target environment execution to Python 3.14+
+license = { text = "Proprietary" } # Explicit PEP 621 inline license object
+
+# Shared runtime production dependencies across platform backend services
+dependencies = []
+
+# ------------------------------------------------------------------------------
+# 2. Dependency Groups (PEP 735 Compliant)
+# Rationale: Allows fast, selective installation of documentation tools via `uv`
+#            without installing unnecessary backend or testing packages in CI.
+# ------------------------------------------------------------------------------
+[dependency-groups]
+docs = [
+    "mkdocs>=1.6.0",          # Core static site generator engine
+    "mkdocs-material>=9.5.0", # Material design theme framework
+]
+
+dev = [
+    "pre-commit>=3.8.0",
+]
+
+# ------------------------------------------------------------------------------
+# 3. Astral uv Package Manager Settings
+# ------------------------------------------------------------------------------
+[tool.uv]
+# Marks repository as a non-packagable workspace monorepo (prevents wheel builds)
+package = false

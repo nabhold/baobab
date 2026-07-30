@@ -1,0 +1,89 @@
+# ==============================================================================
+# GitHub Actions CI/CD Pipeline: Build & Deploy GitHub Pages Documentation
+# File Location: baobab/.github/workflows/deploy-docs.yml
+# Rationale: Automates static site building with MkDocs and deploys to GitHub Pages
+#            with strict link checks and uv dependency management.
+# ==============================================================================
+
+name: Deploy GitHub Pages Documentation
+
+# ------------------------------------------------------------------------------
+# 1. Execution Triggers
+# Rationale: Triggers deployment only on changes to main that affect documentation
+#            files or pipeline settings, avoiding unnecessary builds.
+# ------------------------------------------------------------------------------
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"                        # Markdown source files
+      - "mkdocs.yml"                     # Navigation and theme config
+      - "pyproject.toml"                 # Dependency definitions
+      - ".github/workflows/deploy-docs.yml" # Pipeline file itself
+  workflow_dispatch:                     # Allows manual triggering from GitHub UI
+
+# ------------------------------------------------------------------------------
+# 2. Identity & Permission Scope (Least Privilege Model)
+# Rationale: Required for GitHub Pages OIDC deployment without static deployment tokens.
+# ------------------------------------------------------------------------------
+permissions:
+  contents: read      # Read code repository
+  pages: write        # Write compiled HTML artifact to GitHub Pages
+  id-token: write     # Cryptographic OIDC token issuance for deployment verification
+
+# ------------------------------------------------------------------------------
+# 3. Pipeline Concurrency Management
+# Rationale: Prevents race conditions by cancelling out-of-date runs when multiple
+#            commits arrive in quick succession.
+# ------------------------------------------------------------------------------
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+# ------------------------------------------------------------------------------
+# 4. Job Steps: Build and Publish Static HTML Site
+# ------------------------------------------------------------------------------
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step A: Checkout source code from repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step B: Install Astral uv for ultra-fast dependency isolation
+      - name: Install uv Package Manager
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      # Step C: Setup Python engine version
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      # Step D: Install documentation group dependencies using uv lock synchronization
+      - name: Install Documentation Dependencies
+        run: uv sync --only-group docs
+
+      # Step E: Compile Markdown source files into static HTML
+      # Rationale: --strict causes the build to fail if broken links or syntax errors exist [cite: 10]
+      - name: Build Static Site with MkDocs
+        run: uv run mkdocs build --strict --site-dir site
+
+      # Step F: Upload site output artifact for GitHub Pages deployer
+      - name: Upload GitHub Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "site/"
+
+      # Step G: Publish uploaded artifact to GitHub Pages host endpoint
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
