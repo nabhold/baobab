@@ -1,83 +1,189 @@
+```text
 ###############################################################################
-# Baobab CODEOWNERS
+# Baobab Enterprise Platform
+###############################################################################
 #
-# This file defines the default code owners responsible for reviewing changes.
+# File        : .github/CODEOWNERS
+# Repository  : https://github.com/nabhold/baobab
+# Organization: NABHOLD Group Africa
 #
-# Documentation:
+#------------------------------------------------------------------------------
+# PURPOSE
+#------------------------------------------------------------------------------
+#
+# This file defines the default code ownership for the Baobab Enterprise
+# Platform.
+#
+# Code owners are automatically requested to review pull requests that modify
+# files or directories they own.
+#
+# Documentation
+# -------------
+#
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+#------------------------------------------------------------------------------
+# OWNERSHIP PRINCIPLES
+#------------------------------------------------------------------------------
+#
+# • Every file should have an owner.
+# • Ownership is assigned by architectural domain.
+# • More specific rules override broader rules.
+# • Repository-wide ownership appears first.
+#
 ###############################################################################
 
 ###############################################################################
-# Default Owner
+# Default Repository Ownership
 ###############################################################################
 
-* @bjnabs
+*                                           @nabhold
 
 ###############################################################################
-# GitHub Configuration
+# Repository Configuration
 ###############################################################################
 
-.github/ @bjnabs
+.github/**                                 @nabhold
+
+.devcontainer/**                           @nabhold
+
+docs/**                                    @nabhold
+
+tools/**                                   @nabhold
+
+resources/**                               @nabhold
+
+design/**                                  @nabhold
 
 ###############################################################################
-# Backend
+# Frontend Applications
 ###############################################################################
 
-backend/ @bjnabs
+apps/admin-portal/**                       @nabhold
+
+apps/customer-portal/**                    @nabhold
+
+apps/mobile/**                             @nabhold
+
+apps/analytics/**                          @nabhold
 
 ###############################################################################
-# Frontend
+# Backend Services
 ###############################################################################
 
-frontend/ @bjnabs
+services/backend/**                        @nabhold
+
+services/backend/platform/**               @nabhold
+
+services/backend/products/**               @nabhold
+
+services/backend/shared/**                 @nabhold
+
+###############################################################################
+# AI Platform
+###############################################################################
+
+services/ai/**                             @nabhold
+
+services/ai/agents/**                      @nabhold
+
+services/ai/orchestrators/**               @nabhold
+
+services/ai/memory/**                      @nabhold
+
+services/ai/rag/**                         @nabhold
+
+services/ai/providers/**                   @nabhold
+
+services/ai/prompts/**                     @nabhold
+
+services/ai/evaluations/**                 @nabhold
+
+services/ai/tools/**                       @nabhold
+
+###############################################################################
+# Worker Services
+###############################################################################
+
+services/worker/**                         @nabhold
+
+###############################################################################
+# SDKs
+###############################################################################
+
+sdk/**                                     @nabhold
+
+###############################################################################
+# Shared Packages
+###############################################################################
+
+packages/**                                @nabhold
+
+shared/**                                  @nabhold
+
+###############################################################################
+# Plugins
+###############################################################################
+
+plugins/**                                 @nabhold
 
 ###############################################################################
 # Infrastructure
 ###############################################################################
 
-infrastructure/ @bjnabs
+infrastructure/**                          @nabhold
 
-docker/ @bjnabs
+deployment/**                              @nabhold
+
+###############################################################################
+# Testing
+###############################################################################
+
+tests/**                                   @nabhold
 
 ###############################################################################
 # Documentation
 ###############################################################################
 
-docs/ @bjnabs
-
-###############################################################################
-# Tests
-###############################################################################
-
-tests/ @bjnabs
-
-###############################################################################
-# Scripts
-###############################################################################
-
-scripts/ @bjnabs
-
-###############################################################################
-# Configuration Files
-###############################################################################
-
-*.yml @bjnabs
-*.yaml @bjnabs
-*.toml @bjnabs
-*.json @bjnabs
+*.md                                       @nabhold
 
 ###############################################################################
 # Root Repository Files
 ###############################################################################
 
-README.md @bjnabs
+.editorconfig                              @nabhold
 
-LICENSE @bjnabs
+.gitattributes                             @nabhold
 
-CHANGELOG.md @bjnabs
+.gitignore                                 @nabhold
 
-CONTRIBUTING.md @bjnabs
+.pre-commit-config.yaml                    @nabhold
 
-SECURITY.md @bjnabs
+.markdownlint.jsonc                        @nabhold
 
-CODE_OF_CONDUCT.md @bjnabs
+.yamllint.yml                              @nabhold
+
+mkdocs.yml                                 @nabhold
+
+Makefile                                   @nabhold
+
+compose.yaml                               @nabhold
+
+Dockerfile                                 @nabhold
+
+pyproject.toml                             @nabhold
+
+ruff.toml                                  @nabhold
+
+pytest.ini                                 @nabhold
+
+taplo.toml                                 @nabhold
+
+README.md                                  @nabhold
+
+LICENSE                                    @nabhold
+
+###############################################################################
+# End of File
+###############################################################################
+```

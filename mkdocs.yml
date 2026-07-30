@@ -1,139 +1,267 @@
 # ==============================================================================
-# Baobab Platform Documentation Configuration
-# File Location: baobab/mkdocs.yml
-# Rationale: Defines the structure, theme, extensions, and navigation hierarchy
-#            for publishing the monorepo docs/ directory to GitHub Pages.
+# Baobab Enterprise Platform
+# ==============================================================================
+#
+# File        : mkdocs.yml
+# Repository  : https://github.com/nabhold/baobab
+# Organization: NABHOLD Group Africa
+#
+# ------------------------------------------------------------------------------
+# PURPOSE
+# ------------------------------------------------------------------------------
+#
+# This file is the authoritative configuration for the Baobab documentation
+# platform.
+#
+# Responsibilities
+# ----------------
+#
+# • Documentation site metadata
+# • Navigation hierarchy
+# • Theme configuration
+# • Plugins
+# • Markdown extensions
+# • GitHub integration
+# • Search
+# • Static asset generation
+#
+# Documentation Source
+# --------------------
+#
+#     docs/
+#
+# Generated Output
+# ----------------
+#
+#     site/
+#
+# Documentation Generator
+# -----------------------
+#
+#     MkDocs 1.7+
+#
+# Theme
+# -----
+#
+# Material for MkDocs is currently used as the presentation layer.
+#
+# The documentation structure intentionally remains independent of any
+# specific theme so that a future migration requires only minimal changes.
+#
 # ==============================================================================
 
-# ------------------------------------------------------------------------------
-# 1. Project Identity & Base Metadata
-# ------------------------------------------------------------------------------
-# The human-readable title displayed in the header and browser tab.
-site_name: Baobab Platform Documentation
+# ==============================================================================
+# Site Metadata
+# ==============================================================================
 
-# Summary description used for SEO meta tags and search indexing.
-site_description: Baobab Technical Specifications & Architectural Governance
+site_name: Baobab Enterprise Platform
 
-# Target URL where GitHub Pages hosts the static site output.
+site_description: >
+  Enterprise Multi-Tenant Digital Commerce Platform Documentation
+
+site_author: NABHOLD Group Africa
+
 site_url: https://nabhold.github.io/baobab/
 
-# Directory containing the source Markdown files (defaults to docs/ in repository root).
+repo_name: nabhold/baobab
+
+repo_url: https://github.com/nabhold/baobab
+
+edit_uri: edit/main/docs/
+
+copyright: >
+  Copyright © NABHOLD Group Africa.
+  All Rights Reserved.
+
 docs_dir: docs
 
-# Output directory for the generated static HTML/CSS site files.
 site_dir: site
 
-# ------------------------------------------------------------------------------
-# 2. Visual Theme & User Experience Configuration
-# ------------------------------------------------------------------------------
+# Fail CI builds on missing pages, broken navigation or invalid links.
+strict: true
+
+# ==============================================================================
+# Theme
+# ==============================================================================
+
 theme:
-  # Use Material for MkDocs for modern typography, accessibility, and responsive UI.
+
   name: material
 
-  # Color Palettes: Configures automatic light/dark mode switching based on system preferences.
+  language: en
+
+  favicon: resources/branding/favicon.ico
+
+  logo: resources/branding/logo.svg
+
   palette:
-    # Light Mode Theme
+
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: green         # Custom corporate green matching Baobab branding
-      accent: emerald       # Accent highlighting color for interactive components
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
 
-    # Dark Mode Theme
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
       primary: green
       accent: emerald
+
       toggle:
-        icon: material/brightness-4
+        icon: material/weather-night
+        name: Switch to dark mode
+
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+
+      primary: green
+      accent: emerald
+
+      toggle:
+        icon: material/weather-sunny
         name: Switch to light mode
 
-  # Advanced Layout & UI Features
   features:
-    - navigation.tabs          # Top horizontal tab bar for high-level documentation categories
-    - navigation.tabs.sticky   # Keeps navigation tabs visible when scrolling down long pages
-    - navigation.sections      # Groups related sub-items in the sidebar navigation
-    - navigation.expand        # Expands collapsible sections by default for easy scanning
-    - navigation.top           # Adds a "Back to top" button when scrolling down
-    - search.suggest           # Enables real-time predictive auto-suggestions in search
-    - search.highlight         # Highlights searched query terms within search result pages
-    - content.code.copy        # Adds a quick "Copy to Clipboard" button on all code snippets
-    - content.action.edit      # Provides an inline link for authorized devs to edit docs on GitHub
 
-# ------------------------------------------------------------------------------
-# 3. Core Engine Plugins
-# ------------------------------------------------------------------------------
+    # Navigation
+
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - toc.follow
+
+    # Search
+
+    - search.suggest
+    - search.highlight
+    - search.share
+
+    # Content
+
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.action.edit
+    - content.action.view
+
+# ==============================================================================
+# Plugins
+# ==============================================================================
+
 plugins:
-  # Built-in client-side search indexing engine using lunr.js (no external backend needed)
+
   - search
 
-# ------------------------------------------------------------------------------
-# 4. Markdown Extensions (Formatting, Code Blocks, & Diagrams)
-# ------------------------------------------------------------------------------
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+
+  - git-revision-date-localized:
+      enable_creation_date: true
+
+  - redirects
+
+  - minify:
+      minify_html: true
+
+# ==============================================================================
+# Markdown Extensions
+# ==============================================================================
+
 markdown_extensions:
-  # Code Syntax Highlighting with line anchors for deep-linking
+
+  - admonition
+
+  - attr_list
+
+  - def_list
+
+  - footnotes
+
+  - md_in_html
+
+  - tables
+
+  - toc:
+      permalink: true
+
+  - pymdownx.details
+
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
 
-  # Inline code highlighting support
   - pymdownx.inlinehilite
 
-  # Snippet inclusion support for reusing markdown fragments across files
   - pymdownx.snippets
 
-  # Advanced Code Fences: Configures standard code blocks + inline Mermaid diagram rendering
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.def_list
+  - pymdownx.keys
 
-  # Tabbed Content Panels (useful for showing multi-language code examples or instructions)
+  - pymdownx.mark
+
+  - pymdownx.smartsymbols
+
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
   - pymdownx.tabbed:
       alternate_style: true
 
-  # Native Markdown Table parsing support
-  - tables
+  - pymdownx.superfences:
+      custom_fences:
 
-# ------------------------------------------------------------------------------
-# 5. Site Navigation Architecture
-# Rationale: Explicitly maps the repository's docs/ sub-directories into logical
-#            topics so the generated site is structured, clear, and navigable.
-# ------------------------------------------------------------------------------
+        - name: mermaid
+          class: mermaid
+          format: "!!python/name:pymdownx.superfences.fence_code_format"
+
+# ==============================================================================
+# Navigation
+#
+# NOTE
+# ----
+# Every navigation entry should point to an existing document.
+#
+# Documentation is organised by architecture rather than by technology.
+#
+# ==============================================================================
+
 nav:
-  - Overview:
-      - Introduction: introduction/index.md
-      - Project Charter: introduction/project-charter.md
-  - Architecture & Domain:
-      - Architecture Overview: architecture/index.md
-      - Technical Specifications: specifications/index.md
-      - Domain Model: domain/index.md
-      - Data Architecture: data/index.md
+
+  - Home:
+      - Introduction: index.md
+
+  - Architecture:
+      - Overview: architecture/index.md
+      - Specifications: specifications/index.md
+      - ADRs: adr/index.md
       - Diagrams: diagrams/index.md
-      - AI Subsystem: ai/index.md
-  - Architectural Decisions (ADRs):
-      - Decision Log: adr/index.md
-  - Governance & Standards:
+
+  - Governance:
       - Overview: governance/index.md
+      - Engineering Handbook: governance/engineering-handbook.md
       - Coding Standards: governance/coding-standards.md
       - Testing Standards: governance/testing-standards.md
-      - Repository Governance: governance/repository-governance.md
-      - Engineering Handbook: governance/engineering-handbook.md
-      - Decision Record Process: governance/decision-record-process.md
-      - Decision Log: governance/decision-log.md
       - Documentation Standards: governance/documentation-standards.md
-      - Sprint Roadmap: governance/sprint-roadmap.md
-      - GitHub Issues: governance/github-issues.md
-      - Repository Settings Checklist: governance/repository-settings-checklist.md
-      - Governance Changelog: governance/governance-change-log.md
-      - Glossary: governance/glossary.md
-  - Engineering & Operations:
-      - Development Guide: development/index.md
-      - DevOps & Infrastructure: devops/index.md
-      - Testing Strategy: testing/index.md
-      - Security Policy: security/index.md
-      - Operational Runbooks: runbooks/index.md
+
+  - Operations:
+      - Runbooks: runbooks/index.md
+
+# ==============================================================================
+# Validation
+# ==============================================================================
+
+validation:
+
+  omitted_files: warn
+
+  absolute_links: warn
+
+  unrecognized_links: warn
+
+# ==============================================================================
+# End of File
+# ==============================================================================
