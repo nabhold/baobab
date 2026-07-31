@@ -20,6 +20,7 @@ on:
       - "docs/**"                        # Markdown source files
       - "mkdocs.yml"                     # Navigation and theme config
       - "pyproject.toml"                 # Dependency definitions
+      - ".python-version"                # Exact interpreter pin (added v1.1 — Step C now reads this file directly, see below)
       - ".github/workflows/deploy-docs.yml" # Pipeline file itself
   workflow_dispatch:                     # Allows manual triggering from GitHub UI
 
@@ -53,20 +54,60 @@ jobs:
 
     steps:
       # Step A: Checkout source code from repository
+      # Rationale: fetch-depth: 0 (full history) is required, not optional —
+      #            confirmed by actually running the build without it:
+      #            mkdocs-git-revision-date-localized-plugin (enabled in
+      #            mkdocs.yml with enable_creation_date: true) needs the full
+      #            commit history per file to compute "last updated" dates.
+      #            actions/checkout defaults to a shallow, single-commit
+      #            clone (fetch-depth: 1), which starves the plugin of that
+      #            history — this is documented by the plugin's own
+      #            maintainers as a required CI setting, not a tuning knob.
+      #            Version bumped v4 -> v7: v4 was several major releases
+      #            behind current (v7, GA July 2026) and, because it's a
+      #            floating major tag, silently absorbs upstream behavior
+      #            changes (e.g. the June 2026 pwn-request hardening,
+      #            backported to all supported majors) without ever
+      #            showing up as a diff in this file. Re-verify the current
+      #            release at https://github.com/actions/checkout/releases
+      #            before merging, since tags move.
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       # Step B: Install Astral uv for ultra-fast dependency isolation
+      # Rationale: @v3 is severely stale. As of setup-uv v8.0.0 (March 2026),
+      #            Astral stopped publishing moving major/minor tags
+      #            entirely (a deliberate supply-chain hardening measure,
+      #            the same rationale as the tj-actions incident) — meaning
+      #            @v3 will never be auto-advanced by Dependabot and @v8 /
+      #            @v8.0 do not resolve at all going forward. Pin to the
+      #            current full immutable release tag (or, per Astral's own
+      #            recommendation, its commit SHA) instead of a bare major
+      #            version. Check https://github.com/astral-sh/setup-uv/releases
+      #            for the current tag before merging — do not reuse v3.
       - name: Install uv Package Manager
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v8.1.0 # verify this is still the current release before merging
         with:
           version: "latest"
 
       # Step C: Setup Python engine version
+      # Rationale: Reads .python-version rather than pyproject.toml. The
+      #            project's requires-python (pyproject.toml) is
+      #            deliberately a *range* (>=3.14.6,<3.15) for packaging
+      #            compatibility, not an exact pin — setup-python resolving
+      #            against that range could silently install a newer patch
+      #            (e.g. 3.14.7) than the 3.14.6 pinned in .python-version,
+      #            which `uv sync` uses locally. Reading .python-version
+      #            directly keeps CI and every developer machine on the
+      #            exact same interpreter build, which is the entire point
+      #            of maintaining that file. See pyproject.toml's "PYTHON
+      #            VERSION POLICY" section for the full rationale.
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version-file: "pyproject.toml"
+          python-version-file: ".python-version"
 
       # Step D: Install documentation group dependencies using uv lock synchronization
       - name: Install Documentation Dependencies
@@ -78,6 +119,13 @@ jobs:
         run: uv run mkdocs build --strict --site-dir site
 
       # Step F: Upload site output artifact for GitHub Pages deployer
+      # Note: @v3 not independently re-verified against current releases
+      #       in this review (unlike checkout/setup-uv/setup-python above,
+      #       where staleness was confirmed against current release pages).
+      #       Given the pattern found in the other three actions, check
+      #       https://github.com/actions/upload-pages-artifact/releases
+      #       and https://github.com/actions/deploy-pages/releases before
+      #       merging rather than assuming v3/v4 are still current.
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:

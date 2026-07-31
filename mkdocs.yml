@@ -90,9 +90,43 @@ theme:
 
   language: en
 
-  favicon: resources/branding/favicon.ico
-
-  logo: resources/branding/logo.svg
+  # favicon / logo — DISABLED, see note below (v1.1 correction)
+  #
+  # These pointed at `resources/branding/favicon.ico` and
+  # `resources/branding/logo.svg`. Two independent problems, both confirmed
+  # by an actual `mkdocs build`:
+  #
+  #   1. Neither file exists anywhere in the repository yet — the tree
+  #      shows only `resources/branding/README.md`. This is a design-asset
+  #      gap, not a config bug; someone needs to supply the real
+  #      favicon.ico / logo.svg before this can be re-enabled meaningfully.
+  #
+  #   2. Even once those assets exist, this path is still wrong. MkDocs
+  #      theme `favicon`/`logo` paths resolve relative to `docs_dir`
+  #      (`docs/`), not the repository root. `resources/` is a sibling of
+  #      `docs/`, not inside it, so MkDocs can never see it at this path.
+  #      Confirmed empirically: the `favicon:` line silently fell back to
+  #      Material's default icon (no error), while the `logo:` line
+  #      rendered a literal `<img src="resources/branding/logo.svg">` tag
+  #      into every page's built HTML pointing at a file that was never
+  #      copied into `site/` — i.e. a broken image in production, with no
+  #      build warning to catch it.
+  #
+  # Left commented out for now so Material's built-in default icon/logo is
+  # used (which degrades gracefully with no broken references). To
+  # re-enable correctly once real brand assets exist, do NOT just uncomment
+  # these two lines — first copy the assets into the docs tree, e.g.:
+  #     docs/assets/branding/favicon.ico
+  #     docs/assets/branding/logo.svg
+  # (a small `cp` step added to the docs build, run before `mkdocs build`,
+  # can keep `resources/branding/` as the single canonical source if it's
+  # also used outside of documentation — e.g. mobile app icons), then point
+  # these keys at the copied, docs-relative paths:
+  #     favicon: assets/branding/favicon.ico
+  #     logo: assets/branding/logo.svg
+  #
+  # favicon: assets/branding/favicon.ico
+  # logo: assets/branding/logo.svg
 
   palette:
 
@@ -234,11 +268,24 @@ nav:
   - Home:
       - Introduction: index.md
 
+  - Introduction:
+      - Overview: introduction/index.md
+      - Project Charter: introduction/project-charter.md
+
   - Architecture:
       - Overview: architecture/index.md
+      - Domain Model: domain/index.md
+      - Data Architecture: data/index.md
+      - AI Architecture: ai/index.md
+      - API Reference: api/index.md
       - Specifications: specifications/index.md
       - ADRs: adr/index.md
       - Diagrams: diagrams/index.md
+
+  - Development:
+      - Overview: development/index.md
+      - DevOps: devops/index.md
+      - Testing: testing/index.md
 
   - Governance:
       - Overview: governance/index.md
@@ -246,21 +293,56 @@ nav:
       - Coding Standards: governance/coding-standards.md
       - Testing Standards: governance/testing-standards.md
       - Documentation Standards: governance/documentation-standards.md
+      - Repository Governance: governance/repository-governance.md
+      - Repository Settings Checklist: governance/repository-settings-checklist.md
+      - Decision Log: governance/decision-log.md
+      - Decision Record Process: governance/decision-record-process.md
+      - Sprint Roadmap: governance/sprint-roadmap.md
+      - GitHub Issues Workflow: governance/github-issues.md
+      - Governance Change Log: governance/governance-change-log.md
+      - Glossary: governance/glossary.md
+
+  - Security:
+      - Overview: security/index.md
 
   - Operations:
       - Runbooks: runbooks/index.md
 
 # ==============================================================================
 # Validation
+#
+# NOTE (v1.1 correction)
+# -----------------------
+# The previous version of this block declared `omitted_files`,
+# `absolute_links` and `unrecognized_links` as flat top-level keys under
+# `validation:`. That is not where MkDocs' schema puts them — confirmed by
+# actually running `mkdocs build --strict` against them: MkDocs silently
+# ignored the misplaced keys rather than applying them, so the block had
+# zero effect. `omitted_files` and one flavour of `absolute_links` belong
+# under `validation.nav`; `unrecognized_links`, `anchors`, and the other
+# `absolute_links` belong under `validation.links`. Both are shown below,
+# correctly nested.
+#
+# `nav.omitted_files` is intentionally NOT set to `ignore`: the actual fix
+# for "pages exist but aren't in nav" is to put them in `nav` (done above),
+# not to silence the check. Leaving it at `warn` means `strict: true` keeps
+# doing its job — a future page added to docs/ without a matching nav entry
+# will still fail the build, which is the correct behaviour for a platform
+# that wants documentation structure enforced, not just suggested.
 # ==============================================================================
 
 validation:
 
-  omitted_files: warn
+  nav:
+    omitted_files: warn
+    not_found: warn
+    absolute_links: warn
 
-  absolute_links: warn
-
-  unrecognized_links: warn
+  links:
+    not_found: warn
+    absolute_links: warn
+    unrecognized_links: warn
+    anchors: warn
 
 # ==============================================================================
 # End of File

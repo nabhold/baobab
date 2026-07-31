@@ -36,7 +36,7 @@
 #
 # Revision
 # --------
-#     v1.1 — Architecture review remediation
+#     v1.3 — Architecture review remediation
 #     See "REVISION HISTORY" near the end of this file for a full changelog
 #     of what changed relative to v1.0 and why.
 #
@@ -107,7 +107,7 @@
 #     markdownlint      .markdownlint.jsonc             ✓ present
 #     yamllint          .yamllint.yml                   ✓ present
 #     Taplo (TOML)      taplo.toml                      ✓ present
-#     Pyright           pyrightconfig.jsonc             ✗ ACTION ITEM
+#     Pyright           pyrightconfig.json              ✗ ACTION ITEM
 #     Bandit            bandit.yaml                     ✗ ACTION ITEM
 #     detect-secrets    .secrets.baseline               ✗ ACTION ITEM
 #                        (generate via: uv run detect-secrets scan
@@ -533,7 +533,25 @@ Changelog = "https://github.com/nabhold/baobab/blob/main/CHANGELOG.md"
 
 dependencies = []
 
-#  OPTIONAL DEPENDENCY GROUPS
+#  DEPENDENCY GROUPS
+#
+# CORRECTNESS NOTE (v1.2): these were previously declared under
+# `[project.optional-dependencies]` (PEP 621 "extras"). That was a bug, not
+# a style choice: `[tool.uv] default-groups` and the `--group` /
+# `--only-group` / `--all-groups` flags used throughout this file and in
+# `.github/workflows/deploy-docs.yml` only recognize PEP 735 dependency
+# groups, declared under `[dependency-groups]` — a *different* table. The
+# mismatch meant every `uv sync` invocation (including a bare `uv sync`)
+# failed outright with:
+#     error: Default group `dev` (from `tool.uv.default-groups`) is not
+#     defined in the project's `dependency-groups` table
+# This is now fixed by declaring the table below as `[dependency-groups]`.
+# It is also the more architecturally correct choice, independent of the
+# bug: these are internal developer-tooling buckets for an unpublished
+# workspace root (`package = false`), not installable extras of a
+# distributed package — PEP 735 groups are the right primitive for that,
+# not PEP 621 optional-dependencies.
+#
 #
 # Optional dependency groups provide tooling for developers without polluting
 # production runtime environments.
@@ -568,7 +586,7 @@ dependencies = []
 #     uv sync --all-groups
 #
 #
-[project.optional-dependencies]
+[dependency-groups]
 
 #  DEVELOPMENT TOOLS
 # ---------------------
@@ -608,7 +626,7 @@ dev = [
 # These tools enforce coding standards and detect potential issues before code
 # reaches production.
 #
-# NOTE: pyright is configured via a dedicated `pyrightconfig.jsonc` at the
+# NOTE: pyright is configured via a dedicated `pyrightconfig.json` at the
 # repository root (see "TOOL CONFIGURATION REGISTRY" — currently an open
 # action item). Until that file exists, pyright runs against its own
 # built-in defaults, which is not yet policy-driven.
@@ -627,12 +645,42 @@ quality = [
 # -------------
 # Documentation tooling used to build the Baobab documentation portal.
 #
-# Documentation is generated using MkDocs Material and published/versioned
-# using `mike`. See "DOCUMENTATION BUILD & PUBLISH — CORRECT UV COMMANDS"
-# near the end of this file for the exact command sequence: `uv publish`
-# and `uv build` are PyPI package release commands and are NOT used to
-# publish documentation — using them against the repository root will fail,
-# since `package = false` is set below.
+# ARCHITECTURE DECISION (v1.3): single-version documentation, published via
+# GitHub's native Pages Actions deployment (OIDC-based
+# `actions/upload-pages-artifact` + `actions/deploy-pages`), NOT `mike`.
+#
+# `mike` was removed from this group after being identified as dead weight:
+# it was declared here and documented as "the" publishing path, but
+# `.github/workflows/deploy-docs.yml` never actually invoked it — the
+# workflow implements the single-version model below. The two are
+# genuinely incompatible, not just different flavours of the same thing:
+# `mike` pushes commits to an orphan `gh-pages` branch and requires
+# `contents: write` on the Actions bot token; the OIDC/Pages-Actions model
+# this repository actually uses is deliberately narrower
+# (`pages: write` + `id-token: write`, no `contents: write`) and deploys
+# straight from a build artifact with no branch or commit involved.
+#
+# This was a deliberate decision, not just a bug fix, made on these
+# grounds:
+#   1. Security / least privilege — granting `contents: write` to an
+#      automated pipeline (required by mike's branch-push model) is a
+#      strictly larger supply-chain attack surface than the artifact-based
+#      OIDC deployment already in place. Given a choice, we do not expand
+#      write access from CI when a narrower mechanism already works.
+#   2. Maintenance posture — Baobab does not currently commit to
+#      supporting multiple concurrently-documented major versions (no
+#      externally-versioned SDK/API with an LTS guarantee yet). A
+#      "forward-only" single-version docs site matches that posture; if
+#      that changes (e.g. once `sdk/python` ships a versioned public API),
+#      this decision should be revisited alongside that milestone.
+#   3. Repository hygiene — no orphan `gh-pages` branch accumulating
+#      auto-generated HTML commits over time.
+#
+# See "DOCUMENTATION BUILD & PUBLISH — CORRECT UV COMMANDS" near the end of
+# this file for the exact command sequence: `uv publish` and `uv build`
+# are PyPI package release commands and are NOT used to publish
+# documentation — using them against the repository root will fail, since
+# `package = false` is set below.
 #
 # Version ranges intentionally remain within the current major release family
 # to avoid unplanned breaking changes.
@@ -640,7 +688,17 @@ quality = [
 docs = [
 
     # Documentation engine
-    "mkdocs>=1.6,<1.7",
+    #
+    # Upper-bounded at 1.6.1 rather than the full 1.6.x line (<1.7) because
+    # `mkdocs-redirects` (pinned below) itself declares
+    # `Requires-Dist: mkdocs<=1.6.1,>=1.2` — verified directly against its
+    # published wheel metadata. Leaving our own range at the wider <1.7
+    # works today only because 1.6.1 happens to be the newest 1.6.x release
+    # so far; the moment mkdocs ships 1.6.2, `uv sync`/`uv lock` would fail
+    # to resolve with no obvious cause pointing back to this comment.
+    # ACTION ITEM: re-widen this once mkdocs-redirects raises its own cap
+    # (check https://pypi.org/project/mkdocs-redirects/ before bumping).
+    "mkdocs>=1.6,<=1.6.1",
 
     # Documentation theme
     "mkdocs-material>=9,<10",
@@ -652,9 +710,6 @@ docs = [
 
     # Markdown extensions
     "pymdown-extensions>=11.0.1",
-
-    # Versioned documentation
-    "mike>=2.2.0",
 
     # Redirect support
     "mkdocs-redirects>=1.2.0",
@@ -990,12 +1045,18 @@ default-groups = [
 # root in an attempt to "publish the docs." Those two commands are for
 # building and uploading a *Python package* to a package index (PyPI or
 # private index) and belong to the `release` group / individual service
-# projects — they are unrelated to MkDocs/mike and will fail at the root
+# projects — they are unrelated to MkDocs and will fail at the root
 # because `package = false` is set above (there is nothing to build).
 #
-# Documentation lives in `docs/` and is built/served/published with MkDocs
-# and mike directly, run through `uv run` so they execute inside the
-# project's managed environment:
+# Documentation model: single-version, forward-only (see the ARCHITECTURE
+# DECISION note under the `docs` group above for the full rationale —
+# `mike` and versioned docs were deliberately rejected, not merely
+# forgotten). There is exactly one published version of the docs at any
+# time; publishing simply overwrites it.
+#
+# Documentation lives in `docs/` and is built/served with MkDocs directly,
+# run through `uv run` so it executes inside the project's managed
+# environment:
 #
 #   1. Ensure the docs tooling is installed
 #          uv sync --group docs
@@ -1003,25 +1064,26 @@ default-groups = [
 #      `uv sync` is normally sufficient)
 #
 #   2. Build the static site locally (output to ./site, for inspection only)
-#          uv run mkdocs build
+#          uv run mkdocs build --strict --site-dir site
+#      `--site-dir site` matches the directory
+#      `.github/workflows/deploy-docs.yml` uploads via
+#      `actions/upload-pages-artifact`; keep both in sync if either changes.
+#      `--strict` matches mkdocs.yml's own `strict: true` — running it
+#      explicitly here too means a broken link is caught locally, before
+#      CI, not just in CI.
 #
 #   3. Serve the docs locally with live reload during authoring
 #          uv run mkdocs serve
 #
-#   4. Publish a new versioned build to the `gh-pages` branch via mike
-#          uv run mike deploy <version> latest --push --update-aliases
-#      e.g.
-#          uv run mike deploy 0.1.0 latest --push --update-aliases
-#
-#   5. Point the default published version at the latest alias
-#          uv run mike set-default latest --push
-#
-#   6. (CI only) These same `uv run mike ...` commands are what
-#      .github/workflows/deploy-docs.yml should invoke — it must NOT call
-#      `uv build` or `uv publish`. Confirm this workflow uses `uv run mkdocs`
-#      / `uv run mike`, not the package-release commands, and that the
-#      runner has git write access (and a configured git identity) to push
-#      to `gh-pages`.
+#   4. Publishing to production is CI-only and requires no local/manual
+#      command: pushing to `main` with changes under the paths listed in
+#      `.github/workflows/deploy-docs.yml`'s trigger (or a manual
+#      `workflow_dispatch`) runs the build above and hands the `site/`
+#      artifact to `actions/upload-pages-artifact` +
+#      `actions/deploy-pages`, which deploy it directly to the GitHub
+#      Pages environment via OIDC. There is no branch push, no `git`
+#      credentials, and no `contents: write` permission involved — this is
+#      the entire point of the architecture decision above.
 #
 # Do not run `uv build` / `uv publish` for documentation purposes under any
 # circumstances — those remain reserved for actual Python package releases
@@ -1032,7 +1094,35 @@ default-groups = [
 #  REVISION HISTORY
 # ------------------
 #
-# v1.1 (this revision)
+# v1.3 (this revision)
+#   • Removed `mike` from the `docs` group and rewrote the `docs` group's
+#     header comment and the "DOCUMENTATION BUILD & PUBLISH" section to
+#     describe the single-version, OIDC-based publishing model that
+#     `.github/workflows/deploy-docs.yml` actually implements, instead of
+#     the `mike`/`gh-pages`-branch model it never used. This was a
+#     deliberate architecture decision (security/least-privilege,
+#     maintenance posture, repository hygiene — see the `docs` group
+#     comment for the full rationale), not a bug fix; `deploy-docs.yml`
+#     itself was left unchanged.
+#
+# v1.2
+#   • Fixed a severe bug: dependency groups (`dev`, `quality`, `docs`,
+#     `test`, `security`, `release`) were declared under
+#     `[project.optional-dependencies]` (PEP 621 extras), but
+#     `[tool.uv] default-groups` and every `--group`/`--only-group`
+#     command in this file and in `deploy-docs.yml` only recognize PEP 735
+#     `[dependency-groups]`. This mismatch made every `uv sync` invocation
+#     fail outright, including a bare `uv sync` — confirmed and reproduced
+#     before fixing. Renamed the table to `[dependency-groups]` and
+#     re-verified `uv sync`, `uv sync --only-group docs`, and
+#     `uv run mkdocs` / `uv run mike` end-to-end.
+#   • Tightened the `mkdocs` pin from `>=1.6,<1.7` to `>=1.6,<=1.6.1` after
+#     discovering `mkdocs-redirects` itself caps `mkdocs<=1.6.1` — the
+#     wider range only worked by coincidence (1.6.1 being the newest
+#     1.6.x release at the time) and would have failed resolution outright
+#     the moment mkdocs shipped 1.6.2.
+#
+# v1.1
 #   • Pinned Python to 3.14.6: requires-python narrowed from an open-ended
 #     ">=3.14" to ">=3.14.6,<3.15", paired with a new root-level
 #     `.python-version` file (exact pin, read by `uv`/`pyenv`).
@@ -1041,7 +1131,7 @@ default-groups = [
 #     kept only the extra form).
 #   • Added the "TOOL CONFIGURATION REGISTRY" documenting which tools have
 #     dedicated config files and flagging three that do not yet
-#     (pyrightconfig.jsonc, bandit.yaml, .secrets.baseline) as tracked
+#     (pyrightconfig.json, bandit.yaml, .secrets.baseline) as tracked
 #     action items rather than silent gaps.
 #   • Replaced the ambiguous UV workspace activation comment with an
 #     explicit "UV WORKSPACE READINESS ROADMAP" status table, since the
@@ -1053,7 +1143,7 @@ default-groups = [
 #   • Added the "DOCUMENTATION BUILD & PUBLISH" command reference to
 #     eliminate the recurring error of running `uv build` / `uv publish`
 #     against the (unpackaged) repository root when the actual goal was to
-#     publish MkDocs/mike documentation.
+#     publish MkDocs documentation.
 #
 # v1.0
 #   • Initial root workspace configuration.
