@@ -3,7 +3,7 @@
 
 > **Strong Roots. Inspired Growth.**
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../../LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)]
 ![Python](https://img.shields.io/badge/Python-3.14-blue)
 ![Django](https://img.shields.io/badge/Django-6.0-092E20)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791)
