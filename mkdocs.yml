@@ -277,6 +277,7 @@ nav:
       - Introduction: index.md
 
   - Introduction:
+      - Introduction: introduction/index.md
       - Overview: introduction/overview.md
       - Project Charter: introduction/project-charter.md
 
