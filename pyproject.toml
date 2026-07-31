@@ -34,6 +34,12 @@
 #     PEP 518
 #     PEP 621
 #
+# Revision
+# --------
+#     v1.1 — Architecture review remediation
+#     See "REVISION HISTORY" near the end of this file for a full changelog
+#     of what changed relative to v1.0 and why.
+#
 #
 # PURPOSE
 # ---------------
@@ -54,9 +60,11 @@
 #   • UV workspace configuration
 #
 # This file intentionally contains NO configuration for individual tools such
-# as Ruff, Pytest, MkDocs, or Pre-Commit. Each tool owns its own dedicated
-# configuration file to improve maintainability, reduce coupling, and simplify
-# upgrades.
+# as Ruff, Pytest, MkDocs, Pyright, Bandit, or Pre-Commit. Each tool owns its
+# own dedicated configuration file to improve maintainability, reduce
+# coupling, and simplify upgrades. See "TOOL CONFIGURATION REGISTRY" below
+# for the authoritative mapping of tool → config file, including two gaps
+# identified in the last review that still need dedicated files created.
 #
 #
 # REPOSITORY PHILOSOPHY
@@ -82,6 +90,35 @@
 #
 # The root of the repository serves as the coordination layer for the entire
 # platform rather than as the runtime environment for any individual service.
+#
+#
+# TOOL CONFIGURATION REGISTRY
+# ----------------------------
+#
+# Authoritative mapping of tool → dedicated configuration file. If a tool
+# below has no file yet, that is a known, tracked gap — not an oversight.
+#
+#     Tool              Config file                    Status
+#     ----------------  ------------------------------  -----------------
+#     Ruff              ruff.toml                       ✓ present
+#     Pytest            pytest.ini                      ✓ present
+#     MkDocs            mkdocs.yml                      ✓ present
+#     Pre-commit        .pre-commit-config.yaml         ✓ present
+#     markdownlint      .markdownlint.jsonc             ✓ present
+#     yamllint          .yamllint.yml                   ✓ present
+#     Taplo (TOML)      taplo.toml                      ✓ present
+#     Pyright           pyrightconfig.jsonc             ✗ ACTION ITEM
+#     Bandit            bandit.yaml                     ✗ ACTION ITEM
+#     detect-secrets    .secrets.baseline               ✗ ACTION ITEM
+#                        (generate via: uv run detect-secrets scan
+#                         > .secrets.baseline)
+#     pip-audit         none required (CLI flags only)  n/a
+#
+# The three ACTION ITEM rows were identified during the July 2026
+# architecture review. They do not block this file from being correct, but
+# they should be created as immediate follow-up work so that `quality` and
+# `security` group tools run against explicit, version-controlled policy
+# rather than tool defaults.
 #
 #
 # PYTHON WORKSPACE PHILOSOPHY
@@ -134,13 +171,51 @@
 #      version control alongside the source code.
 #
 #
+# PYTHON VERSION POLICY
+# ----------------------------
+#
+# Baobab pins Python 3.14.6 as the exact interpreter used across all
+# developer machines, CI runners, and devcontainers.
+#
+# This is implemented in two complementary layers, per uv's own guidance —
+# `requires-python` in this file is a PEP 621 *compatibility declaration*
+# (a range), while the exact interpreter used to build environments is
+# pinned separately:
+#
+#   • requires-python (below)   → ">=3.14.6,<3.15"
+#         Declares the minimum patch release the codebase requires and the
+#         next minor line as the ceiling. This is what packaging tools and
+#         IDEs read to validate compatibility.
+#
+#   • .python-version (repo root) → 3.14.6
+#         Read automatically by `uv` (and `pyenv`) to select and download the
+#         *exact* interpreter build for `uv sync` / `uv run`, regardless of
+#         what else is installed on the machine. This is the actual
+#         reproducibility guarantee requested for this platform.
+#
+# Rationale for a range rather than a hard "==3.14.6" pin in requires-python:
+# an exact pin here would make the workspace metadata reject a developer's
+# environment over an unreleased patch bump (e.g. a security patch 3.14.7)
+# even though `uv sync` would still resolve correctly. The `.python-version`
+# file is the correct enforcement point for "everyone runs the exact same
+# interpreter build"; requires-python is the correct place for "this code is
+# only known to work on the 3.14 line, starting at .6."
+#
+# If a future decision needs a hard, non-negotiable single build (e.g. for
+# regulatory reproducibility), tighten requires-python to "==3.14.6" and
+# accept that CI must then also pin the exact same build with no drift
+# allowed — coordinate with the Devcontainer/CI owners before doing so, as
+# it affects the base image in .devcontainer/docker/Dockerfile.
+#
+#
 # SCALABILITY STRATEGY
 # ----------------------------
 #
 # This configuration is designed to support future expansion without requiring
 # structural changes to the repository.
 #
-# Planned future workspace members include:
+# Directories already scaffolded in the tree with a pyproject.toml placeholder
+# (see "UV WORKSPACE READINESS ROADMAP" below for their current status):
 #
 #     services/backend/
 #     services/ai/
@@ -149,8 +224,18 @@
 #     packages/python/
 #     sdk/python/
 #
-# As additional Python services are introduced, they should each contain their
-# own pyproject.toml and become members of the UV workspace.
+# Additionally tracked but not yet scaffolded with any pyproject.toml:
+#
+#     plugins/connectors/
+#     plugins/customer_extensions/
+#     plugins/marketplace/
+#     plugins/reports/
+#
+# The `plugins/` tree currently contains only `.gitkeep` placeholders. If and
+# when any of these becomes a real Python package (e.g. a connector SDK or a
+# reporting engine with its own dependencies), it must be added to this list
+# and to the workspace roadmap below before being enrolled as a workspace
+# member.
 #
 #
 # MAINTENANCE POLICY
@@ -163,16 +248,9 @@
 #   • Build configuration
 #   • Workspace configuration
 #
-# Tool-specific configuration MUST remain in dedicated configuration files,
-# including but not limited to:
-#
-#     ruff.toml
-#     pytest.ini
-#     mkdocs.yml
-#     .pre-commit-config.yaml
-#     .markdownlint.jsonc
-#     .yamllint.yml
-#     taplo.toml
+# Tool-specific configuration MUST remain in dedicated configuration files.
+# See "TOOL CONFIGURATION REGISTRY" above for the full, current list and
+# outstanding gaps.
 #
 # Keeping configuration separated reduces complexity, improves readability,
 # and allows individual tools to evolve independently over time.
@@ -223,10 +301,6 @@ build-backend = "hatchling.build"
 # Baobab follows PEP 621 to ensure consistent and interoperable project
 # metadata across the Python ecosystem.
 #
-#  PROJECT METADATA (PEP 621)
-#  ----------------
-# PEP 621 standardises project metadata for Python packages.
-#
 # Although the Baobab repository root is not itself intended to be published to
 # the Python Package Index (PyPI), maintaining complete metadata provides
 # several benefits:
@@ -256,7 +330,9 @@ description = "An enterprise-grade, AI-enabled, multi-tenant digital business pl
 
 readme = "README.md"
 
-requires-python = ">=3.14"
+# See "PYTHON VERSION POLICY" above for the full rationale behind pairing
+# this range with an exact .python-version pin of 3.14.6.
+requires-python = ">=3.14.6,<3.15"
 
 license = { file = "LICENSE" }
 
@@ -422,18 +498,6 @@ Changelog = "https://github.com/nabhold/baobab/blob/main/CHANGELOG.md"
 # This design keeps the repository root lightweight while allowing each service
 # to evolve independently with its own dependency graph and release cadence.
 #
-
-#  RUNTIME DEPENDENCIES
-#  ------------------------
-# The Baobab repository root intentionally declares NO runtime dependencies.
-#
-# This repository serves as the workspace and orchestration layer for the
-# platform rather than a deployable Python application.
-#
-# Runtime dependencies such as Django, FastAPI, Celery, Redis clients,
-# PostgreSQL drivers, AI frameworks and cloud SDKs belong exclusively to the
-# individual Python services that require them.
-#
 # Examples
 # --------
 #
@@ -544,6 +608,11 @@ dev = [
 # These tools enforce coding standards and detect potential issues before code
 # reaches production.
 #
+# NOTE: pyright is configured via a dedicated `pyrightconfig.jsonc` at the
+# repository root (see "TOOL CONFIGURATION REGISTRY" — currently an open
+# action item). Until that file exists, pyright runs against its own
+# built-in defaults, which is not yet policy-driven.
+#
 quality = [
 
     # Linting and formatting
@@ -558,7 +627,12 @@ quality = [
 # -------------
 # Documentation tooling used to build the Baobab documentation portal.
 #
-# Documentation is generated using MkDocs Material.
+# Documentation is generated using MkDocs Material and published/versioned
+# using `mike`. See "DOCUMENTATION BUILD & PUBLISH — CORRECT UV COMMANDS"
+# near the end of this file for the exact command sequence: `uv publish`
+# and `uv build` are PyPI package release commands and are NOT used to
+# publish documentation — using them against the repository root will fail,
+# since `package = false` is set below.
 #
 # Version ranges intentionally remain within the current major release family
 # to avoid unplanned breaking changes.
@@ -571,8 +645,9 @@ docs = [
     # Documentation theme
     "mkdocs-material>=9,<10",
 
-    # API documentation
-    "mkdocstrings>=1.0.6",
+    # API documentation (single declaration; the `[python]` extra pulls in
+    # the base package, so it must not also be listed bare — a duplicate
+    # entry existed in the prior revision and has been removed)
     "mkdocstrings[python]>=1.0.6",
 
     # Markdown extensions
@@ -623,6 +698,13 @@ test = [
 #   • Static security analysis
 #   • Dependency vulnerability scanning
 #   • Secret detection
+#
+# NOTE: bandit and detect-secrets are intended to run against dedicated
+# policy files (`bandit.yaml`, `.secrets.baseline`) per the tool isolation
+# principle used throughout this repository. Both are currently open action
+# items — see "TOOL CONFIGURATION REGISTRY" above. Until `.secrets.baseline`
+# exists, `detect-secrets scan` has no baseline to diff against and will
+# report every match as new on each run.
 #
 security = [
 
@@ -692,6 +774,10 @@ release = [
 # prevents accidental packaging or publishing of the repository root while
 # still allowing dependency management and workspace operations.
 #
+# This is also *why* `uv build` / `uv publish` must never be run against the
+# repository root to "publish documentation" — there is no package here for
+# those commands to act on. See "DOCUMENTATION BUILD & PUBLISH" at the end of
+# this file for the correct command set.
 #
 package = false
 
@@ -749,22 +835,48 @@ default-groups = [
 #   • Faster dependency resolution
 #   • Better security auditing
 #
-#    FUTURE UV WORKSPACE
-#   ---------------------
-# The Baobab Platform is architected as a scalable enterprise monorepo.
 #
-# As individual Python components mature into standalone packages, they should
+#  UV WORKSPACE READINESS ROADMAP
+# ---------------------------------
+#
+# The Baobab Platform is architected as a scalable enterprise monorepo. As
+# individual Python components mature into standalone packages, they should
 # be enrolled into a shared UV workspace.
 #
-# Workspace members remain independently buildable while sharing dependency
-# resolution and lock file management.
+# STATUS AS OF THIS REVISION: every directory listed below already contains
+# a `pyproject.toml` file in the tree, but these are confirmed PLACEHOLDERS,
+# not complete, buildable Python projects. Do not confuse "file exists" with
+# "ready to enroll" — that was an ambiguity in the prior revision of this
+# file that this roadmap now resolves explicitly.
 #
-# NOTE
-# ----
+# A directory is READY to move from commented-out to an active workspace
+# member only once ALL of the following are true:
 #
-# This section is intentionally commented until every listed directory contains
-# a complete Python project with its own pyproject.toml.
+#   1. Its pyproject.toml declares real name/version/dependencies — not an
+#      empty scaffold.
+#   2. `uv build` succeeds for that project in isolation.
+#   3. At least a minimal test suite exists and passes under `pytest`.
+#   4. Its CI workflow (.github/workflows/) exercises it independently
+#      (e.g. backend.yml, python-app.yml) and is green.
+#   5. It has been reviewed and signed off by the owning team lead.
 #
+#     Member                Owning area        Readiness status
+#     --------------------  -----------------  --------------------------
+#     services/backend      Backend            PLACEHOLDER — not ready
+#     services/ai           AI Platform         PLACEHOLDER — not ready
+#     services/worker        Platform Infra     PLACEHOLDER — not ready
+#     shared/python          Platform Infra     PLACEHOLDER — not ready
+#     packages/python        Platform Infra     PLACEHOLDER — not ready
+#     sdk/python             Developer Exp.     PLACEHOLDER — not ready
+#
+# `plugins/connectors`, `plugins/customer_extensions`, `plugins/marketplace`
+# and `plugins/reports` currently hold no pyproject.toml at all (only
+# `.gitkeep`). If any of these becomes a real Python package, add it to the
+# table above with PLACEHOLDER status before it can progress further.
+#
+# Update the status column (not just this comment block) as each member
+# clears the checklist, and uncomment the corresponding entry in
+# `[tool.uv.workspace].members` below only for members marked READY.
 #
 # [tool.uv.workspace]
 #
@@ -806,6 +918,10 @@ default-groups = [
 # Examples
 # --------
 #
+#     plugins/connectors           (if it becomes a Python connector SDK)
+#     plugins/customer_extensions  (if it becomes a Python extension API)
+#     plugins/marketplace          (if it becomes a Python packaging surface)
+#     plugins/reports              (if it becomes a Python reporting engine)
 #     services/reporting
 #     services/search
 #     services/payments
@@ -816,7 +932,8 @@ default-groups = [
 #
 # The repository architecture has been intentionally designed so that adding a
 # new Python service is primarily a matter of creating a new project directory
-# with its own pyproject.toml and registering it as a workspace member.
+# with its own pyproject.toml and registering it as a workspace member once it
+# clears the readiness checklist above.
 #
 #  MAINTENANCE GUIDELINES
 #
@@ -829,6 +946,9 @@ default-groups = [
 # • Review dependency updates regularly.
 # • Regenerate the UV lock file after dependency changes.
 # • Avoid adding application runtime dependencies to the repository root.
+# • Keep the "UV WORKSPACE READINESS ROADMAP" status table current — it is
+#   the single source of truth for what is safe to enroll as a workspace
+#   member.
 #
 # Developer Workflow
 # ------------------
@@ -860,6 +980,84 @@ default-groups = [
 # Update dependencies
 #
 #     uv lock --upgrade
+#
+#
+#  DOCUMENTATION BUILD & PUBLISH — CORRECT UV COMMANDS
+# -----------------------------------------------------
+#
+# This section exists specifically to prevent the error class observed
+# previously: running `uv build` or `uv publish` against the repository
+# root in an attempt to "publish the docs." Those two commands are for
+# building and uploading a *Python package* to a package index (PyPI or
+# private index) and belong to the `release` group / individual service
+# projects — they are unrelated to MkDocs/mike and will fail at the root
+# because `package = false` is set above (there is nothing to build).
+#
+# Documentation lives in `docs/` and is built/served/published with MkDocs
+# and mike directly, run through `uv run` so they execute inside the
+# project's managed environment:
+#
+#   1. Ensure the docs tooling is installed
+#          uv sync --group docs
+#      (already included by default via `default-groups`, so a plain
+#      `uv sync` is normally sufficient)
+#
+#   2. Build the static site locally (output to ./site, for inspection only)
+#          uv run mkdocs build
+#
+#   3. Serve the docs locally with live reload during authoring
+#          uv run mkdocs serve
+#
+#   4. Publish a new versioned build to the `gh-pages` branch via mike
+#          uv run mike deploy <version> latest --push --update-aliases
+#      e.g.
+#          uv run mike deploy 0.1.0 latest --push --update-aliases
+#
+#   5. Point the default published version at the latest alias
+#          uv run mike set-default latest --push
+#
+#   6. (CI only) These same `uv run mike ...` commands are what
+#      .github/workflows/deploy-docs.yml should invoke — it must NOT call
+#      `uv build` or `uv publish`. Confirm this workflow uses `uv run mkdocs`
+#      / `uv run mike`, not the package-release commands, and that the
+#      runner has git write access (and a configured git identity) to push
+#      to `gh-pages`.
+#
+# Do not run `uv build` / `uv publish` for documentation purposes under any
+# circumstances — those remain reserved for actual Python package releases
+# from `services/*`, `sdk/python`, `packages/python`, etc. once those
+# projects are workspace-ready.
+#
+#
+#  REVISION HISTORY
+# ------------------
+#
+# v1.1 (this revision)
+#   • Pinned Python to 3.14.6: requires-python narrowed from an open-ended
+#     ">=3.14" to ">=3.14.6,<3.15", paired with a new root-level
+#     `.python-version` file (exact pin, read by `uv`/`pyenv`).
+#   • Removed a duplicated `mkdocstrings` dependency declaration in the
+#     `docs` group (both a bare and an `[python]`-extra entry existed;
+#     kept only the extra form).
+#   • Added the "TOOL CONFIGURATION REGISTRY" documenting which tools have
+#     dedicated config files and flagging three that do not yet
+#     (pyrightconfig.jsonc, bandit.yaml, .secrets.baseline) as tracked
+#     action items rather than silent gaps.
+#   • Replaced the ambiguous UV workspace activation comment with an
+#     explicit "UV WORKSPACE READINESS ROADMAP" status table, since the
+#     prior wording's stated precondition ("every directory contains a
+#     pyproject.toml") was already technically true via placeholder files,
+#     which was not the intent.
+#   • Added `plugins/*` to the tracked future-scaling list; it was
+#     previously present in the repository tree but absent from this file.
+#   • Added the "DOCUMENTATION BUILD & PUBLISH" command reference to
+#     eliminate the recurring error of running `uv build` / `uv publish`
+#     against the (unpackaged) repository root when the actual goal was to
+#     publish MkDocs/mike documentation.
+#
+# v1.0
+#   • Initial root workspace configuration.
+#
 #
 #  END OF CONFIGURATION
 # ---------------------
