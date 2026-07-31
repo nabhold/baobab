@@ -1,0 +1,262 @@
+/*==============================================================================
+  BAOBAB ENTERPRISE PLATFORM
+  Dark Theme
+
+  File:
+      docs/assets/css/dark.css
+
+  Purpose:
+      Dark mode overrides for the Baobab Documentation Portal.
+
+      This stylesheet overrides design tokens and applies minimal
+      component adjustments for Material for MkDocs dark mode.
+
+      Layout, typography and components should continue to consume
+      the existing design tokens.
+
+==============================================================================*/
+
+
+/*==============================================================================
+  Design Tokens
+==============================================================================*/
+
+[data-md-color-scheme="slate"] {
+
+    /*--------------------------------------------------------------------------
+      Brand Colours
+    --------------------------------------------------------------------------*/
+
+    --baobab-primary: #F3F4F6;
+
+    --baobab-primary-light: #E5E7EB;
+
+    --baobab-secondary: #D1D5DB;
+
+    --baobab-green: #7FB069;
+
+    --baobab-green-dark: #5E8E52;
+
+    --baobab-gold: #D8B45A;
+
+
+    /*--------------------------------------------------------------------------
+      Surfaces
+    --------------------------------------------------------------------------*/
+
+    --baobab-background: #0F172A;
+
+    --baobab-surface: #1E293B;
+
+    --baobab-border: #334155;
+
+
+    /*--------------------------------------------------------------------------
+      Typography
+    --------------------------------------------------------------------------*/
+
+    --baobab-text: #F8FAFC;
+
+    --baobab-text-light: #CBD5E1;
+
+
+    /*--------------------------------------------------------------------------
+      Shadows
+    --------------------------------------------------------------------------*/
+
+    --baobab-shadow-small:
+        0 6px 18px rgba(0, 0, 0, .45);
+
+    --baobab-shadow-large:
+        0 18px 48px rgba(0, 0, 0, .55);
+
+}
+
+
+/*==============================================================================
+  Material Theme
+==============================================================================*/
+
+[data-md-color-scheme="slate"] body {
+
+    background: var(--baobab-background);
+
+    color: var(--baobab-text);
+
+}
+
+
+[data-md-color-scheme="slate"] .md-content {
+
+    background: var(--baobab-background);
+
+}
+
+
+[data-md-color-scheme="slate"] .md-main {
+
+    background: var(--baobab-background);
+
+}
+
+
+/*==============================================================================
+  Hero
+==============================================================================*/
+
+[data-md-color-scheme="slate"] .hero {
+
+    background:
+        linear-gradient(
+            180deg,
+            #1E293B,
+            #0F172A
+        );
+
+}
+
+
+/*==============================================================================
+  Cards
+==============================================================================*/
+
+[data-md-color-scheme="slate"] .grid.cards li {
+
+    background: var(--baobab-surface);
+
+    border-color: var(--baobab-border);
+
+}
+
+
+[data-md-color-scheme="slate"] .grid.cards li:hover {
+
+    border-color: var(--baobab-green);
+
+}
+
+
+/*==============================================================================
+  Tables
+==============================================================================*/
+
+[data-md-color-scheme="slate"] .md-typeset table {
+
+    background: var(--baobab-surface);
+
+}
+
+
+[data-md-color-scheme="slate"] .md-typeset table th {
+
+    background: var(--baobab-primary);
+
+    color: var(--baobab-background);
+
+}
+
+
+[data-md-color-scheme="slate"] .md-typeset table td {
+
+    border-color: var(--baobab-border);
+
+}
+
+
+/*==============================================================================
+  Blockquotes
+==============================================================================*/
+
+[data-md-color-scheme="slate"] .md-typeset blockquote {
+
+    background: rgba(255,255,255,.03);
+
+}
+
+
+/*==============================================================================
+  Inline Code
+==============================================================================*/
+
+[data-md-color-scheme="slate"] .md-typeset code {
+
+    background: rgba(255,255,255,.08);
+
+    border-color: var(--baobab-border);
+
+}
+
+
+/*==============================================================================
+  Code Blocks
+==============================================================================*/
+
+[data-md-color-scheme="slate"] .highlight {
+
+    border: 1px solid var(--baobab-border);
+
+}
+
+
+/*==============================================================================
+  Buttons
+==============================================================================*/
+
+[data-md-color-scheme="slate"] .md-button {
+
+    border-color: var(--baobab-green);
+
+    color: var(--baobab-green);
+
+}
+
+
+[data-md-color-scheme="slate"] .md-button:hover {
+
+    background: var(--baobab-green);
+
+    color: var(--baobab-background);
+
+}
+
+
+[data-md-color-scheme="slate"] .md-button--primary {
+
+    color: var(--baobab-background);
+
+}
+
+
+/*==============================================================================
+  Images
+==============================================================================*/
+
+[data-md-color-scheme="slate"] .image-frame {
+
+    background: var(--baobab-surface);
+
+    border-color: var(--baobab-border);
+
+}
+
+
+/*==============================================================================
+  Horizontal Rules
+==============================================================================*/
+
+[data-md-color-scheme="slate"] .md-typeset hr {
+
+    border-top-color: var(--baobab-border);
+
+}
+
+
+/*==============================================================================
+  Footer
+==============================================================================*/
+
+[data-md-color-scheme="slate"] .md-footer {
+
+    background: var(--baobab-surface);
+
+}

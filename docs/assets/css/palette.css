@@ -1,0 +1,36 @@
+:root {
+
+    /* Primary Brand */
+
+    --baobab-primary: #1F2937;
+    --baobab-primary-light: #374151;
+    --baobab-secondary: #4B5563;
+
+    /* Accent Colours */
+
+    --baobab-green: #4E7A44;
+    --baobab-green-dark: #35552D;
+
+    --baobab-gold: #C89A2B;
+
+    /* Surfaces */
+
+    --baobab-background: #FFFFFF;
+    --baobab-surface: #F8FAFC;
+    --baobab-border: #E5E7EB;
+
+    /* Typography */
+
+    --baobab-text: var(--baobab-primary);
+    --baobab-text-light: #6B7280;
+
+    /* Layout */
+
+    --baobab-radius: 12px;
+
+    /* Shadows */
+
+    --baobab-shadow-small: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --baobab-shadow-large: 0 15px 40px rgba(0, 0, 0, 0.08);
+
+}

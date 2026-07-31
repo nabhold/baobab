@@ -1,0 +1,453 @@
+/*==============================================================================
+  BAOBAB ENTERPRISE PLATFORM
+  Typography
+
+  File:
+      docs/assets/css/typography.css
+
+  Purpose:
+      Applies the Baobab Typography Design Tokens to Material for MkDocs.
+
+  Dependencies:
+      - palette.css
+      - typography-tokens.css
+
+  Author:
+      Nabhold Group Africa
+
+  Project:
+      Baobab Enterprise Platform
+==============================================================================*/
+
+
+/*==============================================================================
+  Base Typography
+==============================================================================*/
+
+.md-typeset {
+
+    font-family: var(--baobab-font-family-sans);
+
+    font-size: var(--baobab-font-size-body);
+
+    font-weight: var(--baobab-font-weight-normal);
+
+    line-height: var(--baobab-line-height-body);
+
+    color: var(--baobab-text);
+
+    text-rendering: optimizeLegibility;
+
+    -webkit-font-smoothing: antialiased;
+
+    -moz-osx-font-smoothing: grayscale;
+
+}
+
+
+/*==============================================================================
+  Headings
+==============================================================================*/
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+
+    font-family: var(--baobab-font-family-sans);
+
+    font-weight: var(--baobab-font-weight-bold);
+
+    line-height: var(--baobab-line-height-heading);
+
+    letter-spacing: var(--baobab-letter-spacing-heading);
+
+    color: var(--baobab-primary);
+
+}
+
+.md-typeset h1 {
+
+    font-size: var(--baobab-font-size-h1);
+
+    font-weight: var(--baobab-font-weight-extrabold);
+
+}
+
+.md-typeset h2 {
+
+    font-size: var(--baobab-font-size-h2);
+
+}
+
+.md-typeset h3 {
+
+    font-size: var(--baobab-font-size-h3);
+
+}
+
+.md-typeset h4 {
+
+    font-size: var(--baobab-font-size-h4);
+
+}
+
+.md-typeset h5 {
+
+    font-size: var(--baobab-font-size-h5);
+
+}
+
+.md-typeset h6 {
+
+    font-size: var(--baobab-font-size-h6);
+
+    color: var(--baobab-secondary);
+
+}
+
+
+/*==============================================================================
+  Paragraphs
+==============================================================================*/
+
+.md-typeset p {
+
+    color: var(--baobab-text);
+
+    margin-bottom: 1.25rem;
+
+}
+
+
+/*==============================================================================
+  Lead Text
+==============================================================================*/
+
+.md-typeset .lead {
+
+    font-size: var(--baobab-font-size-lead);
+
+    font-weight: var(--baobab-font-weight-light);
+
+    color: var(--baobab-secondary);
+
+}
+
+
+/*==============================================================================
+  Strong
+==============================================================================*/
+
+.md-typeset strong {
+
+    font-weight: var(--baobab-font-weight-bold);
+
+    color: var(--baobab-primary);
+
+}
+
+
+/*==============================================================================
+  Emphasis
+==============================================================================*/
+
+.md-typeset em {
+
+    font-style: italic;
+
+}
+
+
+/*==============================================================================
+  Links
+==============================================================================*/
+
+.md-typeset a {
+
+    color: var(--baobab-green);
+
+    text-decoration: var(--baobab-text-decoration-none);
+
+    transition: color .2s ease;
+
+}
+
+.md-typeset a:hover {
+
+    color: var(--baobab-gold);
+
+}
+
+
+/*==============================================================================
+  Lists
+==============================================================================*/
+
+.md-typeset ul,
+.md-typeset ol {
+
+    margin-bottom: 1.5rem;
+
+    padding-left: var(--baobab-list-indent);
+
+}
+
+.md-typeset li {
+
+    margin-bottom: var(--baobab-list-item-spacing);
+
+}
+
+
+/*==============================================================================
+  Definition Lists
+==============================================================================*/
+
+.md-typeset dt {
+
+    font-weight: var(--baobab-font-weight-bold);
+
+}
+
+.md-typeset dd {
+
+    color: var(--baobab-secondary);
+
+}
+
+
+/*==============================================================================
+  Blockquotes
+==============================================================================*/
+
+.md-typeset blockquote {
+
+    font-size: var(--baobab-blockquote-font-size);
+
+    font-style: var(--baobab-blockquote-font-style);
+
+    color: var(--baobab-secondary);
+
+}
+
+
+/*==============================================================================
+  Horizontal Rule
+==============================================================================*/
+
+.md-typeset hr {
+
+    border: 0;
+
+    border-top: 1px solid var(--baobab-border);
+
+}
+
+
+/*==============================================================================
+  Inline Code
+==============================================================================*/
+
+.md-typeset code {
+
+    font-family: var(--baobab-font-family-mono);
+
+    font-size: var(--baobab-font-size-code);
+
+    font-weight: var(--baobab-code-font-weight);
+
+}
+
+
+/*==============================================================================
+  Code Blocks
+==============================================================================*/
+
+.md-typeset pre {
+
+    font-family: var(--baobab-font-family-mono);
+
+    font-size: var(--baobab-font-size-code);
+
+    line-height: var(--baobab-line-height-code);
+
+    tab-size: var(--baobab-code-tab-size);
+
+}
+
+
+/*==============================================================================
+  Keyboard
+==============================================================================*/
+
+.md-typeset kbd {
+
+    font-family: var(--baobab-font-family-mono);
+
+    font-size: var(--baobab-font-size-small);
+
+    font-weight: var(--baobab-font-weight-semibold);
+
+}
+
+
+/*==============================================================================
+  Tables
+==============================================================================*/
+
+.md-typeset table {
+
+    font-size: var(--baobab-table-font-size);
+
+}
+
+.md-typeset th {
+
+    font-weight: var(--baobab-table-header-weight);
+
+}
+
+.md-typeset td {
+
+    font-weight: var(--baobab-table-body-weight);
+
+}
+
+
+/*==============================================================================
+  Figure Captions
+==============================================================================*/
+
+.md-typeset figcaption {
+
+    font-size: var(--baobab-font-size-caption);
+
+    color: var(--baobab-secondary);
+
+    text-align: center;
+
+}
+
+
+/*==============================================================================
+  Small Text
+==============================================================================*/
+
+.md-typeset small {
+
+    font-size: var(--baobab-font-size-small);
+
+    color: var(--baobab-secondary);
+
+}
+
+
+/*==============================================================================
+  Text Utilities
+==============================================================================*/
+
+.text-left {
+
+    text-align: left;
+
+}
+
+.text-center {
+
+    text-align: center;
+
+}
+
+.text-right {
+
+    text-align: right;
+
+}
+
+.font-light {
+
+    font-weight: var(--baobab-font-weight-light);
+
+}
+
+.font-normal {
+
+    font-weight: var(--baobab-font-weight-normal);
+
+}
+
+.font-medium {
+
+    font-weight: var(--baobab-font-weight-medium);
+
+}
+
+.font-semibold {
+
+    font-weight: var(--baobab-font-weight-semibold);
+
+}
+
+.font-bold {
+
+    font-weight: var(--baobab-font-weight-bold);
+
+}
+
+.font-extrabold {
+
+    font-weight: var(--baobab-font-weight-extrabold);
+
+}
+
+
+/*==============================================================================
+  Responsive Typography
+==============================================================================*/
+
+@media (max-width: 960px) {
+
+    .md-typeset h1 {
+
+        font-size: var(--baobab-font-size-h1-tablet);
+
+    }
+
+    .md-typeset h2 {
+
+        font-size: var(--baobab-font-size-h2-tablet);
+
+    }
+
+    .md-typeset h3 {
+
+        font-size: var(--baobab-font-size-h3-tablet);
+
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .md-typeset h1 {
+
+        font-size: var(--baobab-font-size-h1-mobile);
+
+    }
+
+    .md-typeset h2 {
+
+        font-size: var(--baobab-font-size-h2-mobile);
+
+    }
+
+    .md-typeset h3 {
+
+        font-size: var(--baobab-font-size-h3-mobile);
+
+    }
+
+}

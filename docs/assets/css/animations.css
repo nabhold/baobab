@@ -1,0 +1,522 @@
+/*==============================================================================
+  BAOBAB ENTERPRISE PLATFORM
+  Animations
+
+  File:
+      docs/assets/css/animations.css
+
+  Purpose:
+      Defines reusable animations and transitions for the
+      Baobab Documentation Portal.
+
+      Principles:
+
+      • Fast
+      • Subtle
+      • Accessible
+      • Professional
+
+==============================================================================*/
+
+
+/*==============================================================================
+  Global Transitions
+==============================================================================*/
+
+*,
+*::before,
+*::after {
+
+    transition:
+
+        color .2s ease,
+        background-color .2s ease,
+        border-color .2s ease,
+        box-shadow .25s ease,
+        transform .25s ease;
+
+}
+
+
+/*==============================================================================
+  Hover Lift
+==============================================================================*/
+
+.hover-lift {
+
+    transition:
+
+        transform .25s ease,
+        box-shadow .25s ease;
+
+}
+
+.hover-lift:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow: var(--baobab-shadow-large);
+
+}
+
+
+/*==============================================================================
+  Scale
+==============================================================================*/
+
+.hover-scale {
+
+    transition: transform .25s ease;
+
+}
+
+.hover-scale:hover {
+
+    transform: scale(1.03);
+
+}
+
+
+/*==============================================================================
+  Fade In
+==============================================================================*/
+
+.fade-in {
+
+    animation:
+
+        baobab-fade-in
+
+        .6s ease-out
+
+        both;
+
+}
+
+
+/*==============================================================================
+  Slide Up
+==============================================================================*/
+
+.slide-up {
+
+    animation:
+
+        baobab-slide-up
+
+        .6s ease-out
+
+        both;
+
+}
+
+
+/*==============================================================================
+  Slide Down
+==============================================================================*/
+
+.slide-down {
+
+    animation:
+
+        baobab-slide-down
+
+        .5s ease-out
+
+        both;
+
+}
+
+
+/*==============================================================================
+  Slide Left
+==============================================================================*/
+
+.slide-left {
+
+    animation:
+
+        baobab-slide-left
+
+        .5s ease-out
+
+        both;
+
+}
+
+
+/*==============================================================================
+  Slide Right
+==============================================================================*/
+
+.slide-right {
+
+    animation:
+
+        baobab-slide-right
+
+        .5s ease-out
+
+        both;
+
+}
+
+
+/*==============================================================================
+  Zoom
+==============================================================================*/
+
+.zoom-in {
+
+    animation:
+
+        baobab-zoom-in
+
+        .4s ease-out
+
+        both;
+
+}
+
+
+/*==============================================================================
+  Gentle Float
+==============================================================================*/
+
+.float {
+
+    animation:
+
+        baobab-float
+
+        6s ease-in-out
+
+        infinite;
+
+}
+
+
+/*==============================================================================
+  Pulse
+==============================================================================*/
+
+.pulse {
+
+    animation:
+
+        baobab-pulse
+
+        2.5s ease-in-out
+
+        infinite;
+
+}
+
+
+/*==============================================================================
+  Rotate
+==============================================================================*/
+
+.rotate {
+
+    transition: transform .3s ease;
+
+}
+
+.rotate:hover {
+
+    transform: rotate(5deg);
+
+}
+
+
+/*==============================================================================
+  Link Underline
+==============================================================================*/
+
+.md-typeset a {
+
+    transition:
+
+        color .2s ease,
+
+        text-decoration-color .2s ease;
+
+}
+
+
+/*==============================================================================
+  Button
+==============================================================================*/
+
+.md-button {
+
+    transition:
+
+        transform .2s ease,
+
+        box-shadow .2s ease,
+
+        background-color .2s ease,
+
+        color .2s ease;
+
+}
+
+.md-button:hover {
+
+    transform: translateY(-2px);
+
+}
+
+
+/*==============================================================================
+  Cards
+==============================================================================*/
+
+.grid.cards li {
+
+    transition:
+
+        transform .25s ease,
+
+        box-shadow .25s ease,
+
+        border-color .25s ease;
+
+}
+
+
+/*==============================================================================
+  Images
+==============================================================================*/
+
+.md-typeset img {
+
+    transition:
+
+        transform .25s ease,
+
+        box-shadow .25s ease;
+
+}
+
+.md-typeset img:hover {
+
+    transform: scale(1.01);
+
+}
+
+
+/*==============================================================================
+  Code Blocks
+==============================================================================*/
+
+.highlight {
+
+    transition:
+
+        box-shadow .25s ease;
+
+}
+
+.highlight:hover {
+
+    box-shadow: var(--baobab-shadow-large);
+
+}
+
+
+/*==============================================================================
+  Keyframes
+==============================================================================*/
+
+@keyframes baobab-fade-in {
+
+    from {
+
+        opacity: 0;
+
+    }
+
+    to {
+
+        opacity: 1;
+
+    }
+
+}
+
+
+@keyframes baobab-slide-up {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateY(30px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: translateY(0);
+
+    }
+
+}
+
+
+@keyframes baobab-slide-down {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateY(-20px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: translateY(0);
+
+    }
+
+}
+
+
+@keyframes baobab-slide-left {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateX(24px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: translateX(0);
+
+    }
+
+}
+
+
+@keyframes baobab-slide-right {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateX(-24px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: translateX(0);
+
+    }
+
+}
+
+
+@keyframes baobab-zoom-in {
+
+    from {
+
+        opacity: 0;
+
+        transform: scale(.96);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: scale(1);
+
+    }
+
+}
+
+
+@keyframes baobab-float {
+
+    0% {
+
+        transform: translateY(0);
+
+    }
+
+    50% {
+
+        transform: translateY(-8px);
+
+    }
+
+    100% {
+
+        transform: translateY(0);
+
+    }
+
+}
+
+
+@keyframes baobab-pulse {
+
+    0% {
+
+        transform: scale(1);
+
+    }
+
+    50% {
+
+        transform: scale(1.04);
+
+    }
+
+    100% {
+
+        transform: scale(1);
+
+    }
+
+}
+
+
+/*==============================================================================
+  Reduced Motion
+==============================================================================*/
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+
+    *::before,
+
+    *::after {
+
+        animation: none !important;
+
+        transition: none !important;
+
+        scroll-behavior: auto !important;
+
+    }
+
+}

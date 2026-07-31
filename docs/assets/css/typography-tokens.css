@@ -1,0 +1,185 @@
+/*==============================================================================
+  BAOBAB ENTERPRISE PLATFORM
+  Typography Design Tokens
+
+  File:
+      docs/assets/css/typography-tokens.css
+
+  Purpose:
+      Defines all typography-related design tokens used throughout the
+      Baobab Design System.
+
+      This file contains no styling rules.
+      It exposes reusable CSS custom properties that are consumed by
+      typography.css and other modules.
+
+  Author:
+      Nabhold Group Africa
+
+  Project:
+      Baobab Enterprise Platform
+==============================================================================*/
+
+:root {
+
+    /*==========================================================================
+      Font Families
+    ==========================================================================*/
+
+    --baobab-font-family-sans:
+        Inter,
+        "Segoe UI",
+        Roboto,
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+
+    --baobab-font-family-serif:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    --baobab-font-family-mono:
+        "JetBrains Mono",
+        "Fira Code",
+        Consolas,
+        "Liberation Mono",
+        monospace;
+
+
+    /*==========================================================================
+      Font Sizes
+    ==========================================================================*/
+
+    --baobab-font-size-xs: 0.75rem;
+    --baobab-font-size-sm: 0.875rem;
+    --baobab-font-size-md: 1rem;
+    --baobab-font-size-lg: 1.125rem;
+    --baobab-font-size-xl: 1.25rem;
+    --baobab-font-size-2xl: 1.5rem;
+    --baobab-font-size-3xl: 1.875rem;
+    --baobab-font-size-4xl: 2.25rem;
+    --baobab-font-size-5xl: 3rem;
+    --baobab-font-size-6xl: 3.75rem;
+
+
+    /*==========================================================================
+      Heading Sizes
+    ==========================================================================*/
+
+    --baobab-font-size-h1: var(--baobab-font-size-5xl);
+    --baobab-font-size-h2: var(--baobab-font-size-4xl);
+    --baobab-font-size-h3: var(--baobab-font-size-3xl);
+    --baobab-font-size-h4: var(--baobab-font-size-2xl);
+    --baobab-font-size-h5: var(--baobab-font-size-xl);
+    --baobab-font-size-h6: var(--baobab-font-size-lg);
+
+
+    /*==========================================================================
+      Body Text
+    ==========================================================================*/
+
+    --baobab-font-size-body: 0.95rem;
+    --baobab-font-size-lead: 1.25rem;
+    --baobab-font-size-small: 0.85rem;
+    --baobab-font-size-caption: 0.80rem;
+    --baobab-font-size-code: 0.90rem;
+
+
+    /*==========================================================================
+      Font Weights
+    ==========================================================================*/
+
+    --baobab-font-weight-light: 300;
+    --baobab-font-weight-normal: 400;
+    --baobab-font-weight-medium: 500;
+    --baobab-font-weight-semibold: 600;
+    --baobab-font-weight-bold: 700;
+    --baobab-font-weight-extrabold: 800;
+
+
+    /*==========================================================================
+      Line Heights
+    ==========================================================================*/
+
+    --baobab-line-height-tight: 1.2;
+    --baobab-line-height-heading: 1.25;
+    --baobab-line-height-body: 1.8;
+    --baobab-line-height-code: 1.6;
+    --baobab-line-height-relaxed: 2;
+
+
+    /*==========================================================================
+      Letter Spacing
+    ==========================================================================*/
+
+    --baobab-letter-spacing-tight: -0.04em;
+    --baobab-letter-spacing-heading: -0.02em;
+    --baobab-letter-spacing-normal: 0;
+    --baobab-letter-spacing-wide: 0.03em;
+    --baobab-letter-spacing-widest: 0.08em;
+
+
+    /*==========================================================================
+      Text Transform
+    ==========================================================================*/
+
+    --baobab-text-transform-none: none;
+    --baobab-text-transform-uppercase: uppercase;
+    --baobab-text-transform-capitalize: capitalize;
+
+
+    /*==========================================================================
+      Text Decoration
+    ==========================================================================*/
+
+    --baobab-text-decoration-none: none;
+    --baobab-text-decoration-underline: underline;
+
+
+    /*==========================================================================
+      Responsive Typography
+    ==========================================================================*/
+
+    --baobab-font-size-h1-mobile: 2rem;
+    --baobab-font-size-h2-mobile: 1.75rem;
+    --baobab-font-size-h3-mobile: 1.50rem;
+
+    --baobab-font-size-h1-tablet: 2.5rem;
+    --baobab-font-size-h2-tablet: 2rem;
+    --baobab-font-size-h3-tablet: 1.6rem;
+
+
+    /*==========================================================================
+      Code Typography
+    ==========================================================================*/
+
+    --baobab-code-tab-size: 4;
+    --baobab-code-font-weight: 500;
+
+
+    /*==========================================================================
+      Blockquote
+    ==========================================================================*/
+
+    --baobab-blockquote-font-size: 1.125rem;
+    --baobab-blockquote-font-style: italic;
+
+
+    /*==========================================================================
+      Lists
+    ==========================================================================*/
+
+    --baobab-list-indent: 1.5rem;
+    --baobab-list-item-spacing: 0.5rem;
+
+
+    /*==========================================================================
+      Tables
+    ==========================================================================*/
+
+    --baobab-table-font-size: 0.95rem;
+    --baobab-table-header-weight: 700;
+    --baobab-table-body-weight: 400;
+
+}

@@ -1,0 +1,387 @@
+/*==============================================================================
+  BAOBAB ENTERPRISE PLATFORM
+  Components
+
+  File:
+      docs/assets/css/components.css
+
+  Purpose:
+      Reusable UI components for the Baobab Documentation Portal.
+
+==============================================================================*/
+
+
+/*==============================================================================
+  Buttons
+==============================================================================*/
+
+.md-button {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: .5rem;
+
+    padding: .85rem 1.6rem;
+
+    border-radius: 999px;
+
+    border: 1px solid var(--baobab-green);
+
+    background: transparent;
+
+    color: var(--baobab-green);
+
+    font-weight: var(--baobab-font-weight-semibold);
+
+    text-decoration: none;
+
+    transition: all .25s ease;
+
+}
+
+.md-button:hover {
+
+    background: var(--baobab-green);
+
+    color: white;
+
+    transform: translateY(-2px);
+
+}
+
+.md-button--primary {
+
+    background: var(--baobab-green);
+
+    color: white;
+
+}
+
+.md-button--primary:hover {
+
+    background: var(--baobab-green-dark);
+
+    border-color: var(--baobab-green-dark);
+
+}
+
+
+/*==============================================================================
+  Cards
+==============================================================================*/
+
+.grid.cards {
+
+    margin-top: 2rem;
+
+}
+
+.grid.cards > ul {
+
+    display: grid;
+
+    grid-template-columns:
+
+        repeat(auto-fit, minmax(280px,1fr));
+
+    gap: 2rem;
+
+    padding: 0;
+
+}
+
+.grid.cards li {
+
+    list-style: none;
+
+    padding: 2rem;
+
+    border-radius: var(--baobab-radius);
+
+    background: var(--baobab-background);
+
+    border: 1px solid var(--baobab-border);
+
+    box-shadow: var(--baobab-shadow-small);
+
+    transition: all .25s ease;
+
+}
+
+.grid.cards li:hover {
+
+    transform: translateY(-6px);
+
+    border-color: var(--baobab-green);
+
+    box-shadow: var(--baobab-shadow-large);
+
+}
+
+.grid.cards h3 {
+
+    margin-top: .75rem;
+
+}
+
+
+/*==============================================================================
+  Badges
+==============================================================================*/
+
+.badge {
+
+    display: inline-block;
+
+    padding: .35rem .8rem;
+
+    border-radius: 999px;
+
+    background: var(--baobab-green);
+
+    color: white;
+
+    font-size: var(--baobab-font-size-small);
+
+    font-weight: var(--baobab-font-weight-semibold);
+
+}
+
+.badge-outline {
+
+    background: transparent;
+
+    border: 1px solid var(--baobab-green);
+
+    color: var(--baobab-green);
+
+}
+
+
+/*==============================================================================
+  Chips
+==============================================================================*/
+
+.chip {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: .35rem;
+
+    padding: .4rem .9rem;
+
+    border-radius: 999px;
+
+    background: var(--baobab-surface);
+
+    border: 1px solid var(--baobab-border);
+
+}
+
+
+/*==============================================================================
+  Tables
+==============================================================================*/
+
+.md-typeset table {
+
+    border-collapse: collapse;
+
+    width: 100%;
+
+    border-radius: var(--baobab-radius);
+
+    overflow: hidden;
+
+    box-shadow: var(--baobab-shadow-small);
+
+}
+
+.md-typeset table th {
+
+    background: var(--baobab-primary);
+
+    color: white;
+
+    padding: 1rem;
+
+}
+
+.md-typeset table td {
+
+    padding: .9rem;
+
+    border-bottom: 1px solid var(--baobab-border);
+
+}
+
+.md-typeset table tr:nth-child(even) {
+
+    background: var(--baobab-surface);
+
+}
+
+
+/*==============================================================================
+  Blockquotes
+==============================================================================*/
+
+.md-typeset blockquote {
+
+    border-left: 4px solid var(--baobab-green);
+
+    background: var(--baobab-surface);
+
+    padding: 1rem 1.5rem;
+
+    border-radius: 0 var(--baobab-radius) var(--baobab-radius) 0;
+
+}
+
+
+/*==============================================================================
+  Admonitions
+==============================================================================*/
+
+.md-typeset .admonition {
+
+    border: none;
+
+    border-radius: var(--baobab-radius);
+
+    box-shadow: var(--baobab-shadow-small);
+
+}
+
+
+/*==============================================================================
+  Inline Code
+==============================================================================*/
+
+.md-typeset code {
+
+    background: var(--baobab-surface);
+
+    border: 1px solid var(--baobab-border);
+
+    border-radius: 4px;
+
+    padding: .15rem .35rem;
+
+}
+
+
+/*==============================================================================
+  Code Blocks
+==============================================================================*/
+
+.highlight {
+
+    border-radius: var(--baobab-radius);
+
+    overflow: hidden;
+
+    box-shadow: var(--baobab-shadow-small);
+
+}
+
+
+/*==============================================================================
+  Images
+==============================================================================*/
+
+.md-typeset img {
+
+    border-radius: var(--baobab-radius);
+
+}
+
+.image-frame {
+
+    border: 1px solid var(--baobab-border);
+
+    padding: .5rem;
+
+    border-radius: var(--baobab-radius);
+
+    background: white;
+
+}
+
+
+/*==============================================================================
+  Horizontal Rules
+==============================================================================*/
+
+.md-typeset hr {
+
+    border: none;
+
+    border-top: 1px solid var(--baobab-border);
+
+}
+
+
+/*==============================================================================
+  Status Colours
+==============================================================================*/
+
+.status-success {
+
+    color: #2E7D32;
+
+}
+
+.status-warning {
+
+    color: #ED6C02;
+
+}
+
+.status-danger {
+
+    color: #D32F2F;
+
+}
+
+.status-info {
+
+    color: #0288D1;
+
+}
+
+
+/*==============================================================================
+  Footer
+==============================================================================*/
+
+.hero-footer {
+
+    text-align: center;
+
+    padding: 3rem 0;
+
+}
+
+
+/*==============================================================================
+  Hover Utilities
+==============================================================================*/
+
+.hover-lift {
+
+    transition: transform .25s ease;
+
+}
+
+.hover-lift:hover {
+
+    transform: translateY(-4px);
+
+}

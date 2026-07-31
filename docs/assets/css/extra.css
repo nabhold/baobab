@@ -1,0 +1,79 @@
+/*==============================================================================
+  BAOBAB ENTERPRISE PLATFORM
+  Material for MkDocs Theme
+
+  File:
+      docs/assets/css/extra.css
+
+  Purpose:
+      Entry point for the Baobab Documentation Design System.
+
+      This file intentionally contains little or no styling.
+      Instead, it imports the modular CSS architecture that defines
+      the Baobab visual identity.
+
+  Architecture:
+
+      palette.css        → Design tokens
+      typography.css     → Fonts and text styles
+      layout.css         → Page layout and grids
+      components.css     → Reusable UI components
+      utilities.css      → Utility helper classes
+      dark.css           → Dark mode overrides
+      animations.css     → Animations and transitions
+
+  Author:
+      Nabhold Group Africa
+
+  Project:
+      Baobab Enterprise Platform
+==============================================================================*/
+
+
+/*==============================================================================
+  Design Tokens
+==============================================================================*/
+
+@import url("palette.css");
+
+
+/*==============================================================================
+  Typography
+==============================================================================*/
+@import url("typography-tokens.css");
+@import url("typography.css");
+
+
+/*==============================================================================
+  Layout
+==============================================================================*/
+
+@import url("layout.css");
+
+
+/*==============================================================================
+  Components
+==============================================================================*/
+
+@import url("components.css");
+
+
+/*==============================================================================
+  Utilities
+==============================================================================*/
+
+@import url("utilities.css");
+
+
+/*==============================================================================
+  Dark Theme
+==============================================================================*/
+
+@import url("dark.css");
+
+
+/*==============================================================================
+  Animations
+==============================================================================*/
+
+@import url("animations.css");

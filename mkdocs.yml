@@ -177,6 +177,14 @@ theme:
     - content.tabs.link
     - content.action.edit
     - content.action.view
+# Link your custom CSS
+extra_css:
+  - assets/css/extra.css
+
+# Link your custom JavaScript
+extra_javascript:
+ - assets/js/extra.js
+
 
 # ==============================================================================
 # Plugins
@@ -266,7 +274,7 @@ markdown_extensions:
 nav:
 
   - Home:
-      - Introduction: introduction/index.md
+      - Introduction: index.md
 
   - Introduction:
       - Overview: introduction/overview.md
