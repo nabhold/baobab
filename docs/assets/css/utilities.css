@@ -6,444 +6,93 @@
       docs/assets/css/utilities.css
 
   Purpose:
-      Utility helper classes for the Baobab Documentation Portal.
+      Small, single-purpose helper classes for use directly in Markdown
+      content (e.g. `<div class="mt-4">` in index.md). Consumes the
+      spacing scale defined in layout.css.
 
-      These classes are intentionally small, composable, and reusable.
+  Guidance:
+      Utilities are an escape hatch for content authors, not a
+      replacement for component styling. If a pattern is used more than
+      2-3 times across pages, promote it into components.css as a
+      named, semantic class instead of chaining utilities.
 
+  Depends on:
+      layout.css (spacing scale)
 ==============================================================================*/
 
 
 /*==============================================================================
-  Display
+  Spacing — Margin Top
+  (the set actually used across index.md's hero button group, plus the
+  adjacent steps in the scale for consistency)
 ==============================================================================*/
 
-.d-block { display: block; }
-
-.d-inline { display: inline; }
-
-.d-inline-block { display: inline-block; }
-
-.d-flex { display: flex; }
-
-.d-grid { display: grid; }
-
-.d-none { display: none; }
+.mt-0  { margin-top: 0; }
+.mt-1  { margin-top: var(--baobab-space-1); }
+.mt-2  { margin-top: var(--baobab-space-2); }
+.mt-3  { margin-top: var(--baobab-space-3); }
+.mt-4  { margin-top: var(--baobab-space-4); }
+.mt-6  { margin-top: var(--baobab-space-6); }
+.mt-8  { margin-top: var(--baobab-space-8); }
 
 
 /*==============================================================================
-  Flexbox
+  Spacing — Margin Bottom
 ==============================================================================*/
 
-.flex-row { flex-direction: row; }
-
-.flex-column { flex-direction: column; }
-
-.flex-wrap { flex-wrap: wrap; }
-
-.flex-nowrap { flex-wrap: nowrap; }
-
-.justify-start { justify-content: flex-start; }
-
-.justify-center { justify-content: center; }
-
-.justify-end { justify-content: flex-end; }
-
-.justify-between { justify-content: space-between; }
-
-.justify-around { justify-content: space-around; }
-
-.align-start { align-items: flex-start; }
-
-.align-center { align-items: center; }
-
-.align-end { align-items: flex-end; }
-
-.align-stretch { align-items: stretch; }
-
-.gap-sm { gap: .5rem; }
-
-.gap-md { gap: 1rem; }
-
-.gap-lg { gap: 2rem; }
-
-
-/*==============================================================================
-  Width
-==============================================================================*/
-
-.w-25 { width: 25%; }
-
-.w-50 { width: 50%; }
-
-.w-75 { width: 75%; }
-
-.w-100 { width: 100%; }
-
-.max-w-sm {
-
-    max-width: 640px;
-
-    margin-inline: auto;
-
-}
-
-.max-w-md {
-
-    max-width: 900px;
-
-    margin-inline: auto;
-
-}
-
-.max-w-lg {
-
-    max-width: 1200px;
-
-    margin-inline: auto;
-
-}
-
-
-/*==============================================================================
-  Height
-==============================================================================*/
-
-.h-100 {
-
-    height: 100%;
-
-}
-
-.min-vh-100 {
-
-    min-height: 100vh;
-
-}
-
-
-/*==============================================================================
-  Margin
-==============================================================================*/
-
-.m-0 { margin: 0; }
-
-.mt-0 { margin-top: 0; }
-
-.mt-1 { margin-top: .5rem; }
-
-.mt-2 { margin-top: 1rem; }
-
-.mt-3 { margin-top: 2rem; }
-
-.mt-4 { margin-top: 3rem; }
-
-.mt-5 { margin-top: 4rem; }
-
-.mb-0 { margin-bottom: 0; }
-
-.mb-1 { margin-bottom: .5rem; }
-
-.mb-2 { margin-bottom: 1rem; }
-
-.mb-3 { margin-bottom: 2rem; }
-
-.mb-4 { margin-bottom: 3rem; }
-
-.mb-5 { margin-bottom: 4rem; }
-
-.ml-auto { margin-left: auto; }
-
-.mr-auto { margin-right: auto; }
-
-.mx-auto {
-
-    margin-left: auto;
-
-    margin-right: auto;
-
-}
-
-
-/*==============================================================================
-  Padding
-==============================================================================*/
-
-.p-0 { padding: 0; }
-
-.p-1 { padding: .5rem; }
-
-.p-2 { padding: 1rem; }
-
-.p-3 { padding: 2rem; }
-
-.p-4 { padding: 3rem; }
-
-.p-5 { padding: 4rem; }
-
-.pt-1 { padding-top: .5rem; }
-
-.pt-2 { padding-top: 1rem; }
-
-.pt-3 { padding-top: 2rem; }
-
-.pt-4 { padding-top: 3rem; }
-
-.pb-1 { padding-bottom: .5rem; }
-
-.pb-2 { padding-bottom: 1rem; }
-
-.pb-3 { padding-bottom: 2rem; }
-
-.pb-4 { padding-bottom: 3rem; }
+.mb-0  { margin-bottom: 0; }
+.mb-2  { margin-bottom: var(--baobab-space-2); }
+.mb-4  { margin-bottom: var(--baobab-space-4); }
+.mb-6  { margin-bottom: var(--baobab-space-6); }
 
 
 /*==============================================================================
   Text Alignment
 ==============================================================================*/
 
-.text-left { text-align: left; }
-
-.text-center { text-align: center; }
-
-.text-right { text-align: right; }
-
-.text-justify { text-align: justify; }
-
-
-/*==============================================================================
-  Font Weight
-==============================================================================*/
-
-.font-light {
-
-    font-weight: var(--baobab-font-weight-light);
-
-}
-
-.font-normal {
-
-    font-weight: var(--baobab-font-weight-normal);
-
-}
-
-.font-medium {
-
-    font-weight: var(--baobab-font-weight-medium);
-
-}
-
-.font-semibold {
-
-    font-weight: var(--baobab-font-weight-semibold);
-
-}
-
-.font-bold {
-
-    font-weight: var(--baobab-font-weight-bold);
-
-}
-
-.font-extrabold {
-
-    font-weight: var(--baobab-font-weight-extrabold);
-
-}
-
-
-/*==============================================================================
-  Text Colour
-==============================================================================*/
-
-.text-primary { color: var(--baobab-primary); }
-
-.text-secondary { color: var(--baobab-secondary); }
-
-.text-muted { color: var(--baobab-text-light); }
-
-.text-success { color: var(--baobab-green); }
-
-.text-accent { color: var(--baobab-gold); }
-
-
-/*==============================================================================
-  Background
-==============================================================================*/
-
-.bg-primary {
-
-    background: var(--baobab-primary);
-
-    color: white;
-
-}
-
-.bg-surface {
-
-    background: var(--baobab-surface);
-
-}
-
-.bg-white {
-
-    background: var(--baobab-background);
-
-}
-
-
-/*==============================================================================
-  Border Radius
-==============================================================================*/
-
-.rounded-sm { border-radius: 6px; }
-
-.rounded { border-radius: var(--baobab-radius); }
-
-.rounded-lg { border-radius: 20px; }
-
-.rounded-pill { border-radius: 999px; }
-
-
-/*==============================================================================
-  Shadow
-==============================================================================*/
-
-.shadow-sm {
-
-    box-shadow: var(--baobab-shadow-small);
-
-}
-
-.shadow-lg {
-
-    box-shadow: var(--baobab-shadow-large);
-
-}
-
-.shadow-none {
-
-    box-shadow: none;
-
-}
-
-
-/*==============================================================================
-  Border
-==============================================================================*/
-
-.border {
-
-    border: 1px solid var(--baobab-border);
-
-}
-
-.border-0 {
-
-    border: none;
-
-}
-
-
-/*==============================================================================
-  Overflow
-==============================================================================*/
-
-.overflow-hidden {
-
-    overflow: hidden;
-
-}
-
-.overflow-auto {
-
-    overflow: auto;
-
-}
-
-
-/*==============================================================================
-  Cursor
-==============================================================================*/
-
-.cursor-pointer {
-
-    cursor: pointer;
-
-}
-
-.cursor-default {
-
-    cursor: default;
-
-}
+.text-left    { text-align: left; }
+.text-center  { text-align: center; }
+.text-right   { text-align: right; }
 
 
 /*==============================================================================
   Visibility
 ==============================================================================*/
 
-.visible {
+/* Visually hides content while keeping it available to screen readers —
+   for skip-links, icon-only buttons, etc. Do not use `display: none`
+   for this purpose; it removes the content from the accessibility tree. */
 
-    visibility: visible;
-
-}
-
-.invisible {
-
-    visibility: hidden;
-
-}
-
-
-/*==============================================================================
-  Position
-==============================================================================*/
-
-.position-relative {
-
-    position: relative;
-
-}
-
-.position-absolute {
+.sr-only {
 
     position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 
 }
 
 
 /*==============================================================================
-  Responsive Utilities
+  Motion Preference Escape Hatch
+  Applies to any element authors want to explicitly exempt from
+  animations.css's global prefers-reduced-motion rule (should be rare —
+  prefer letting the global rule handle it).
 ==============================================================================*/
 
-@media (max-width: 960px) {
+.motion-safe-only {
 
-    .hide-tablet {
-
-        display: none !important;
-
-    }
+    animation: none !important;
+    transition: none !important;
 
 }
 
-@media (max-width: 600px) {
 
-    .hide-mobile {
-
-        display: none !important;
-
-    }
-
-    .text-center-mobile {
-
-        text-align: center;
-
-    }
-
-    .w-100-mobile {
-
-        width: 100%;
-
-    }
-
-}
+/*==============================================================================
+  End of File
+==============================================================================*/

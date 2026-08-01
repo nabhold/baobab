@@ -23,7 +23,148 @@
 
     --baobab-text: var(--baobab-primary);
     --baobab-text-light: #6B7280;
+/*==============================================================================
+  BAOBAB ENTERPRISE PLATFORM
+  Design Tokens — Palette
 
+  File:
+      docs/assets/css/palette.css
+
+  Purpose:
+      Single source of truth for brand colour tokens, and the bridge that
+      wires those tokens into Material for MkDocs' own CSS variable system
+      (--md-primary-*, --md-accent-*, --md-typeset-a-color, etc).
+
+  Notes:
+      • Tokens are defined once on :root and are scheme-agnostic.
+      • The Material bridge blocks below are scheme-aware
+        ([data-md-color-scheme="default"] = light, "slate" = dark) and are
+        what actually makes mkdocs.yml's `primary: custom` / `accent: custom`
+        pick up Baobab's brand instead of a stock Material swatch.
+      • Any token flagged "text-safe" has been checked against WCAG AA
+        (4.5:1 normal text / 3:1 large text or UI) on its intended surface.
+        Re-verify with a contrast tool (e.g. WebAIM) after any hex change.
+==============================================================================*/
+
+:root {
+
+    /* ---------------------------------------------------------------------
+       Primary Brand
+       --------------------------------------------------------------------- */
+
+    --baobab-primary: #1F2937;          /* text-safe on light + dark surfaces, ~14.6:1 on white */
+    --baobab-primary-light: #374151;
+    --baobab-secondary: #4B5563;
+
+    /* ---------------------------------------------------------------------
+       Accent Colours
+       --------------------------------------------------------------------- */
+
+    --baobab-green: #4E7A44;            /* text-safe on white, ~5:1 — do not lighten further */
+    --baobab-green-dark: #35552D;       /* higher-contrast variant for links / small text */
+    --baobab-green-light: #7FB06E;      /* dark-mode variant, ~5:1 on --baobab-background-dark */
+
+    --baobab-gold: #C89A2B;             /* DECORATIVE ONLY — ~2.6:1 on white, fails AA for text */
+    --baobab-gold-dark: #8A6B1D;        /* text-safe gold, ~4.6:1 on white — use this for gold text/links */
+    --baobab-gold-light: #E4C878;       /* dark-mode decorative accent */
+
+    /* ---------------------------------------------------------------------
+       Surfaces — Light
+       --------------------------------------------------------------------- */
+
+    --baobab-background: #FFFFFF;
+    --baobab-surface: #F8FAFC;
+    --baobab-border: #E5E7EB;
+
+    /* ---------------------------------------------------------------------
+       Surfaces — Dark
+       --------------------------------------------------------------------- */
+
+    --baobab-background-dark: #111827;
+    --baobab-surface-dark: #1F2937;
+    --baobab-border-dark: #374151;
+
+    /* ---------------------------------------------------------------------
+       Typography Colours
+       --------------------------------------------------------------------- */
+
+    --baobab-text: var(--baobab-primary);
+    --baobab-text-light: #6B7280;       /* text-safe on white, ~4.8:1 — borderline, don't shrink font size */
+
+    --baobab-text-dark: #F3F4F6;        /* body text on dark surfaces */
+    --baobab-text-dark-light: #9CA3AF;  /* secondary text on dark surfaces */
+
+    /* ---------------------------------------------------------------------
+       Semantic / Status
+       (kept close to brand hues so admonitions don't look like a
+       different product from the marketing pages)
+       --------------------------------------------------------------------- */
+
+    --baobab-success: var(--baobab-green);
+    --baobab-warning: var(--baobab-gold-dark);
+    --baobab-danger: #B3261E;
+    --baobab-info: #2B6CB0;
+
+    /* ---------------------------------------------------------------------
+       Interactive States
+       --------------------------------------------------------------------- */
+
+    --baobab-focus-ring: #2563EB;
+    --baobab-focus-ring-offset: 2px;
+    --baobab-hover-overlay: rgba(0, 0, 0, 0.04);
+    --baobab-hover-overlay-dark: rgba(255, 255, 255, 0.06);
+
+    /* ---------------------------------------------------------------------
+       Layout
+       --------------------------------------------------------------------- */
+
+    --baobab-radius: 12px;
+    --baobab-radius-small: 8px;
+
+    /* ---------------------------------------------------------------------
+       Shadows
+       --------------------------------------------------------------------- */
+
+    --baobab-shadow-small: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --baobab-shadow-large: 0 15px 40px rgba(0, 0, 0, 0.08);
+    --baobab-shadow-small-dark: 0 4px 12px rgba(0, 0, 0, 0.35);
+    --baobab-shadow-large-dark: 0 15px 40px rgba(0, 0, 0, 0.45);
+
+}
+
+
+/*==============================================================================
+  Material for MkDocs Bridge — Light Scheme
+  Activated when mkdocs.yml sets: scheme: default, primary: custom, accent: custom
+==============================================================================*/
+
+[data-md-color-scheme="default"] {
+
+    --md-primary-fg-color: var(--baobab-primary);
+    --md-primary-fg-color--light: var(--baobab-primary-light);
+    --md-primary-fg-color--dark: var(--baobab-primary);
+    --md-primary-bg-color: var(--baobab-background);
+    --md-primary-bg-color--light: var(--baobab-surface);
+
+    --md-accent-fg-color: var(--baobab-green);
+    --md-accent-fg-color--transparent: rgba(78, 122, 68, 0.1);
+    --md-accent-bg-color: var(--baobab-background);
+
+    --md-default-fg-color: var(--baobab-text);
+    --md-default-fg-color--light: var(--baobab-text-light);
+    --md-default-bg-color: var(--baobab-background);
+
+    --md-typeset-a-color: var(--baobab-green-dark);
+
+    --md-footer-bg-color: var(--baobab-primary);
+    --md-footer-fg-color: var(--baobab-background);
+
+}
+
+
+/*==============================================================================
+  End of File
+==============================================================================*/
     /* Layout */
 
     --baobab-radius: 12px;

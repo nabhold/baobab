@@ -130,11 +130,22 @@ theme:
 
   palette:
 
+    # NOTE (v1.2 correction)
+    # -----------------------
+    # `primary`/`accent` were previously set to Material's stock swatch
+    # names (`green` / `emerald`). That silently discarded the entire
+    # docs/assets/css/palette.css + dark.css token system — Material only
+    # consults custom [data-md-color-scheme="..."] overrides when no
+    # built-in swatch is claiming the palette name. Setting both to
+    # `custom` removes Material's own colour definitions for these slots
+    # and lets palette.css / dark.css be the sole source of truth, as
+    # designed.
+
     - media: "(prefers-color-scheme: light)"
       scheme: default
 
-      primary: green
-      accent: emerald
+      primary: custom
+      accent: custom
 
       toggle:
         icon: material/weather-night
@@ -143,8 +154,8 @@ theme:
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
 
-      primary: green
-      accent: emerald
+      primary: custom
+      accent: custom
 
       toggle:
         icon: material/weather-sunny
@@ -206,8 +217,33 @@ plugins:
 
   - redirects
 
+  # NOTE (v1.2 correction)
+  # -----------------------
+  # Previously only `minify_html` was set — CSS and JS shipped unminified
+  # to production. Added `minify_css` / `minify_js` plus the explicit file
+  # lists the plugin requires to minify referenced (non-inline) assets.
+  # `cache_safe: true` appends a content hash to each minified filename,
+  # so browsers/CDNs won't serve a stale cached copy after a brand or
+  # component update — add any new file under docs/assets/css/ or
+  # docs/assets/js/ to these lists as it's introduced, or it will ship
+  # unminified and uncached-busted.
   - minify:
       minify_html: true
+      minify_css: true
+      minify_js: true
+      cache_safe: true
+      css_files:
+        - assets/css/palette.css
+        - assets/css/dark.css
+        - assets/css/typography-tokens.css
+        - assets/css/typography.css
+        - assets/css/layout.css
+        - assets/css/components.css
+        - assets/css/utilities.css
+        - assets/css/animations.css
+        - assets/css/extra.css
+      js_files:
+        - assets/js/extra.js
 
 # ==============================================================================
 # Markdown Extensions
@@ -231,6 +267,17 @@ markdown_extensions:
       permalink: true
 
   - pymdownx.details
+
+  # NOTE (v1.2 correction)
+  # -----------------------
+  # Added — was missing entirely. Every `:material-*:`-style icon
+  # shortcode used throughout index.md (and now referenced by
+  # components.css's card-icon styling) requires this block; without it,
+  # MkDocs renders the shortcodes as literal, un-styled text instead of
+  # icons, on every page that uses them.
+  - pymdownx.emoji:
+      emoji_index: "!!python/name:material.extensions.emoji.twemoji"
+      emoji_generator: "!!python/name:material.extensions.emoji.to_svg"
 
   - pymdownx.highlight:
       anchor_linenums: true
@@ -277,7 +324,6 @@ nav:
       - Introduction: index.md
 
   - Introduction:
-      - Introduction: introduction/index.md
       - Overview: introduction/overview.md
       - Project Charter: introduction/project-charter.md
 
