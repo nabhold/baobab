@@ -1,28 +1,3 @@
-:root {
-
-    /* Primary Brand */
-
-    --baobab-primary: #1F2937;
-    --baobab-primary-light: #374151;
-    --baobab-secondary: #4B5563;
-
-    /* Accent Colours */
-
-    --baobab-green: #4E7A44;
-    --baobab-green-dark: #35552D;
-
-    --baobab-gold: #C89A2B;
-
-    /* Surfaces */
-
-    --baobab-background: #FFFFFF;
-    --baobab-surface: #F8FAFC;
-    --baobab-border: #E5E7EB;
-
-    /* Typography */
-
-    --baobab-text: var(--baobab-primary);
-    --baobab-text-light: #6B7280;
 /*==============================================================================
   BAOBAB ENTERPRISE PLATFORM
   Design Tokens — Palette
@@ -52,7 +27,8 @@
        Primary Brand
        --------------------------------------------------------------------- */
 
-    --baobab-primary: #1F2937;          /* text-safe on light + dark surfaces, ~14.6:1 on white */
+    --baobab-primary: #1F2937;
+    /* text-safe on light + dark surfaces, ~14.6:1 on white */
     --baobab-primary-light: #374151;
     --baobab-secondary: #4B5563;
 
@@ -60,13 +36,19 @@
        Accent Colours
        --------------------------------------------------------------------- */
 
-    --baobab-green: #4E7A44;            /* text-safe on white, ~5:1 — do not lighten further */
-    --baobab-green-dark: #35552D;       /* higher-contrast variant for links / small text */
-    --baobab-green-light: #7FB06E;      /* dark-mode variant, ~5:1 on --baobab-background-dark */
+    --baobab-green: #4E7A44;
+    /* text-safe on white, ~5:1 — do not lighten further */
+    --baobab-green-dark: #35552D;
+    /* higher-contrast variant for links / small text */
+    --baobab-green-light: #7FB06E;
+    /* dark-mode variant, ~5:1 on --baobab-background-dark */
 
-    --baobab-gold: #C89A2B;             /* DECORATIVE ONLY — ~2.6:1 on white, fails AA for text */
-    --baobab-gold-dark: #8A6B1D;        /* text-safe gold, ~4.6:1 on white — use this for gold text/links */
-    --baobab-gold-light: #E4C878;       /* dark-mode decorative accent */
+    --baobab-gold: #C89A2B;
+    /* DECORATIVE ONLY — ~2.6:1 on white, fails AA for text */
+    --baobab-gold-dark: #8A6B1D;
+    /* text-safe gold, ~4.6:1 on white — use this for gold text/links */
+    --baobab-gold-light: #E4C878;
+    /* dark-mode decorative accent */
 
     /* ---------------------------------------------------------------------
        Surfaces — Light
@@ -89,10 +71,13 @@
        --------------------------------------------------------------------- */
 
     --baobab-text: var(--baobab-primary);
-    --baobab-text-light: #6B7280;       /* text-safe on white, ~4.8:1 — borderline, don't shrink font size */
+    --baobab-text-light: #6B7280;
+    /* text-safe on white, ~4.8:1 — borderline, don't shrink font size */
 
-    --baobab-text-dark: #F3F4F6;        /* body text on dark surfaces */
-    --baobab-text-dark-light: #9CA3AF;  /* secondary text on dark surfaces */
+    --baobab-text-dark: #F3F4F6;
+    /* body text on dark surfaces */
+    --baobab-text-dark-light: #9CA3AF;
+    /* secondary text on dark surfaces */
 
     /* ---------------------------------------------------------------------
        Semantic / Status
@@ -165,13 +150,3 @@
 /*==============================================================================
   End of File
 ==============================================================================*/
-    /* Layout */
-
-    --baobab-radius: 12px;
-
-    /* Shadows */
-
-    --baobab-shadow-small: 0 4px 12px rgba(0, 0, 0, 0.06);
-    --baobab-shadow-large: 0 15px 40px rgba(0, 0, 0, 0.08);
-
-}
