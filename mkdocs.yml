@@ -195,6 +195,8 @@ extra_css:
 # Link your custom JavaScript
 extra_javascript:
  - assets/js/extra.js
+ - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
 
 
 # ==============================================================================
@@ -276,8 +278,8 @@ markdown_extensions:
   # MkDocs renders the shortcodes as literal, un-styled text instead of
   # icons, on every page that uses them.
   - pymdownx.emoji:
-      emoji_index: "!!python/name:material.extensions.emoji.twemoji"
-      emoji_generator: "!!python/name:material.extensions.emoji.to_svg"
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
   - pymdownx.highlight:
       anchor_linenums: true
