@@ -45,7 +45,8 @@
        Containers
        --------------------------------------------------------------------- */
 
-    --baobab-container-max: 76rem;      /* 1216px */
+    --baobab-container-max: 76rem;
+    /* 1216px */
     --baobab-container-padding: var(--baobab-space-4);
 
 }
