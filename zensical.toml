@@ -35,7 +35,8 @@ language = "en"
 
 # Theme & Branding Configuration
 [project.theme]
-name = "modern"
+name = "material"
+variant = "modern"
 custom_dir = "overrides"
 
 
