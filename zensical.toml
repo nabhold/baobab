@@ -33,12 +33,6 @@ site_dir = "site"
 # Language and Localization
 language = "en"
 
-# Theme & Branding Configuration
-[project.theme]
-name = "material"
-variant = "modern"
-custom_dir = "overrides"
-
 
 # Custom Styling Assets (relies on root docs/stylesheets/extra.css)
 extra_css = [
