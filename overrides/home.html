@@ -1,0 +1,63 @@
+{#
+  overrides/home.html
+
+  Selected per-page via docs/index.md's front matter:
+
+      template: home.html
+
+  Extends Material's own main.html (NOT base.html directly) so every other
+  theme feature — header, search, palette toggle, back-to-top, footer,
+  keyboard shortcuts, instant navigation — is inherited unmodified.
+
+  Two blocks are touched:
+
+    tabs   Suppresses the horizontal navigation.tabs bar (theme.features
+           in mkdocs.yml) on this page only. Every other page keeps it.
+           There is no front-matter `hide:` option for this — removing it
+           requires a template override.
+
+    hero   Includes overrides/partials/hero.html — Material's own,
+           previously-unused extension point, rendered outside
+           `.md-content` so the hero can be genuinely full-bleed. See
+           that partial for why the hero's content had to move out of
+           docs/index.md's Markdown to live here.
+
+  IMPORTANT — do not override the `content` block here.
+  An earlier version of this file did:
+
+      {% block content %}
+        {{ page.content }}
+      {% endblock %}
+
+  This looked harmless but broke the page: Material's default `content`
+  block doesn't just insert page.content — it's what applies the
+  `md-typeset` class in the first place (see partials/content.html /
+  blog.html's container block for the equivalent pattern). Every rule in
+  typography.css and components.css is scoped `.md-typeset ...`, so
+  bypassing that partial silently dropped ALL of that styling on this page
+  only. It's also the likely cause of same-page navigation.instant links
+  failing, since Material's client-side instant-navigation JS expects the
+  standard content DOM structure to swap against.
+
+  The feedback widget that motivated the original override is already
+  suppressed the supported way, via `hide: - feedback` in docs/index.md's
+  front matter — no template code needed for that. The edit-this-page
+  pencil icon has no equivalent front-matter switch; it is left visible
+  here as an accepted minor cosmetic trade-off rather than risk this class
+  of bug again. If it needs hiding later, do it in CSS
+  (`body:has(.landing-hero) .md-content__button { display: none; }`) —
+  not in this template.
+
+  Everything else — sidebars, breadcrumbs, footer copyright/social — is
+  governed by docs/index.md's `hide:` front matter and mkdocs.yml, not by
+  this file. Keep it that way: the smaller this file stays, the less of it
+  can drift out of sync with future Material upgrades.
+#}
+{% extends "main.html" %}
+
+{% block tabs %}
+{% endblock %}
+
+{% block hero %}
+  {% include "partials/hero.html" %}
+{% endblock %}

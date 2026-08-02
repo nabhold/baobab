@@ -1,7 +1,10 @@
 ---
+template: home.html
 hide:
   - navigation
   - toc
+  - footer
+  - feedback
 ---
 
 <div class="hero">
