@@ -47,6 +47,38 @@ extra_css = [
 
 extra_javascript = ["javascripts/extra.js"]
 
+
+# ==============================================================================
+# Navigation Hierarchy (Mapped from previous mkdocs.yml structure)
+# ==============================================================================
+nav = [
+    { "Home" = "index.md" },
+    { "Architecture" = [
+        { "Overview" = "architecture/overview.md" },
+        { "Multi-Tenancy (django-tenants)" = "architecture/multi-tenancy.md" },
+        { "Database Schema Design" = "architecture/database-schemas.md" },
+        { "API Contracts & DRF" = "architecture/api-contracts.md" },
+        { "Authentication & RBAC" = "architecture/auth-rbac.md" }
+    ]},
+    { "Governance" = [
+        { "Coding Standards" = "governance/coding-standards.md" },
+        { "Compliance & Security" = "governance/compliance.md" }
+    ]},
+    { "Infrastructure" = [
+        { "Devcontainers & Codespaces" = "infrastructure/codespaces.md" },
+        { "Docker & Multi-Arch Build" = "infrastructure/docker-build.md" },
+        { "CI/CD Pipelines" = "infrastructure/cicd.md" }
+    ]},
+    { "Subsidiaries" = [
+        { "Thamani Global B2B" = "subsidiaries/thamani-global.md" }
+    ]},
+    { "ADRs (Architecture Decision Records)" = [
+        { "Index" = "adr/index.md" },
+        { "0001 - Django Monolith with Schema Isolation" = "adr/0001-django-monolith.md" },
+        { "0002 - Adopting Zensical for Documentation" = "adr/0002-adopting-zensical.md" }
+    ]}
+]
+
 # Color Palette & Appearance Modes (Light & Dark Schemes)
 [theme.palette]
 # Light mode configuration
@@ -68,6 +100,13 @@ name = "Switch to light mode"
 text = "Plus Jakarta Sans"
 code = "JetBrains Mono"
 
+
+
+# Theme & Branding Configuration
+[project.theme]
+name = "material"
+variant = "modern"
+custom_dir = "overrides"
 # ==============================================================================
 # Feature Toggles & Authoring Enhancements
 # ==============================================================================
@@ -101,36 +140,6 @@ features = [
     "search.share"
 ]
 
-# ==============================================================================
-# Navigation Hierarchy (Mapped from previous mkdocs.yml structure)
-# ==============================================================================
-nav = [
-    { "Home" = "index.md" },
-    { "Architecture" = [
-        { "Overview" = "architecture/overview.md" },
-        { "Multi-Tenancy (django-tenants)" = "architecture/multi-tenancy.md" },
-        { "Database Schema Design" = "architecture/database-schemas.md" },
-        { "API Contracts & DRF" = "architecture/api-contracts.md" },
-        { "Authentication & RBAC" = "architecture/auth-rbac.md" }
-    ]},
-    { "Governance" = [
-        { "Coding Standards" = "governance/coding-standards.md" },
-        { "Compliance & Security" = "governance/compliance.md" }
-    ]},
-    { "Infrastructure" = [
-        { "Devcontainers & Codespaces" = "infrastructure/codespaces.md" },
-        { "Docker & Multi-Arch Build" = "infrastructure/docker-build.md" },
-        { "CI/CD Pipelines" = "infrastructure/cicd.md" }
-    ]},
-    { "Subsidiaries" = [
-        { "Thamani Global B2B" = "subsidiaries/thamani-global.md" }
-    ]},
-    { "ADRs (Architecture Decision Records)" = [
-        { "Index" = "adr/index.md" },
-        { "0001 - Django Monolith with Schema Isolation" = "adr/0001-django-monolith.md" },
-        { "0002 - Adopting Zensical for Documentation" = "adr/0002-adopting-zensical.md" }
-    ]}
-]
 
 # ==============================================================================
 # Markdown Extensions & Parsing Rules
