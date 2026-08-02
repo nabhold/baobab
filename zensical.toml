@@ -1,0 +1,191 @@
+# ==============================================================================
+# Baobab Enterprise Platform
+# ==============================================================================
+#
+# File        : zensical.toml
+# Repository  : https://github.com/nabhold/baobab
+# Organization: NABHOLD Group Africa
+#
+# ------------------------------------------------------------------------------
+# PURPOSE
+# ------------------------------------------------------------------------------
+# Authoritative Zensical configuration for the Baobab Enterprise Platform.
+# Migrated from MkDocs Material to Zensical for blazing-fast performance,
+# modern web standards, and native TOML-driven documentation architecture.
+# ==============================================================================
+
+[project]
+site_name = "Baobab Enterprise Platform"
+site_description = "Enterprise-grade multi-tenant platform architecture for NABHOLD Group Africa and operating subsidiaries."
+site_author = "NABHOLD Group Africa"
+site_url = "https://nabhold.github.io/baobab/"
+copyright = "Copyright © 2026 NABHOLD Group Africa (Pty) Ltd. All rights reserved."
+
+# Repository Integration
+repo_name = "nabhold/baobab"
+repo_url = "https://github.com/nabhold/baobab"
+edit_uri = "edit/main/docs/"
+
+# Directories
+docs_dir = "docs"
+site_dir = "site"
+
+# Language and Localization
+language = "en"
+
+# Theme & Branding Configuration
+[theme]
+name = "zensical"
+variant = "default"
+
+# Custom Styling Assets (relies on root docs/assets/css/extra.css)
+extra_css = [
+    "assets/css/extra.css"
+]
+
+# Color Palette & Appearance Modes (Light & Dark Schemes)
+[theme.palette]
+# Light mode configuration
+scheme = "default"
+primary = "emerald"
+accent = "teal"
+
+[[theme.palette.toggle]]
+icon = "material/brightness-7"
+name = "Switch to dark mode"
+
+# Dark mode configuration (Slate scheme)
+[[theme.palette.toggle]]
+icon = "material/brightness-3"
+name = "Switch to light mode"
+
+# Typography Overrides (Plus Jakarta Sans & JetBrains Mono)
+[theme.font]
+text = "Plus Jakarta Sans"
+code = "JetBrains Mono"
+
+# ==============================================================================
+# Feature Toggles & Authoring Enhancements
+# ==============================================================================
+features = [
+    # Navigation UX features
+    "navigation.instant",
+    "navigation.instant.progress",
+    "navigation.tracking",
+    "navigation.tabs",
+    "navigation.tabs.sticky",
+    "navigation.sections",
+    "navigation.expand",
+    "navigation.path",
+    "navigation.indexes",
+    "navigation.top",
+    "navigation.footer",
+
+    # Content & Code Authoring
+    "content.code.annotate",
+    "content.code.copy",
+    "content.code.select",
+    "content.action.edit",
+    "content.action.view",
+    "content.footnote.tooltips",
+    "content.tabs.link",
+    "content.tooltips",
+
+    # Search Experience
+    "search.suggest",
+    "search.highlight",
+    "search.share"
+]
+
+# ==============================================================================
+# Navigation Hierarchy (Mapped from previous mkdocs.yml structure)
+# ==============================================================================
+nav = [
+    { "Home" = "index.md" },
+    { "Architecture" = [
+        { "Overview" = "architecture/overview.md" },
+        { "Multi-Tenancy (django-tenants)" = "architecture/multi-tenancy.md" },
+        { "Database Schema Design" = "architecture/database-schemas.md" },
+        { "API Contracts & DRF" = "architecture/api-contracts.md" },
+        { "Authentication & RBAC" = "architecture/auth-rbac.md" }
+    ]},
+    { "Governance" = [
+        { "Coding Standards" = "governance/coding-standards.md" },
+        { "Compliance & Security" = "governance/compliance.md" }
+    ]},
+    { "Infrastructure" = [
+        { "Devcontainers & Codespaces" = "infrastructure/codespaces.md" },
+        { "Docker & Multi-Arch Build" = "infrastructure/docker-build.md" },
+        { "CI/CD Pipelines" = "infrastructure/cicd.md" }
+    ]},
+    { "Subsidiaries" = [
+        { "Thamani Global B2B" = "subsidiaries/thamani-global.md" }
+    ]},
+    { "ADRs (Architecture Decision Records)" = [
+        { "Index" = "adr/index.md" },
+        { "0001 - Django Monolith with Schema Isolation" = "adr/0001-django-monolith.md" },
+        { "0002 - Adopting Zensical for Documentation" = "adr/0002-adopting-zensical.md" }
+    ]}
+]
+
+# ==============================================================================
+# Markdown Extensions & Parsing Rules
+# ==============================================================================
+[markdown]
+extensions = [
+    "abbr",
+    "attr_list",
+    "def_list",
+    "footnotes",
+    "meta",
+    "md_in_html",
+    "tables",
+    "toc",
+    "admonition",
+    "pymdownx.arithmatex",
+    "pymdownx.betterem",
+    "pymdownx.caret",
+    "pymdownx.details",
+    "pymdownx.emoji",
+    "pymdownx.escapeall",
+    "pymdownx.highlight",
+    "pymdownx.inlinehilite",
+    "pymdownx.keys",
+    "pymdownx.mark",
+    "pymdownx.smartsymbols",
+    "pymdownx.snippets",
+    "pymdownx.superfences",
+    "pymdownx.tabbed",
+    "pymdownx.tasklist",
+    "pymdownx.tilde"
+]
+
+[markdown.extension_configs."pymdownx.highlight"]
+anchor_linenums = true
+line_spans = "__span"
+pygments_lang_class = true
+
+[markdown.extension_configs."pymdownx.inlinehilite"]
+custom_inline = true
+
+[markdown.extension_configs."pymdownx.superfences"]
+custom_fences = [
+    { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" }
+]
+
+[markdown.extension_configs."pymdownx.emoji"]
+emoji_index = "pymdownx.emoji.gemini"
+emoji_generator = "pymdownx.emoji.to_svg"
+
+# ==============================================================================
+# Build Validation Rules (Strict Checking)
+# ==============================================================================
+[validation]
+nav.omitted_files = "warn"
+nav.not_found = "warn"
+nav.absolute_links = "warn"
+
+links.not_found = "warn"
+links.absolute_links = "warn"
+links.unrecognized_links = "warn"
+links.anchors = "warn"

@@ -1,7 +1,7 @@
 # ==============================================================================
 # GitHub Actions CI/CD Pipeline: Build & Deploy GitHub Pages Documentation
 # File Location: baobab/.github/workflows/deploy-docs.yml
-# Rationale: Automates static site building with MkDocs and deploys to GitHub Pages
+# Rationale: Automates static site building with Zensical and deploys to GitHub Pages
 #            with strict link checks and uv dependency management.
 # ==============================================================================
 
@@ -18,7 +18,7 @@ on:
       - main
     paths:
       - "docs/**"                        # Markdown source files
-      - "mkdocs.yml"                     # Navigation and theme config
+      - "zensical.toml"                  # Navigation and theme config
       - "pyproject.toml"                 # Dependency definitions
       - ".python-version"                # Exact interpreter pin (added v1.1 — Step C now reads this file directly, see below)
       - ".github/workflows/deploy-docs.yml" # Pipeline file itself
@@ -109,8 +109,8 @@ jobs:
 
       # Step F: Compile Markdown source files into static HTML
       # Rationale: --strict causes the build to fail if broken links or syntax errors exist
-      - name: Build Static Site with MkDocs
-        run: uv run mkdocs build --strict --site-dir site
+      - name: Build Static Site with Zensical
+        run: uv run zensical build
 
       # Step G: Upload site output artifact for GitHub Pages deployer
       - name: Upload GitHub Pages Artifact
