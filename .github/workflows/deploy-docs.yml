@@ -91,7 +91,7 @@ jobs:
       #            Node.js/NPM into a pure Python/uv pipeline.
       - name: Bundle Modular CSS
         run: |
-          cd docs/assets/css
+          cd docs/stylesheets
 
           # 1. Extract the filenames from the @import url("..."); declarations
           FILES=$(grep -E "^@import" extra.css | sed -E "s/.*url\(['\"]?([^'\"]+)['\"]?\).*/\1/")
