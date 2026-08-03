@@ -353,7 +353,7 @@ next = "fontawesome/solid/angle-right"
 # (every official example for theme.palette.toggle.icon uses lucide/*).
 
 [project.theme.palette]
-# primary = "custom"
+primary = "custom"
 
 
 # Palette toggle for automatic mode
