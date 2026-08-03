@@ -98,8 +98,8 @@ code = "JetBrains Mono"
 
 # Theme & Branding Configuration
 [project.theme]
-name = "material"
-variant = "modern"
+name = "zensical"
+variant = "default"
 custom_dir = "overrides"
 # ==============================================================================
 # Feature Toggles & Authoring Enhancements
