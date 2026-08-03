@@ -34,16 +34,16 @@ site_dir = "site"
 language = "en"
 
 
-# Custom Styling Assets (relies on root docs/stylesheets/extra.css)
+# Custom Styling Assets (relies on root docs/assets/stylesheets/extra.css)
 extra_css = [
-    "stylesheets/extra.css"
+    "assets/stylesheets/extra.css"
 ]
 
-extra_javascript = ["javascripts/extra.js"]
+extra_javascript = ["assets/javascripts/extra.js"]
 
 
 # ==============================================================================
-# Navigation Hierarchy (Mapped from previous mkdocs.yml structure)
+# Navigation Hierarchy
 # ==============================================================================
 nav = [
     { "Home" = "index.md" },
@@ -131,7 +131,9 @@ features = [
     # Search Experience
     "search.suggest",
     "search.highlight",
-    "search.share"
+    "search.share",
+
+    "toc.follow",
 ]
 
 
