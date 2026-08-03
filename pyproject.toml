@@ -604,19 +604,15 @@ dependencies = []
 #
 
 dev = [
-
     # Interactive Python REPL
     "ipython>=8.0",
-
     # Git hook management
     "pre-commit>=4.0",
-
     # Rich terminal output
     "rich>=14.0",
-
     # Automatic file monitoring
     "watchdog>=6.0",
-
+    "zensical>=0.0.52",
 ]
 
 #  CODE QUALITY
@@ -687,41 +683,8 @@ quality = [
 #
 docs = [
 
-    # Documentation engine
-    "zensical>=0.0.1",
-
-    # Legacy MkDocs compatibility and extensions
-    #
-    # Upper-bounded at 1.6.1 rather than the full 1.6.x line (<1.7) because
-    # `mkdocs-redirects` (pinned below) itself declares
-    # `Requires-Dist: mkdocs<=1.6.1,>=1.2` — verified directly against its
-    # published wheel metadata. Leaving our own range at the wider <1.7
-    # works today only because 1.6.1 happens to be the newest 1.6.x release
-    # so far; the moment mkdocs ships 1.6.2, `uv sync`/`uv lock` would fail
-    # to resolve with no obvious cause pointing back to this comment.
-    # ACTION ITEM: re-widen this once mkdocs-redirects raises its own cap
-    # (check https://pypi.org/project/mkdocs-redirects/ before bumping).
-    "mkdocs>=1.6,<=1.6.1",
-
-    # Documentation theme
-    "mkdocs-material>=9,<10",
-
-    # API documentation (single declaration; the `[python]` extra pulls in
-    # the base package, so it must not also be listed bare — a duplicate
-    # entry existed in the prior revision and has been removed)
-    "mkdocstrings[python]>=1.0.6",
-
-    # Markdown extensions
-    "pymdown-extensions>=11.0.1",
-
-    # Redirect support
-    "mkdocs-redirects>=1.2.0",
-
-    # Last modified dates
-    "mkdocs-git-revision-date-localized-plugin>=0",
-
-    # HTML optimisation
-    "mkdocs-minify-plugin>=0.8.0",
+    # Zensical documentation engine used by the GitHub Pages workflow.
+    "zensical>=0.0.52",
 
 ]
 
