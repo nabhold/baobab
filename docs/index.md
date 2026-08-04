@@ -7,32 +7,7 @@ hide:
   - feedback
 ---
 
-<div class="hero">
 
-<img
-    src="assets/images/baobab-logo.svg"
-    alt="Baobab Enterprise Platform"
-    class="hero-logo float">
-
-# Build Africa's Enterprise Future
-
-### AI-Powered • Enterprise-Ready • Cloud-Native
-
-Baobab is an enterprise platform that enables governments, businesses, development organisations and institutions to build secure, scalable and intelligent digital ecosystems.
-
-Designed with artificial intelligence, cloud-native architecture and enterprise governance at its core, Baobab provides a modern foundation for digital transformation across Africa and beyond.
-
-<div class="mt-4">
-
-[Get Started](introduction/index.md){ .md-button .md-button--primary }
-
-[Explore the Architecture](architecture/index.md){ .md-button }
-
-[View on GitHub](https://github.com/bjnabs/baobab){ .md-button }
-
-</div>
-
-</div>
 
 ---
 
