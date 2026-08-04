@@ -5,6 +5,8 @@ hide:
   - toc
   - footer
   - feedback
+  - view
+  - edit
 ---
 
 
