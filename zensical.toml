@@ -164,7 +164,7 @@ site_author = "Nabhold Group Africa"
 # sitemap.xml, which is empty without this setting.
 site_url = "https://nabhold.github.io/baobab/"
 
-copyright = "Copyright © 2026 Nabhold Group Africa (Pty) Ltd. All rights reserved."
+copyright = "Copyright © 2026 Nabhold Group Africa (Pty) Ltd.| All Rights Reserved."
 
 # ------------------------------------------------------------------------------
 # Repository Integration
