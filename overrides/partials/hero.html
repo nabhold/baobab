@@ -160,6 +160,20 @@
 
     <div class="hero-illustration" data-enhance="three">
 
+      {# --------------------------------------------------------------------
+         .hero-illustration-stage — PHASE 2 ADDITION (structural fix, not a
+         redesign). Groups every absolutely-positioned illustration piece
+         (glow / tree / trunk emblem / platform badge / orbit nodes) inside
+         one relatively-positioned box with a reserved aspect-ratio height.
+         Without this wrapper, those absolutely-positioned children are
+         removed from normal flow and contribute no height to
+         .hero-illustration, so .hero-capability-strip (a normal-flow
+         sibling) would render at the very top instead of below the tree.
+         Discovered empirically while writing Phase 2 CSS; documenting here
+         rather than working around it with fragile margin hacks.
+      -------------------------------------------------------------------- #}
+      <div class="hero-illustration-stage">
+
       {# Ambient radial glow behind the tree. Purely decorative — a plain
          layer div rather than baked into the SVG so Phase 2/4 can control
          its opacity, blur, or parallax offset independently of the tree
@@ -259,6 +273,9 @@
         </li>
 
       </ul>
+
+      </div>
+      {# end .hero-illustration-stage #}
 
       {# ----------------------------------------------------------------------
          Capability strip — the six icon badges beneath the root system

@@ -22,6 +22,14 @@
       dark.css           → Dark mode overrides
       animations.css     → Animations and transitions
 
+      Everything below the import block is landing-page-only CSS
+      (docs/index.md). It is intentionally NOT a separate landing.css
+      file — folding it into extra.css avoids a second extra_css entry
+      in mkdocs.yml. Nothing in this section should be treated as a
+      shared design-system primitive; if a rule here is ever needed
+      on a non-landing page, promote it into one of the imported files
+      above instead of reaching for a class defined below.
+
   Author:
       Nabhold Group Africa
 
@@ -30,50 +38,1706 @@
 ==============================================================================*/
 
 
-/*==============================================================================
+/*
   Design Tokens
 ==============================================================================*/
 
 @import url("palette.css");
 
 
-/*==============================================================================
+/*
   Typography
 ==============================================================================*/
 @import url("typography-tokens.css");
 @import url("typography.css");
 
 
-/*==============================================================================
+/*
   Layout
 ==============================================================================*/
 
 @import url("layout.css");
 
 
-/*==============================================================================
+/*
   Components
 ==============================================================================*/
 
 @import url("components.css");
 
 
-/*==============================================================================
+/*
   Utilities
 ==============================================================================*/
 
 @import url("utilities.css");
 
 
-/*==============================================================================
+/*
   Dark Theme
 ==============================================================================*/
 
 @import url("dark.css");
 
 
-/*==============================================================================
+/*
   Animations
 ==============================================================================*/
 
 @import url("animations.css");
+
+
+/*==============================================================================
+  LANDING PAGE — docs/index.md only
+  Everything below this banner is scoped to the marketing/landing page.
+  Do not reference these classes from documentation content pages.
+==============================================================================*/
+
+
+/*
+  Landing Hero
+  ------------------------------------------------------------------------
+  Namespaced as .landing-hero (NOT .hero) so it never collides with the
+  shared, mobile-first .hero rule defined in layout.css. That shared rule
+  is left completely untouched and remains available for any future
+  in-docs mini-hero use.
+
+  Lives in overrides/partials/hero.html, rendered via Material's `hero`
+  block — OUTSIDE `.md-content`. Two consequences that don't apply to any
+  other class in this file:
+
+    1. .landing-hero-bleed exists purely to give the hero its own
+       full-width background, independent of `--baobab-container-max`.
+       .landing-hero itself still constrains its CONTENT to that same
+       max-width, centered inside the full-bleed band — the standard
+       "full-bleed section, contained content" pattern.
+
+    2. .landing-hero now needs its own explicit horizontal padding.
+       Previously it sat inside `.md-content`, which supplies horizontal
+       padding on every ordinary page. Outside `.md-content`, nothing
+       does that automatically, so it's declared here instead.
+==============================================================================*/
+
+/*==============================================================================
+  Hero Design Tokens
+  ------------------------------------------------------------------------
+  Scoped to .landing-hero-bleed (NOT :root) deliberately: this is a
+  refined, slightly warmer/greener palette approved specifically for the
+  hero mockup. It intentionally does NOT live in palette.css — per this
+  file's own architecture note (top of file), landing-only tokens stay
+  out of the shared design-system file. Nothing outside
+  .landing-hero-bleed and its descendants should reference these
+  variables; if a genuine site-wide need arises later, promote them into
+  palette.css as a deliberate decision, not by accident of CSS custom-
+  property inheritance.
+
+  RECONCILIATION WITH palette.css (design decisions, not oversights):
+
+    --hero-accent-gold   → NOT a new token. Reuses --baobab-gold as-is.
+      The mockup's #C9A23B and the existing #C89A2B are a 1-notch hex
+      difference — introducing a near-duplicate token for that would
+      violate the "consistency over proliferation" decision made when
+      this was discussed. Both are DECORATIVE-ONLY per the standing WCAG
+      audit (~2.6:1 on white) — never used for text below.
+
+    --hero-brand-900..500 → NEW. The mockup's 5-step green ramp is
+      deliberately kept separate from --baobab-green/-dark/-light (the
+      existing 3-step UI scale used by buttons/links). Three steps is
+      enough for a button's rest/hover state; it is NOT enough to shade
+      a layered illustration (roots / trunk / canopy each want a
+      distinct tone). USE THIS RAMP FOR ILLUSTRATION FILLS ONLY. Text
+      and interactive UI in the hero (headline accent, links) continue
+      using the existing, already-audited --baobab-green* tokens — see
+      .hero-headline-accent below.
+
+    --hero-surface-1 / -2 → NEW. Warmer/greener than --baobab-surface
+      (#F8FAFC, blue-grey). Scoped to the hero for the same reason as
+      the brand ramp: an intentional, contained art-direction choice for
+      the page's most brand-forward component, not a silent departure
+      from the shared surface tokens used everywhere else.
+
+  CONTRAST — checked by hand against the WCAG 2.1 relative-luminance
+  formula (not yet cross-verified in a live contrast tool; per project
+  convention, spot-check with WebAIM before Phase 5 sign-off):
+
+      --hero-text-secondary on --hero-bg / --hero-surface-1  ≈ 7.2 : 1  (AA pass)
+      --baobab-green-dark   on --hero-bg  (headline accent)  — already audited, unchanged
+      --hero-brand-700      on white icon-badge fill         ≈ 7.2 : 1  (safe for icon strokes)
+
+  --hero-brand-900 / -800 / -500 are illustration fills ONLY in this
+  build — never used as text colour. If a future change puts text on
+  them, contrast must be re-verified before shipping.
+==============================================================================*/
+
+.landing-hero-bleed {
+
+    width: 100%;
+    background: var(--hero-bg);
+
+    /* ---- Backgrounds ---- */
+    --hero-bg: #FEFEFE;
+    --hero-surface-1: #FAFBF9;
+    --hero-surface-2: #F5F8F0;
+
+    /* ---- Brand ramp — illustration fills only, see note above ---- */
+    --hero-brand-900: #2E4A2E;
+    --hero-brand-800: #3C5F36;
+    --hero-brand-700: #465D3F;
+    --hero-brand-600: #4B6F42;
+    --hero-brand-500: #6F945E;
+
+    /* ---- Text ---- */
+    --hero-text-primary: #1E2328;
+    --hero-text-secondary: #4E5A52;
+
+    /* ---- Borders ---- */
+    --hero-border-subtle: #E4E9DD;
+
+}
+
+[data-md-color-scheme="slate"] .landing-hero-bleed {
+
+    background: var(--hero-bg);
+
+    /* Dark-mode token overrides. Reuses existing dark-mode palette
+       tokens wherever a direct equivalent exists, rather than inventing
+       new hex values — keeps the hero's dark mode visually consistent
+       with the rest of the site's dark mode instead of introducing a
+       second, independently-maintained dark palette.
+
+       --hero-surface-2 intentionally collapses onto the same value as
+       --hero-surface-1 in dark mode: palette.css only exposes one dark
+       surface tone (--baobab-surface-dark), so the light-mode two-step
+       surface distinction has nothing to map onto. Known simplification,
+       not an oversight — revisit if a second dark surface tone is ever
+       added to palette.css. */
+
+    --hero-bg: var(--baobab-background-dark);
+    --hero-surface-1: var(--baobab-surface-dark);
+    --hero-surface-2: var(--baobab-surface-dark);
+
+    /* Only the two DARKEST illustration tones are shifted one step
+       lighter in dark mode, so the tree silhouette doesn't blend into
+       the dark background. The three lighter ramp steps (700/600/500)
+       already read clearly against --baobab-background-dark unchanged. */
+    --hero-brand-900: #3C5F36;
+    --hero-brand-800: #465D3F;
+
+    --hero-text-primary: var(--baobab-text-dark);
+    --hero-text-secondary: var(--baobab-text-dark-light);
+
+    --hero-border-subtle: var(--baobab-border-dark);
+
+}
+
+.landing-hero {
+
+    display: grid;
+    gap: var(--baobab-space-8);
+    align-items: center;
+    max-width: var(--baobab-container-max);
+    margin-inline: auto;
+    padding-block: var(--baobab-space-12);
+    padding-inline: var(--baobab-container-padding);
+
+}
+
+@media (min-width:1024px){
+
+    .landing-hero{
+
+        grid-template-columns: 1.1fr 0.9fr;
+
+    }
+
+}
+
+.hero-content{
+
+    display:flex;
+    flex-direction:column;
+    gap:var(--baobab-space-5);
+
+}
+
+.hero-actions{
+
+    display:flex;
+    flex-wrap:wrap;
+    gap:var(--baobab-space-3);
+
+}
+
+.hero-badges{
+
+    display:flex;
+    flex-wrap:wrap;
+    gap:0.75rem;
+
+    font-size:0.875rem;
+
+}
+
+
+/*==============================================================================
+  Hero — Eyebrow (brief §6.1)
+==============================================================================*/
+
+.hero-eyebrow {
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--baobab-space-2);
+
+    margin: 0;
+
+}
+
+.hero-eyebrow-text {
+
+    font-size: var(--baobab-text-sm);
+    font-weight: var(--baobab-weight-semibold);
+    letter-spacing: var(--baobab-tracking-wide);
+    text-transform: uppercase;
+
+    /* Reuses the existing text-safe green — see palette.css. Not part
+       of the new --hero-brand-* ramp, which is illustration-only. */
+    color: var(--baobab-green-dark);
+
+}
+
+[data-md-color-scheme="slate"] .hero-eyebrow-text {
+
+    color: var(--baobab-green-light);
+
+}
+
+.hero-eyebrow-rule {
+
+    display: block;
+    width: 2rem;
+    height: 3px;
+    border-radius: var(--baobab-radius-small);
+
+    /* Decorative-only gold, per the standing WCAG ruling — this is a
+       graphical rule, not text, so the AA text-contrast failure that
+       restricts --baobab-gold elsewhere does not apply here. */
+    background-color: var(--baobab-gold);
+
+}
+
+
+/*==============================================================================
+  Hero — Headline (brief §6.2)
+  Deliberately NOT reusing typography.css's `.hero h1` rule: this
+  markup's outer class is `.landing-hero` (not `.hero`), by design, to
+  avoid colliding with the shared docs-page `.hero` rule — see the
+  namespacing note earlier in this file. Full heading treatment is
+  therefore declared explicitly here instead of inherited.
+==============================================================================*/
+
+.hero-headline {
+
+    margin: 0;
+
+    font-size: var(--baobab-text-5xl);
+    font-weight: var(--baobab-weight-bold);
+    line-height: var(--baobab-leading-tight);
+    letter-spacing: var(--baobab-tracking-tight);
+
+    color: var(--hero-text-primary);
+
+}
+
+.hero-headline-accent {
+
+    /* Existing, already-audited text-safe green token — intentionally
+       NOT --hero-brand-600 (see Hero Design Tokens note above: the new
+       ramp is reserved for illustration fills, not text). */
+    color: var(--baobab-green-dark);
+
+}
+
+[data-md-color-scheme="slate"] .hero-headline-accent {
+
+    color: var(--baobab-green-light);
+
+}
+
+.hero-accent-dot {
+
+    /* Decorative punctuation glyph, not informational text — approved
+       use of the decorative-only gold token. See palette.css's WCAG
+       audit note; do not promote this to --baobab-gold-dark, doing so
+       would defeat the point of the two-tone treatment in the mockup. */
+    color: var(--baobab-gold);
+
+}
+
+
+/*==============================================================================
+  Hero — Supporting Statement (brief §6.3)
+  Reuses typography.css's `.lead` rule for size/line-height, and
+  overrides only colour (warmer hero-scoped grey) and measure (line
+  length) here.
+==============================================================================*/
+
+.hero-subtext {
+
+    max-width: 34rem;
+    color: var(--hero-text-secondary);
+
+}
+
+
+/*==============================================================================
+  Hero — Actions (brief §6.4 / §6.5)
+==============================================================================*/
+
+.hero-cta-primary {
+
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+
+}
+
+.hero-cta-icon svg {
+
+    display: block;
+    width: 1rem;
+    height: 1rem;
+
+}
+
+.hero-secondary-actions {
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--baobab-space-2);
+
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+}
+
+.hero-secondary-link {
+
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    font-weight: var(--baobab-weight-medium);
+    color: var(--hero-text-primary);
+    text-decoration: none;
+
+}
+
+.hero-secondary-link:hover,
+.hero-secondary-link:focus-visible {
+
+    color: var(--baobab-green-dark);
+
+}
+
+[data-md-color-scheme="slate"] .hero-secondary-link:hover,
+[data-md-color-scheme="slate"] .hero-secondary-link:focus-visible {
+
+    color: var(--baobab-green-light);
+
+}
+
+.hero-secondary-icon svg,
+.hero-secondary-arrow svg {
+
+    display: block;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+
+}
+
+.hero-secondary-arrow {
+
+    display: inline-flex;
+    transition: transform 0.15s ease;
+
+}
+
+.hero-secondary-link:hover .hero-secondary-arrow,
+.hero-secondary-link:focus-visible .hero-secondary-arrow {
+
+    transform: translateX(3px);
+
+}
+
+
+/*==============================================================================
+  Hero — Illustration (brief §7)
+  ------------------------------------------------------------------------
+  .hero-illustration is the outer column; .hero-illustration-stage (the
+  Phase 2 structural addition — see hero.html's inline note) is the
+  relatively-positioned box that reserves space for every absolutely-
+  positioned piece (glow / tree / trunk emblem / platform badge / orbit
+  nodes). Sized by aspect-ratio, not a fixed pixel height, so it scales
+  proportionally at every breakpoint per brief §11.
+
+  Every position value below (glow, tree-graphic inset, trunk emblem,
+  platform badge, and each .hero-node[data-node] offset) is a FIRST-PASS
+  estimate matched against the mockup by eye. These are exactly the
+  values expected to need fine visual calibration once real illustration
+  artwork replaces the placeholder shapes in hero.html (see Open Item #2
+  there) — flagging now so that recalibration isn't mistaken for a bug
+  later.
+==============================================================================*/
+
+.hero-illustration {
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--baobab-space-6);
+
+}
+
+.hero-illustration-stage {
+
+    position: relative;
+
+    width: 100%;
+    max-width: 34rem;
+    aspect-ratio: 1 / 1;
+    margin-inline: auto;
+
+}
+
+.hero-illustration-glow {
+
+    position: absolute;
+    inset: 0;
+
+    background: radial-gradient(
+        circle at 50% 42%,
+        color-mix(in srgb, var(--hero-brand-500) 20%, transparent) 0%,
+        transparent 68%
+    );
+
+    pointer-events: none;
+    z-index: 0;
+
+}
+
+.hero-tree-graphic {
+
+    position: absolute;
+    inset: 4% 8% 0 8%;
+
+    width: 84%;
+    height: 96%;
+
+    z-index: 1;
+
+}
+
+.hero-tree-roots path {
+
+    fill: none;
+    stroke: var(--hero-brand-800);
+    stroke-width: 3;
+    stroke-linecap: round;
+    opacity: 0.55;
+
+}
+
+.hero-tree-trunk path {
+
+    fill: var(--hero-brand-900);
+
+}
+
+.hero-tree-canopy ellipse:first-child {
+
+    fill: var(--hero-brand-700);
+
+}
+
+.hero-tree-canopy ellipse:not(:first-child) {
+
+    fill: var(--hero-brand-600);
+
+}
+
+.hero-trunk-emblem {
+
+    position: absolute;
+    top: 58%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 2.25rem;
+    height: 2.25rem;
+
+    color: var(--baobab-gold);
+
+    z-index: 2;
+
+}
+
+.hero-trunk-emblem svg {
+
+    width: 100%;
+    height: 100%;
+
+}
+
+.hero-platform-badge {
+
+    position: absolute;
+    top: 68%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    margin: 0;
+    padding: 0.6em 1.4em;
+    border-radius: 999px;
+
+    background: var(--hero-bg);
+    box-shadow: var(--baobab-shadow-small);
+
+    font-size: var(--baobab-text-sm);
+    font-weight: var(--baobab-weight-bold);
+    letter-spacing: var(--baobab-tracking-wide);
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--baobab-green-dark);
+
+    z-index: 3;
+
+}
+
+[data-md-color-scheme="slate"] .hero-platform-badge {
+
+    color: var(--baobab-green-light);
+    box-shadow: var(--baobab-shadow-small-dark);
+
+}
+
+
+/*
+  Orbit Nodes
+  ------------------------------------------------------------------------
+  Each node is a badge (icon + label) plus a short dashed connector
+  rendered as a ::after pseudo-element, oriented per node via the
+  [data-node] attribute selectors below. Connector geometry is anchored
+  to the PLACEHOLDER tree's approximate bounds and will need re-aligning
+  once real artwork lands — see block comment above.
+==============================================================================*/
+
+.hero-orbit-nodes {
+
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+}
+
+.hero-node {
+
+    position: absolute;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+
+    text-align: center;
+
+    z-index: 2;
+
+}
+
+.hero-node-icon {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 50%;
+
+    background: var(--hero-bg);
+    box-shadow: var(--baobab-shadow-small);
+    color: var(--hero-brand-700);
+
+}
+
+[data-md-color-scheme="slate"] .hero-node-icon {
+
+    box-shadow: var(--baobab-shadow-small-dark);
+
+}
+
+.hero-node-icon svg {
+
+    width: 1.4rem;
+    height: 1.4rem;
+
+}
+
+.hero-node-label {
+
+    font-size: var(--baobab-text-xs);
+    font-weight: var(--baobab-weight-semibold);
+    letter-spacing: var(--baobab-tracking-wide);
+    text-transform: uppercase;
+
+    color: var(--hero-text-secondary);
+
+}
+
+/* Per-node placement (percentages relative to .hero-illustration-stage) */
+
+.hero-node[data-node="government"] {
+
+    top: -2%;
+    left: 50%;
+    transform: translateX(-50%);
+
+}
+
+.hero-node[data-node="agriculture"] {
+
+    top: 16%;
+    left: 2%;
+
+}
+
+.hero-node[data-node="finance"] {
+
+    top: 16%;
+    right: 2%;
+
+}
+
+.hero-node[data-node="education"] {
+
+    top: 46%;
+    left: -4%;
+
+}
+
+.hero-node[data-node="healthcare"] {
+
+    top: 46%;
+    right: -4%;
+
+}
+
+/* Dashed connector lines — axis-aligned short segments pointing from
+   each node toward the canopy, matching the mockup's mostly-orthogonal
+   dotted lines. Government's connector is vertical; the remaining four
+   are horizontal, mirrored left/right via [data-node]. */
+
+.hero-node::after {
+
+    content: "";
+    position: absolute;
+
+    background-image: linear-gradient(
+        to right,
+        var(--hero-brand-500) 50%,
+        transparent 0%
+    );
+    background-size: 6px 2px;
+    background-repeat: repeat-x;
+
+    pointer-events: none;
+    z-index: 1;
+
+}
+
+.hero-node[data-node="government"]::after {
+
+    top: 100%;
+    left: 50%;
+    width: 2px;
+    height: 1.25rem;
+    transform: translateX(-50%);
+
+    background-image: linear-gradient(
+        to bottom,
+        var(--hero-brand-500) 50%,
+        transparent 0%
+    );
+    background-size: 2px 6px;
+    background-repeat: repeat-y;
+
+}
+
+.hero-node[data-node="agriculture"]::after,
+.hero-node[data-node="education"]::after {
+
+    top: 50%;
+    left: 100%;
+    width: 1.5rem;
+    height: 2px;
+    transform: translateY(-50%);
+
+}
+
+.hero-node[data-node="finance"]::after,
+.hero-node[data-node="healthcare"]::after {
+
+    top: 50%;
+    right: 100%;
+    width: 1.5rem;
+    height: 2px;
+    transform: translateY(-50%);
+
+}
+
+
+/*
+  Capability Strip
+  ------------------------------------------------------------------------
+  Normal-flow (NOT absolutely positioned) — sits below
+  .hero-illustration-stage as its own row. Distinct component from
+  .hero-trust-bar below; do not merge the two even though the visual
+  language (icon + label) is similar — see hero.html's own note on why
+  these are separate.
+==============================================================================*/
+
+.hero-capability-strip {
+
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--baobab-space-5);
+
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+}
+
+.hero-capability {
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+
+}
+
+.hero-capability-icon {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+
+    border: 1px solid var(--hero-border-subtle);
+    color: var(--hero-brand-700);
+
+}
+
+.hero-capability-icon svg {
+
+    width: 1.2rem;
+    height: 1.2rem;
+
+}
+
+.hero-capability-label {
+
+    font-size: var(--baobab-text-xs);
+    font-weight: var(--baobab-weight-medium);
+    letter-spacing: var(--baobab-tracking-wide);
+    text-transform: uppercase;
+
+    color: var(--hero-text-secondary);
+
+}
+
+
+/*==============================================================================
+  Hero — Trust Bar (brief §8)
+  Full-width band, sibling of .landing-hero (see hero.html's own note on
+  why it lives outside the two-column grid). Single bordered strip, all
+  six items equal visual weight — deliberately not reusing .tech-item's
+  individually-bordered-tile treatment.
+==============================================================================*/
+
+.hero-trust-bar-wrap {
+
+    max-width: var(--baobab-container-max);
+    margin-inline: auto;
+    padding-inline: var(--baobab-container-padding);
+    padding-bottom: var(--baobab-space-8);
+
+}
+
+.hero-trust-bar {
+
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: var(--baobab-space-6);
+
+    margin: 0;
+    padding: var(--baobab-space-5) var(--baobab-space-6);
+    border: 1px solid var(--hero-border-subtle);
+    border-radius: var(--baobab-radius);
+
+    background: var(--hero-surface-1);
+    list-style: none;
+
+}
+
+.hero-trust-item {
+
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    font-size: var(--baobab-text-sm);
+    font-weight: var(--baobab-weight-medium);
+    color: var(--hero-text-primary);
+
+}
+
+.hero-trust-icon {
+
+    display: flex;
+    color: var(--hero-brand-700);
+
+}
+
+.hero-trust-icon svg {
+
+    width: 1.1rem;
+    height: 1.1rem;
+
+}
+
+
+/*==============================================================================
+  Hero — Scroll Indicator (brief §9)
+==============================================================================*/
+
+.hero-scroll-cue-wrap {
+
+    display: flex;
+    justify-content: center;
+    padding-bottom: var(--baobab-space-8);
+
+}
+
+.hero-scroll-cue {
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+
+    font-size: var(--baobab-text-xs);
+    font-weight: var(--baobab-weight-semibold);
+    letter-spacing: var(--baobab-tracking-wide);
+    text-transform: uppercase;
+    text-decoration: none;
+
+    color: var(--hero-text-secondary);
+
+}
+
+.hero-scroll-cue:hover,
+.hero-scroll-cue:focus-visible {
+
+    color: var(--baobab-green-dark);
+
+}
+
+[data-md-color-scheme="slate"] .hero-scroll-cue:hover,
+[data-md-color-scheme="slate"] .hero-scroll-cue:focus-visible {
+
+    color: var(--baobab-green-light);
+
+}
+
+.hero-scroll-cue-icon svg {
+
+    display: block;
+    width: 1rem;
+    height: 1rem;
+
+    /* Reuses the existing float keyframe idiom's spirit (animations.css)
+       with its own lightweight bounce — intentionally not the `.float`
+       utility class itself, since that animation's amplitude/timing was
+       tuned for the much larger hero logo, not a 16px chevron. */
+    animation: baobab-scroll-cue-bounce 1.6s ease-in-out infinite;
+
+}
+
+@keyframes baobab-scroll-cue-bounce {
+
+    0%, 100% {
+
+        transform: translateY(0);
+
+    }
+
+    50% {
+
+        transform: translateY(4px);
+
+    }
+
+}
+
+
+
+/*
+  Technology Strip
+==============================================================================*/
+
+.tech-strip{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+
+    gap:1rem;
+
+    text-align:center;
+
+    margin-block:var(--baobab-space-10);
+
+}
+
+.tech-item{
+
+    padding:1rem;
+
+    border:1px solid var(--baobab-border);
+
+    border-radius:var(--baobab-radius-small);
+
+    background:var(--baobab-surface);
+
+}
+
+[data-md-color-scheme="slate"] .tech-item{
+
+    background:var(--baobab-surface-dark);
+
+    border-color:var(--baobab-border-dark);
+
+}
+
+
+
+/*
+  Capability Icons
+==============================================================================*/
+
+.icon-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+
+    gap:var(--baobab-space-5);
+
+}
+
+.icon-card{
+
+    text-align:center;
+
+    padding:2rem 1rem;
+
+}
+
+.icon-card .twemoji{
+
+    font-size:2rem;
+
+    margin-bottom:1rem;
+
+}
+
+
+
+/*
+  Metrics
+==============================================================================*/
+
+.metrics{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+
+    gap:var(--baobab-space-4);
+
+}
+
+.metric{
+
+    text-align:center;
+
+    padding:1.5rem;
+
+}
+
+.metric strong{
+
+    display:block;
+
+    font-size:1.8rem;
+
+}
+
+
+
+/*
+  Documentation Cards
+==============================================================================*/
+
+.documentation-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+
+    gap:var(--baobab-space-5);
+
+}
+
+.documentation-card{
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:space-between;
+
+    min-height:220px;
+
+}
+
+
+
+/*
+  CTA Banner
+==============================================================================*/
+
+.cta-banner{
+
+    margin-block:var(--baobab-space-12);
+
+    padding:4rem 3rem;
+
+    border-radius:var(--baobab-radius);
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--baobab-primary),
+            var(--baobab-background-dark)
+        );
+
+    color:white;
+
+    text-align:center;
+
+}
+
+.cta-banner .md-button{
+
+    margin-top:1.5rem;
+
+}
+
+
+
+/*
+  Footer Navigation
+  ------------------------------------------------------------------------
+  .footer-grid itself (the six-column sitemap layout) is unchanged from
+  its original definition. .md-footer-directory is new: it's the
+  full-width background band around it, now rendered site-wide via
+  overrides/partials/footer.html rather than only on the landing page.
+==============================================================================*/
+
+.md-footer-directory{
+
+    background:var(--baobab-surface);
+
+    padding-block:var(--baobab-space-8);
+
+}
+
+[data-md-color-scheme="slate"] .md-footer-directory{
+
+    background:var(--baobab-surface-dark);
+
+}
+
+.footer-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+
+    gap:var(--baobab-space-6);
+
+    margin-top:var(--baobab-space-10);
+
+}
+
+.footer-grid h3{
+
+    margin-bottom:1rem;
+
+}
+
+.footer-grid ul{
+
+    list-style:none;
+
+    margin:0;
+
+    padding:0;
+
+}
+
+.footer-grid li{
+
+    margin-bottom:0.5rem;
+    font-size: small;
+
+}
+
+
+
+/*
+  Section Headings
+==============================================================================*/
+
+.section-heading{
+
+    text-align:center;
+
+    max-width:52rem;
+
+    margin-inline:auto;
+
+    margin-bottom:var(--baobab-space-8);
+
+}
+
+
+
+/*
+  Material Tab Refinements
+==============================================================================*/
+
+.md-typeset .tabbed-set{
+
+    margin-top:var(--baobab-space-8);
+
+}
+
+
+
+/*
+  Responsive Landing Hero
+==============================================================================*/
+
+@media (max-width:1023px){
+
+    .landing-hero{
+
+        text-align:center;
+
+    }
+
+    .hero-actions{
+
+        justify-content:center;
+
+    }
+
+    /* Brief §11 (Tablet/Mobile): eyebrow/actions stay center-aligned
+       with the rest of .hero-content at this breakpoint, rather than
+       staying left-aligned against a now-centered column. */
+    .hero-eyebrow,
+    .hero-secondary-actions{
+
+        align-items:center;
+
+    }
+
+    .hero-subtext{
+
+        margin-inline:auto;
+
+    }
+
+    /* Illustration scales down slightly on tablet/mobile so the orbit
+       nodes' fixed badge size (3.25rem) doesn't crowd a narrower stage. */
+    .hero-illustration-stage{
+
+        max-width:26rem;
+
+    }
+
+}
+
+@media (max-width:640px){
+
+    /* Trust bar: six equal-weight items no longer fit one row below
+       ~640px. Reflow to a 2-column grid rather than letting flex-wrap
+       produce an uneven, hard-to-scan final row. */
+    .hero-trust-bar{
+
+        display:grid;
+        grid-template-columns:repeat(2,1fr);
+        justify-items:center;
+        gap:var(--baobab-space-4);
+
+    }
+
+}
+
+/*==============================================================================
+  Feature Grid
+==============================================================================*/
+
+.feature-grid {
+
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--baobab-space-6);
+    margin-block: var(--baobab-space-8);
+
+}
+
+
+/*==============================================================================
+  Feature Card
+==============================================================================*/
+
+.feature-card {
+
+    position: relative;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: var(--baobab-space-4);
+
+    padding: 2rem;
+
+    border: 1px solid var(--baobab-border);
+
+    border-radius: var(--baobab-radius);
+
+    background: var(--baobab-surface);
+
+    transition:
+        transform 220ms ease,
+        border-color 220ms ease,
+        box-shadow 220ms ease;
+
+}
+
+[data-md-color-scheme="slate"] .feature-card {
+
+    background: var(--baobab-surface-dark);
+    border-color: var(--baobab-border-dark);
+
+}
+
+.feature-card:hover {
+
+    transform: translateY(-6px);
+
+    border-color: var(--md-primary-fg-color);
+
+    box-shadow: var(--baobab-shadow-large);
+
+}
+
+[data-md-color-scheme="slate"] .feature-card:hover {
+
+    box-shadow: var(--baobab-shadow-large-dark);
+
+}
+
+
+/*==============================================================================
+  Feature Icon
+==============================================================================*/
+
+.feature-icon {
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: color-mix(
+        in srgb,
+        var(--md-primary-fg-color) 12%,
+        transparent
+    );
+    font-size: 1.6rem;
+    color: var(--md-primary-fg-color);
+
+}
+
+
+/*==============================================================================
+  Feature Heading
+==============================================================================*/
+
+.feature-card h3 {
+
+    margin: 0;
+
+}
+
+.feature-card p {
+
+    margin: 0;
+    color: var(--md-default-fg-color--light);
+
+}
+
+
+/*==============================================================================
+  Feature List
+==============================================================================*/
+
+.feature-list {
+
+    margin: auto 0 0;
+    padding: 0;
+    min-height: 24rem;
+    list-style: none;
+
+}
+
+.feature-list li {
+
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding-block: .45rem;
+
+}
+
+.feature-list li::before {
+
+    content: "✓";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.3rem;
+    height: 1.3rem;
+    border-radius: 50%;
+    background: var(--md-primary-fg-color);
+    color: white;
+    font-size: .75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+
+}
+
+
+/*==============================================================================
+  Responsive
+==============================================================================*/
+
+@media (max-width: 768px) {
+
+    .feature-grid {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}
+
+/*==============================================================================
+  Showcase Proof Panel
+==============================================================================*/
+
+.showcase-panel {
+
+    position: relative;
+
+    border: 1px solid var(--baobab-border);
+
+    border-radius: var(--baobab-radius);
+
+    background: var(--baobab-surface);
+
+    overflow: hidden;
+
+    transition:
+        transform 220ms ease,
+        border-color 220ms ease,
+        box-shadow 220ms ease;
+
+}
+
+[data-md-color-scheme="slate"] .showcase-panel {
+
+    background: var(--baobab-surface-dark);
+    border-color: var(--baobab-border-dark);
+
+}
+
+.showcase-panel:hover {
+
+    transform: translateY(-4px);
+
+    border-color: var(--md-primary-fg-color);
+
+    box-shadow: var(--baobab-shadow-large);
+
+}
+
+[data-md-color-scheme="slate"] .showcase-panel:hover {
+
+    box-shadow: var(--baobab-shadow-large-dark);
+
+}
+
+
+/*==============================================================================
+  Panel Header
+==============================================================================*/
+
+.showcase-panel-header {
+
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+
+    padding: .85rem 1rem;
+
+    border-bottom: 1px solid var(--baobab-border);
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.03),
+            rgba(0,0,0,.04)
+        );
+
+    font-size: .85rem;
+    font-weight: 600;
+
+}
+
+[data-md-color-scheme="slate"] .showcase-panel-header {
+
+    border-color: var(--baobab-border-dark);
+
+}
+
+.showcase-panel-header .window-dot {
+
+    width: 12px;
+    height: 12px;
+
+    border-radius: 50%;
+
+}
+
+.showcase-panel-header .red {
+
+    background: #ef4444;
+
+}
+
+.showcase-panel-header .yellow {
+
+    background: #f59e0b;
+
+}
+
+.showcase-panel-header .green {
+
+    background: #22c55e;
+
+}
+
+.showcase-panel-title {
+
+    margin-left: .5rem;
+
+    color: var(--md-default-fg-color--light);
+
+}
+
+
+/*==============================================================================
+  Mermaid
+==============================================================================*/
+
+.showcase-panel .mermaid {
+
+    padding: 1.5rem;
+
+    background: transparent;
+
+}
+
+
+/*==============================================================================
+  Code Blocks
+==============================================================================*/
+
+.showcase-panel pre {
+
+    margin: 0;
+
+    border-radius: 0;
+
+    background: transparent;
+
+}
+
+
+/*==============================================================================
+  Responsive
+==============================================================================*/
+
+@media (max-width: 992px) {
+
+    .showcase-panel {
+
+        margin-top: 1rem;
+
+    }
+
+}
+
+
+/*==============================================================================
+  Project Status
+  ------------------------------------------------------------------------
+  Deliberately distinct from every other card treatment on the page —
+  horizontal icon-left/text-right layout with a thin colored top accent,
+  rather than the centered tile (.tech-item), circular-icon vertical card
+  (.feature-card), or icon+description+button card (.documentation-card)
+  used elsewhere. This section reads as a trust/status strip late in the
+  page narrative, immediately before the CTA banner.
+==============================================================================*/
+
+.status-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+
+    gap: var(--baobab-space-5);
+
+    margin-block: var(--baobab-space-8);
+
+}
+
+.status-card {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: var(--baobab-space-4);
+
+    padding: var(--baobab-space-5);
+
+    border: 1px solid var(--baobab-border);
+    border-top: 3px solid var(--baobab-green);
+
+    border-radius: var(--baobab-radius-small);
+
+    background: var(--baobab-surface);
+
+    transition:
+        transform 220ms ease,
+        box-shadow 220ms ease;
+
+}
+
+[data-md-color-scheme="slate"] .status-card {
+
+    background: var(--baobab-surface-dark);
+    border-color: var(--baobab-border-dark);
+    border-top-color: var(--baobab-green-light);
+
+}
+
+.status-card:hover {
+
+    transform: translateY(-3px);
+
+    box-shadow: var(--baobab-shadow-small);
+
+}
+
+[data-md-color-scheme="slate"] .status-card:hover {
+
+    box-shadow: var(--baobab-shadow-small-dark);
+
+}
+
+.status-card .twemoji {
+
+    flex-shrink: 0;
+
+    font-size: 1.75rem;
+
+    color: var(--baobab-green);
+
+}
+
+[data-md-color-scheme="slate"] .status-card .twemoji {
+
+    color: var(--baobab-green-light);
+
+}
+
+.status-card h3 {
+
+    margin: 0 0 .35rem;
+
+    font-size: var(--baobab-text-lg);
+
+}
+
+.status-card p {
+
+    margin: 0;
+
+    font-size: var(--baobab-text-sm);
+
+    color: var(--md-default-fg-color--light);
+
+}
