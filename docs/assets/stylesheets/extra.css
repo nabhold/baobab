@@ -103,150 +103,120 @@
   in-docs mini-hero use.
 
   Lives in overrides/partials/hero.html, rendered via Material's `hero`
-  block — OUTSIDE `.md-content`. Two consequences that don't apply to any
-  other class in this file:
+  block — but the <section> itself carries BOTH `.md-content` and
+  `.landing-hero`. That combination is deliberate and is the fix for
+  earlier review feedback: `.md-content` is the single, site-wide
+  mechanism for content max-width and responsive horizontal padding —
+  `.landing-hero` no longer duplicates that with its own max-width /
+  padding-inline rules the way an earlier draft did. `.landing-hero`
+  now ONLY adds hero-specific concerns `.md-content` doesn't already
+  provide: vertical rhythm and (on larger viewports) viewport-height
+  fitting. The two-column grid itself lives on `.hero-grid`, a child of
+  this section — see that rule below for why it's a separate class
+  rather than being merged back into `.landing-hero`.
 
-    1. .landing-hero-bleed exists purely to give the hero its own
-       full-width background, independent of `--baobab-container-max`.
-       .landing-hero itself still constrains its CONTENT to that same
-       max-width, centered inside the full-bleed band — the standard
-       "full-bleed section, contained content" pattern.
+  `.landing-hero-bleed` still exists purely to give the hero its own
+  full-width BACKGROUND band, independent of `--baobab-container-max` —
+  that part of the "full-bleed section, contained content" pattern is
+  unchanged.
 
-    2. .landing-hero now needs its own explicit horizontal padding.
-       Previously it sat inside `.md-content`, which supplies horizontal
-       padding on every ordinary page. Outside `.md-content`, nothing
-       does that automatically, so it's declared here instead.
-==============================================================================*/
-
-/*==============================================================================
-  Hero Design Tokens
-  ------------------------------------------------------------------------
-  Scoped to .landing-hero-bleed (NOT :root) deliberately: this is a
-  refined, slightly warmer/greener palette approved specifically for the
-  hero mockup. It intentionally does NOT live in palette.css — per this
-  file's own architecture note (top of file), landing-only tokens stay
-  out of the shared design-system file. Nothing outside
-  .landing-hero-bleed and its descendants should reference these
-  variables; if a genuine site-wide need arises later, promote them into
-  palette.css as a deliberate decision, not by accident of CSS custom-
-  property inheritance.
-
-  RECONCILIATION WITH palette.css (design decisions, not oversights):
-
-    --hero-accent-gold   → NOT a new token. Reuses --baobab-gold as-is.
-      The mockup's #C9A23B and the existing #C89A2B are a 1-notch hex
-      difference — introducing a near-duplicate token for that would
-      violate the "consistency over proliferation" decision made when
-      this was discussed. Both are DECORATIVE-ONLY per the standing WCAG
-      audit (~2.6:1 on white) — never used for text below.
-
-    --hero-brand-900..500 → NEW. The mockup's 5-step green ramp is
-      deliberately kept separate from --baobab-green/-dark/-light (the
-      existing 3-step UI scale used by buttons/links). Three steps is
-      enough for a button's rest/hover state; it is NOT enough to shade
-      a layered illustration (roots / trunk / canopy each want a
-      distinct tone). USE THIS RAMP FOR ILLUSTRATION FILLS ONLY. Text
-      and interactive UI in the hero (headline accent, links) continue
-      using the existing, already-audited --baobab-green* tokens — see
-      .hero-headline-accent below.
-
-    --hero-surface-1 / -2 → NEW. Warmer/greener than --baobab-surface
-      (#F8FAFC, blue-grey). Scoped to the hero for the same reason as
-      the brand ramp: an intentional, contained art-direction choice for
-      the page's most brand-forward component, not a silent departure
-      from the shared surface tokens used everywhere else.
-
-  CONTRAST — checked by hand against the WCAG 2.1 relative-luminance
-  formula (not yet cross-verified in a live contrast tool; per project
-  convention, spot-check with WebAIM before Phase 5 sign-off):
-
-      --hero-text-secondary on --hero-bg / --hero-surface-1  ≈ 7.2 : 1  (AA pass)
-      --baobab-green-dark   on --hero-bg  (headline accent)  — already audited, unchanged
-      --hero-brand-700      on white icon-badge fill         ≈ 7.2 : 1  (safe for icon strokes)
-
-  --hero-brand-900 / -800 / -500 are illustration fills ONLY in this
-  build — never used as text colour. If a future change puts text on
-  them, contrast must be re-verified before shipping.
+  COLOUR TOKENS: this file used to declare a full set of hero-scoped
+  custom properties directly on `.landing-hero-bleed`. Per review
+  feedback, they have been relocated to palette.css (light values) and
+  dark.css (dark-mode overrides) as `--baobab-hero-*`, following the
+  exact same :root / bare-[data-md-color-scheme="slate"] pattern every
+  other token in this project already uses. That relocation is also the
+  fix for a real bug: the hero headline's base colour was silently
+  falling back to its light-mode value in dark mode, because the old
+  token scope required `.landing-hero-bleed` to be a descendant of the
+  scheme attribute AND carry that specific class — functionally correct
+  in theory, but fragile in a way the project's proven, unqualified
+  pattern isn't. See palette.css / dark.css for the token declarations
+  and full rationale; nothing in this file declares a --baobab-hero-*
+  value any more, it only consumes them.
 ==============================================================================*/
 
 .landing-hero-bleed {
 
     width: 100%;
-    background: var(--hero-bg);
-
-    /* ---- Backgrounds ---- */
-    --hero-bg: #FEFEFE;
-    --hero-surface-1: #FAFBF9;
-    --hero-surface-2: #F5F8F0;
-
-    /* ---- Brand ramp — illustration fills only, see note above ---- */
-    --hero-brand-900: #2E4A2E;
-    --hero-brand-800: #3C5F36;
-    --hero-brand-700: #465D3F;
-    --hero-brand-600: #4B6F42;
-    --hero-brand-500: #6F945E;
-
-    /* ---- Text ---- */
-    --hero-text-primary: #1E2328;
-    --hero-text-secondary: #4E5A52;
-
-    /* ---- Borders ---- */
-    --hero-border-subtle: #E4E9DD;
+    background: var(--baobab-hero-bg);
 
 }
 
 [data-md-color-scheme="slate"] .landing-hero-bleed {
 
-    background: var(--hero-bg);
-
-    /* Dark-mode token overrides. Reuses existing dark-mode palette
-       tokens wherever a direct equivalent exists, rather than inventing
-       new hex values — keeps the hero's dark mode visually consistent
-       with the rest of the site's dark mode instead of introducing a
-       second, independently-maintained dark palette.
-
-       --hero-surface-2 intentionally collapses onto the same value as
-       --hero-surface-1 in dark mode: palette.css only exposes one dark
-       surface tone (--baobab-surface-dark), so the light-mode two-step
-       surface distinction has nothing to map onto. Known simplification,
-       not an oversight — revisit if a second dark surface tone is ever
-       added to palette.css. */
-
-    --hero-bg: var(--baobab-background-dark);
-    --hero-surface-1: var(--baobab-surface-dark);
-    --hero-surface-2: var(--baobab-surface-dark);
-
-    /* Only the two DARKEST illustration tones are shifted one step
-       lighter in dark mode, so the tree silhouette doesn't blend into
-       the dark background. The three lighter ramp steps (700/600/500)
-       already read clearly against --baobab-background-dark unchanged. */
-    --hero-brand-900: #3C5F36;
-    --hero-brand-800: #465D3F;
-
-    --hero-text-primary: var(--baobab-text-dark);
-    --hero-text-secondary: var(--baobab-text-dark-light);
-
-    --hero-border-subtle: var(--baobab-border-dark);
+    background: var(--baobab-hero-bg);
 
 }
 
 .landing-hero {
 
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: var(--baobab-space-8);
-    align-items: center;
-    max-width: var(--baobab-container-max);
-    margin-inline: auto;
-    padding-block: var(--baobab-space-12);
-    padding-inline: var(--baobab-container-padding);
+    padding-block: var(--baobab-space-10);
 
 }
+
+/*
+  Viewport-fit behaviour (review feedback: "fit into viewport height of
+  screens the size of laptops or bigger, if possible"). Deliberately
+  gated to >=1024px only — the existing mobile layout was explicitly
+  praised as-is, and forcing a min-height on small screens would fight
+  the natural, already-correct mobile flow instead of helping it.
+
+  --baobab-header-height is a PLACEHOLDER fallback (4rem), not a
+  measured value — Zensical's actual rendered header height has not
+  been inspected against a live build. Uses the var(--x, fallback)
+  syntax so this degrades gracefully (a slightly-too-tall/short
+  min-height, never a broken one) until that measurement happens in
+  Phase 5. If a real --baobab-header-height token gets added to
+  palette.css later for this or any other purpose, this rule picks it
+  up automatically with no change needed here.
+*/
 
 @media (min-width:1024px){
 
     .landing-hero{
 
-        grid-template-columns: 1.1fr 0.9fr;
+        min-height: calc(100vh - var(--baobab-header-height, 4rem));
+        justify-content: center;
+        padding-block: var(--baobab-space-8);
+
+    }
+
+}
+
+/*
+  .hero-grid
+  ------------------------------------------------------------------------
+  The two-column layout itself, split out from `.landing-hero` (see that
+  rule's comment) specifically so `.hero-trust-bar` can sit as a normal
+  block-level sibling of this grid — inside the same `.md-content`
+  section, inheriting the same width/padding — without being forced to
+  participate in a 2-column grid it was never meant to occupy a column
+  of.
+
+  Column ratio widened toward the left per review feedback ("make the
+  left column a little wider than that of illustration on the right");
+  1.1fr:0.9fr read as too close to even in practice — 1.35fr:0.85fr
+  gives the messaging column visibly more room while still leaving the
+  illustration a clearly substantial share of the row.
+*/
+
+.hero-grid {
+
+    display: grid;
+    gap: var(--baobab-space-8);
+    align-items: center;
+
+}
+
+@media (min-width:1024px){
+
+    .hero-grid{
+
+        grid-template-columns: 1.35fr 0.85fr;
 
     }
 
@@ -302,7 +272,7 @@
     text-transform: uppercase;
 
     /* Reuses the existing text-safe green — see palette.css. Not part
-       of the new --hero-brand-* ramp, which is illustration-only. */
+       of the new --baobab-hero-brand-* ramp, which is illustration-only. */
     color: var(--baobab-green-dark);
 
 }
@@ -341,19 +311,27 @@
 
     margin: 0;
 
-    font-size: var(--baobab-text-5xl);
+    /* FIX (review feedback: "Faster" overflowing). A fixed
+       --baobab-text-5xl (49px) doesn't shrink on narrow viewports, so
+       at some in-between widths the headline (or the trailing accent
+       dot) could run past the column edge before the responsive
+       breakpoint kicked in. clamp() scales continuously with viewport
+       width instead of jumping at a single breakpoint: never smaller
+       than 2rem, never larger than the original --baobab-text-5xl, and
+       following viewport width in between. */
+    font-size: clamp(2rem, 1.2rem + 4vw, var(--baobab-text-5xl));
     font-weight: var(--baobab-weight-bold);
     line-height: var(--baobab-leading-tight);
     letter-spacing: var(--baobab-tracking-tight);
 
-    color: var(--hero-text-primary);
+    color: var(--baobab-hero-text-primary);
 
 }
 
 .hero-headline-accent {
 
     /* Existing, already-audited text-safe green token — intentionally
-       NOT --hero-brand-600 (see Hero Design Tokens note above: the new
+       NOT --baobab-hero-brand-600 (see Hero Design Tokens note above: the new
        ramp is reserved for illustration fills, not text). */
     color: var(--baobab-green-dark);
 
@@ -386,7 +364,7 @@
 .hero-subtext {
 
     max-width: 34rem;
-    color: var(--hero-text-secondary);
+    color: var(--baobab-hero-text-secondary);
 
 }
 
@@ -430,7 +408,7 @@
     gap: 0.5rem;
 
     font-weight: var(--baobab-weight-medium);
-    color: var(--hero-text-primary);
+    color: var(--baobab-hero-text-primary);
     text-decoration: none;
 
 }
@@ -519,7 +497,7 @@
 
     background: radial-gradient(
         circle at 50% 42%,
-        color-mix(in srgb, var(--hero-brand-500) 20%, transparent) 0%,
+        color-mix(in srgb, var(--baobab-hero-brand-500) 20%, transparent) 0%,
         transparent 68%
     );
 
@@ -543,7 +521,7 @@
 .hero-tree-roots path {
 
     fill: none;
-    stroke: var(--hero-brand-800);
+    stroke: var(--baobab-hero-brand-800);
     stroke-width: 3;
     stroke-linecap: round;
     opacity: 0.55;
@@ -552,19 +530,19 @@
 
 .hero-tree-trunk path {
 
-    fill: var(--hero-brand-900);
+    fill: var(--baobab-hero-brand-900);
 
 }
 
 .hero-tree-canopy ellipse:first-child {
 
-    fill: var(--hero-brand-700);
+    fill: var(--baobab-hero-brand-700);
 
 }
 
 .hero-tree-canopy ellipse:not(:first-child) {
 
-    fill: var(--hero-brand-600);
+    fill: var(--baobab-hero-brand-600);
 
 }
 
@@ -606,7 +584,7 @@
     padding: 0.6em 1.4em;
     border-radius: 999px;
 
-    background: var(--hero-bg);
+    background: var(--baobab-hero-bg);
     box-shadow: var(--baobab-shadow-small);
 
     font-size: var(--baobab-text-sm);
@@ -671,9 +649,9 @@
     height: 3.25rem;
     border-radius: 50%;
 
-    background: var(--hero-bg);
+    background: var(--baobab-hero-bg);
     box-shadow: var(--baobab-shadow-small);
-    color: var(--hero-brand-700);
+    color: var(--baobab-hero-brand-700);
 
 }
 
@@ -697,7 +675,7 @@
     letter-spacing: var(--baobab-tracking-wide);
     text-transform: uppercase;
 
-    color: var(--hero-text-secondary);
+    color: var(--baobab-hero-text-secondary);
 
 }
 
@@ -751,7 +729,7 @@
 
     background-image: linear-gradient(
         to right,
-        var(--hero-brand-500) 50%,
+        var(--baobab-hero-brand-500) 50%,
         transparent 0%
     );
     background-size: 6px 2px;
@@ -772,7 +750,7 @@
 
     background-image: linear-gradient(
         to bottom,
-        var(--hero-brand-500) 50%,
+        var(--baobab-hero-brand-500) 50%,
         transparent 0%
     );
     background-size: 2px 6px;
@@ -818,9 +796,21 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: var(--baobab-space-5);
 
-    margin: 0;
+    /* FIX (review feedback: workflow icon overflowing beneath the
+       tree). .hero-illustration-stage caps at 34rem, but this strip was
+       previously 100% of the (wider) .hero-illustration column, so at
+       intermediate widths its generous gap pushed the sixth item past
+       the tree's visual bounds before flex-wrap kicked in. Matching the
+       stage's own max-width keeps the strip visually anchored under
+       the illustration at every width, and the gap is reduced from
+       --baobab-space-5 (1.5rem) to --baobab-space-4 (1rem) so six items
+       have a realistic chance of fitting one row on the stage's own
+       narrower footprint. */
+    max-width: 34rem;
+    margin-inline: auto;
+    gap: var(--baobab-space-4);
+
     padding: 0;
     list-style: none;
 
@@ -845,8 +835,8 @@
     height: 2.75rem;
     border-radius: 50%;
 
-    border: 1px solid var(--hero-border-subtle);
-    color: var(--hero-brand-700);
+    border: 1px solid var(--baobab-hero-border-subtle);
+    color: var(--baobab-hero-brand-700);
 
 }
 
@@ -864,27 +854,40 @@
     letter-spacing: var(--baobab-tracking-wide);
     text-transform: uppercase;
 
-    color: var(--hero-text-secondary);
+    color: var(--baobab-hero-text-secondary);
+
+}
+
+@media (max-width:420px){
+
+    /* At the narrowest phone widths, shrink the icon badge and gap
+       further rather than letting the strip wrap to a lopsided
+       5-then-1 final row. */
+    .hero-capability-icon{
+
+        width:2.25rem;
+        height:2.25rem;
+
+    }
+
+    .hero-capability-strip{
+
+        gap:var(--baobab-space-3);
+
+    }
 
 }
 
 
 /*==============================================================================
   Hero — Trust Bar (brief §8)
-  Full-width band, sibling of .landing-hero (see hero.html's own note on
-  why it lives outside the two-column grid). Single bordered strip, all
-  six items equal visual weight — deliberately not reusing .tech-item's
-  individually-bordered-tile treatment.
+  Full-width band, direct child of the same <section class="md-content
+  landing-hero"> as .hero-grid — see .landing-hero's own comment above
+  for why it no longer has a bespoke wrapper div with its own
+  max-width/padding. Single bordered strip, all six items equal visual
+  weight — deliberately not reusing .tech-item's individually-bordered-
+  tile treatment.
 ==============================================================================*/
-
-.hero-trust-bar-wrap {
-
-    max-width: var(--baobab-container-max);
-    margin-inline: auto;
-    padding-inline: var(--baobab-container-padding);
-    padding-bottom: var(--baobab-space-8);
-
-}
 
 .hero-trust-bar {
 
@@ -896,10 +899,10 @@
 
     margin: 0;
     padding: var(--baobab-space-5) var(--baobab-space-6);
-    border: 1px solid var(--hero-border-subtle);
+    border: 1px solid var(--baobab-hero-border-subtle);
     border-radius: var(--baobab-radius);
 
-    background: var(--hero-surface-1);
+    background: var(--baobab-hero-surface-1);
     list-style: none;
 
 }
@@ -912,14 +915,14 @@
 
     font-size: var(--baobab-text-sm);
     font-weight: var(--baobab-weight-medium);
-    color: var(--hero-text-primary);
+    color: var(--baobab-hero-text-primary);
 
 }
 
 .hero-trust-icon {
 
     display: flex;
-    color: var(--hero-brand-700);
+    color: var(--baobab-hero-brand-700);
 
 }
 
@@ -932,77 +935,11 @@
 
 
 /*==============================================================================
-  Hero — Scroll Indicator (brief §9)
+  Hero — Scroll Indicator — REMOVED (review feedback: "doesn't serve the
+  purpose"). Deleted outright rather than commented out, per this
+  project's convention of not leaving dead CSS in delivered files. The
+  corresponding markup removal is documented in hero.html.
 ==============================================================================*/
-
-.hero-scroll-cue-wrap {
-
-    display: flex;
-    justify-content: center;
-    padding-bottom: var(--baobab-space-8);
-
-}
-
-.hero-scroll-cue {
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.35rem;
-
-    font-size: var(--baobab-text-xs);
-    font-weight: var(--baobab-weight-semibold);
-    letter-spacing: var(--baobab-tracking-wide);
-    text-transform: uppercase;
-    text-decoration: none;
-
-    color: var(--hero-text-secondary);
-
-}
-
-.hero-scroll-cue:hover,
-.hero-scroll-cue:focus-visible {
-
-    color: var(--baobab-green-dark);
-
-}
-
-[data-md-color-scheme="slate"] .hero-scroll-cue:hover,
-[data-md-color-scheme="slate"] .hero-scroll-cue:focus-visible {
-
-    color: var(--baobab-green-light);
-
-}
-
-.hero-scroll-cue-icon svg {
-
-    display: block;
-    width: 1rem;
-    height: 1rem;
-
-    /* Reuses the existing float keyframe idiom's spirit (animations.css)
-       with its own lightweight bounce — intentionally not the `.float`
-       utility class itself, since that animation's amplitude/timing was
-       tuned for the much larger hero logo, not a 16px chevron. */
-    animation: baobab-scroll-cue-bounce 1.6s ease-in-out infinite;
-
-}
-
-@keyframes baobab-scroll-cue-bounce {
-
-    0%, 100% {
-
-        transform: translateY(0);
-
-    }
-
-    50% {
-
-        transform: translateY(4px);
-
-    }
-
-}
 
 
 
@@ -1267,7 +1204,7 @@
 
 @media (max-width:1023px){
 
-    .landing-hero{
+    .hero-grid{
 
         text-align:center;
 

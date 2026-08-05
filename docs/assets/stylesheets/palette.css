@@ -23,97 +23,151 @@
 
 :root {
 
-    /* ---------------------------------------------------------------------
+   /* ---------------------------------------------------------------------
        Primary Brand
        --------------------------------------------------------------------- */
 
-    --baobab-primary: #1F2937;
-    /* text-safe on light + dark surfaces, ~14.6:1 on white */
-    --baobab-primary-light: #374151;
-    --baobab-secondary: #4B5563;
+   --baobab-primary: #1F2937;
+   /* text-safe on light + dark surfaces, ~14.6:1 on white */
+   --baobab-primary-light: #374151;
+   --baobab-secondary: #4B5563;
 
-    /* ---------------------------------------------------------------------
+   /* ---------------------------------------------------------------------
        Accent Colours
        --------------------------------------------------------------------- */
 
-    --baobab-green: #4E7A44;
-    /* text-safe on white, ~5:1 — do not lighten further */
-    --baobab-green-dark: #35552D;
-    /* higher-contrast variant for links / small text */
-    --baobab-green-light: #7FB06E;
-    /* dark-mode variant, ~5:1 on --baobab-background-dark */
+   --baobab-green: #4E7A44;
+   /* text-safe on white, ~5:1 — do not lighten further */
+   --baobab-green-dark: #35552D;
+   /* higher-contrast variant for links / small text */
+   --baobab-green-light: #7FB06E;
+   /* dark-mode variant, ~5:1 on --baobab-background-dark */
 
-    --baobab-gold: #C89A2B;
-    /* DECORATIVE ONLY — ~2.6:1 on white, fails AA for text */
-    --baobab-gold-dark: #8A6B1D;
-    /* text-safe gold, ~4.6:1 on white — use this for gold text/links */
-    --baobab-gold-light: #E4C878;
-    /* dark-mode decorative accent */
+   --baobab-gold: #C89A2B;
+   /* DECORATIVE ONLY — ~2.6:1 on white, fails AA for text */
+   --baobab-gold-dark: #8A6B1D;
+   /* text-safe gold, ~4.6:1 on white — use this for gold text/links */
+   --baobab-gold-light: #E4C878;
+   /* dark-mode decorative accent */
 
-    /* ---------------------------------------------------------------------
+   /* ---------------------------------------------------------------------
        Surfaces — Light
        --------------------------------------------------------------------- */
 
-    --baobab-background: #FFFFFF;
-    --baobab-surface: #F8FAFC;
-    --baobab-border: #E5E7EB;
+   --baobab-background: #FFFFFF;
+   --baobab-surface: #F8FAFC;
+   --baobab-border: #E5E7EB;
 
-    /* ---------------------------------------------------------------------
+   /* ---------------------------------------------------------------------
        Surfaces — Dark
        --------------------------------------------------------------------- */
 
-    --baobab-background-dark: #111827;
-    --baobab-surface-dark: #1F2937;
-    --baobab-border-dark: #374151;
+   --baobab-background-dark: #111827;
+   --baobab-surface-dark: #1F2937;
+   --baobab-border-dark: #374151;
 
-    /* ---------------------------------------------------------------------
+   /* ---------------------------------------------------------------------
        Typography Colours
        --------------------------------------------------------------------- */
 
-    --baobab-text: var(--baobab-primary);
-    --baobab-text-light: #6B7280;
-    /* text-safe on white, ~4.8:1 — borderline, don't shrink font size */
+   --baobab-text: var(--baobab-primary);
+   --baobab-text-light: #6B7280;
+   /* text-safe on white, ~4.8:1 — borderline, don't shrink font size */
 
-    --baobab-text-dark: #F3F4F6;
-    /* body text on dark surfaces */
-    --baobab-text-dark-light: #9CA3AF;
-    /* secondary text on dark surfaces */
+   --baobab-text-dark: #F3F4F6;
+   /* body text on dark surfaces */
+   --baobab-text-dark-light: #9CA3AF;
+   /* secondary text on dark surfaces */
 
-    /* ---------------------------------------------------------------------
+   /* ---------------------------------------------------------------------
        Semantic / Status
        (kept close to brand hues so admonitions don't look like a
        different product from the marketing pages)
        --------------------------------------------------------------------- */
 
-    --baobab-success: var(--baobab-green);
-    --baobab-warning: var(--baobab-gold-dark);
-    --baobab-danger: #B3261E;
-    --baobab-info: #2B6CB0;
+   --baobab-success: var(--baobab-green);
+   --baobab-warning: var(--baobab-gold-dark);
+   --baobab-danger: #B3261E;
+   --baobab-info: #2B6CB0;
 
-    /* ---------------------------------------------------------------------
+   /* ---------------------------------------------------------------------
        Interactive States
        --------------------------------------------------------------------- */
 
-    --baobab-focus-ring: #2563EB;
-    --baobab-focus-ring-offset: 2px;
-    --baobab-hover-overlay: rgba(0, 0, 0, 0.04);
-    --baobab-hover-overlay-dark: rgba(255, 255, 255, 0.06);
+   --baobab-focus-ring: #2563EB;
+   --baobab-focus-ring-offset: 2px;
+   --baobab-hover-overlay: rgba(0, 0, 0, 0.04);
+   --baobab-hover-overlay-dark: rgba(255, 255, 255, 0.06);
 
-    /* ---------------------------------------------------------------------
+   /* ---------------------------------------------------------------------
        Layout
        --------------------------------------------------------------------- */
 
-    --baobab-radius: 12px;
-    --baobab-radius-small: 8px;
+   --baobab-radius: 12px;
+   --baobab-radius-small: 8px;
 
-    /* ---------------------------------------------------------------------
+   /* ---------------------------------------------------------------------
        Shadows
        --------------------------------------------------------------------- */
 
-    --baobab-shadow-small: 0 4px 12px rgba(0, 0, 0, 0.06);
-    --baobab-shadow-large: 0 15px 40px rgba(0, 0, 0, 0.08);
-    --baobab-shadow-small-dark: 0 4px 12px rgba(0, 0, 0, 0.35);
-    --baobab-shadow-large-dark: 0 15px 40px rgba(0, 0, 0, 0.45);
+   --baobab-shadow-small: 0 4px 12px rgba(0, 0, 0, 0.06);
+   --baobab-shadow-large: 0 15px 40px rgba(0, 0, 0, 0.08);
+   --baobab-shadow-small-dark: 0 4px 12px rgba(0, 0, 0, 0.35);
+   --baobab-shadow-large-dark: 0 15px 40px rgba(0, 0, 0, 0.45);
+
+   /* ---------------------------------------------------------------------
+       Hero / Illustration Tokens
+       ------------------------------------------------------------------
+       Used exclusively by the landing-page hero (docs/index.md via
+       overrides/partials/hero.html) — see extra.css's "LANDING PAGE"
+       banner for the standing rule that landing-only CSS *rules* stay
+       out of this file. Token *values*, however, belong here regardless
+       of where they're consumed: this project's single-source-of-truth
+       convention is that ALL design tokens live in palette.css, with
+       dark-mode overrides in dark.css, full stop — no exceptions for
+       "but it's only used in one place." An earlier draft scoped these
+       to a hero-local class instead; that was a mistake, not a style
+       choice, and is why the dark-mode headline colour previously
+       failed to resolve. Do not re-introduce a second, page-scoped
+       token system.
+
+       --baobab-hero-bg / -surface-1 / -surface-2:
+           Warmer/greener than --baobab-background / --baobab-surface —
+           a deliberate, contained art-direction choice for the hero
+           specifically, approved against the high-fidelity mockup.
+
+       --baobab-hero-brand-900..500:
+           A 5-step green ramp, DELIBERATELY SEPARATE from
+           --baobab-green / -dark / -light above. The 3-step scale is
+           sized for a button's rest/hover state; the hero's layered SVG
+           illustration (roots / trunk / canopy) needs more tonal steps
+           than that to read as layered depth. ILLUSTRATION FILLS ONLY —
+           never use this ramp for text or interactive UI colour; the
+           hero's headline accent and links continue using
+           --baobab-green-dark / -light like everything else on the site.
+
+       --baobab-hero-text-primary / -text-secondary / -border-subtle:
+           Text/border tones matched to the warmer hero background above.
+           CONTRAST — hand-checked against the WCAG 2.1 relative-luminance
+           formula (not yet cross-verified in a live contrast tool; per
+           project convention, spot-check with WebAIM before shipping):
+               --baobab-hero-text-secondary on --baobab-hero-bg/-surface-1  ≈ 7.2:1 (AA pass)
+       --------------------------------------------------------------------- */
+
+   --baobab-hero-bg: #FEFEFE;
+   --baobab-hero-surface-1: #FAFBF9;
+   --baobab-hero-surface-2: #F5F8F0;
+
+   --baobab-hero-brand-900: #2E4A2E;
+   --baobab-hero-brand-800: #3C5F36;
+   --baobab-hero-brand-700: #465D3F;
+   --baobab-hero-brand-600: #4B6F42;
+   --baobab-hero-brand-500: #6F945E;
+
+   --baobab-hero-text-primary: #1E2328;
+   --baobab-hero-text-secondary: #4E5A52;
+
+   --baobab-hero-border-subtle: #E4E9DD;
 
 }
 
@@ -125,24 +179,24 @@
 
 [data-md-color-scheme="default"] {
 
-    --md-primary-fg-color: var(--baobab-primary);
-    --md-primary-fg-color--light: var(--baobab-primary-light);
-    --md-primary-fg-color--dark: var(--baobab-primary);
-    --md-primary-bg-color: var(--baobab-background);
-    --md-primary-bg-color--light: var(--baobab-surface);
+   --md-primary-fg-color: var(--baobab-primary);
+   --md-primary-fg-color--light: var(--baobab-primary-light);
+   --md-primary-fg-color--dark: var(--baobab-primary);
+   --md-primary-bg-color: var(--baobab-background);
+   --md-primary-bg-color--light: var(--baobab-surface);
 
-    --md-accent-fg-color: var(--baobab-green);
-    --md-accent-fg-color--transparent: rgba(78, 122, 68, 0.1);
-    --md-accent-bg-color: var(--baobab-background);
+   --md-accent-fg-color: var(--baobab-green);
+   --md-accent-fg-color--transparent: rgba(78, 122, 68, 0.1);
+   --md-accent-bg-color: var(--baobab-background);
 
-    --md-default-fg-color: var(--baobab-text);
-    --md-default-fg-color--light: var(--baobab-text-light);
-    --md-default-bg-color: var(--baobab-background);
+   --md-default-fg-color: var(--baobab-text);
+   --md-default-fg-color--light: var(--baobab-text-light);
+   --md-default-bg-color: var(--baobab-background);
 
-    --md-typeset-a-color: var(--baobab-green-dark);
+   --md-typeset-a-color: var(--baobab-green-dark);
 
-    --md-footer-bg-color: var(--baobab-primary);
-    --md-footer-fg-color: var(--baobab-background);
+   --md-footer-bg-color: var(--baobab-primary);
+   --md-footer-fg-color: var(--baobab-background);
 
 }
 

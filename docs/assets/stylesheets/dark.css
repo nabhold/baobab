@@ -49,6 +49,47 @@
        rather than hard-coded hex, so a future brand refresh only touches
        palette.css. */
 
+    /* -----------------------------------------------------------------
+       Hero / Illustration Tokens — dark-mode overrides
+       -------------------------------------------------------------
+       Companion block to the --baobab-hero-* tokens declared in
+       palette.css. Deliberately scoped the SAME way as every other
+       override in this file — a bare [data-md-color-scheme="slate"]
+       selector, no additional class — so these inherit correctly to
+       every descendant regardless of how deeply the hero markup is
+       nested. (A previous draft qualified this selector with a hero-
+       local class, which is why the headline's base colour silently
+       fell back to its light-mode value in dark mode — see palette.css's
+       note on this token block for the full explanation.)
+
+       Reuses existing dark-mode palette values wherever a direct
+       equivalent exists, rather than maintaining a second, independent
+       dark palette:
+         --baobab-hero-surface-2 intentionally collapses onto the same
+         value as -surface-1 in dark mode — this file only exposes one
+         dark surface tone (--baobab-surface-dark), so the light-mode
+         two-step surface distinction has nothing to map onto. Known
+         simplification; revisit if a second dark surface tone is ever
+         added to palette.css.
+
+         Only the two DARKEST illustration ramp steps are shifted one
+         step lighter, so the tree silhouette doesn't blend into the
+         dark background. The three lighter steps (700/600/500) already
+         read clearly against --baobab-background-dark unchanged.
+       ----------------------------------------------------------------- */
+
+    --baobab-hero-bg: var(--baobab-background-dark);
+    --baobab-hero-surface-1: var(--baobab-surface-dark);
+    --baobab-hero-surface-2: var(--baobab-surface-dark);
+
+    --baobab-hero-brand-900: #3C5F36;
+    --baobab-hero-brand-800: #465D3F;
+
+    --baobab-hero-text-primary: var(--baobab-text-dark);
+    --baobab-hero-text-secondary: var(--baobab-text-dark-light);
+
+    --baobab-hero-border-subtle: var(--baobab-border-dark);
+
 }
 
 
