@@ -1,123 +1,202 @@
 # ==============================================================================
 # GitHub Actions CI/CD Pipeline: Build & Deploy GitHub Pages Documentation
-# File Location: baobab/.github/workflows/deploy-docs.yml
-# Rationale: Automates static site building with Zensical and deploys to GitHub Pages
-#            with strict link checks and uv dependency management.
+# File: .github/workflows/deploy-docs.yml
+#
+# Purpose:
+#   Build the Zensical documentation site and deploy it to GitHub Pages.
+#
+# Design principles:
+#   - Least-privilege GitHub permissions
+#   - Immutable action SHA pinning
+#   - Reproducible Python/uv dependency installation
+#   - Strict documentation build
+#   - GitHub Pages artifact-based deployment
 # ==============================================================================
 
 name: Deploy GitHub Pages Documentation
 
 # ------------------------------------------------------------------------------
 # 1. Execution Triggers
-# Rationale: Triggers deployment only on changes to main that affect documentation
-#            files or pipeline settings, avoiding unnecessary builds.
+#
+# Deploy when documentation or documentation tooling changes on main.
+# workflow_dispatch allows an administrator to trigger a deployment manually.
 # ------------------------------------------------------------------------------
 on:
   push:
     branches:
       - main
     paths:
-      - "docs/**"                        # Markdown source files
-      - "zensical.toml"                  # Navigation and theme config
-      - "pyproject.toml"                 # Dependency definitions
-      - ".python-version"                # Exact interpreter pin (added v1.1 — Step C now reads this file directly, see below)
-      - ".github/workflows/deploy-docs.yml" # Pipeline file itself
-  workflow_dispatch:                     # Allows manual triggering from GitHub UI
+      - "docs/**"
+      - "zensical.toml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - ".github/workflows/deploy-docs.yml"
+
+  workflow_dispatch:
 
 # ------------------------------------------------------------------------------
-# 2. Identity & Permission Scope (Least Privilege Model)
-# Rationale: Required for GitHub Pages OIDC deployment without static deployment tokens.
+# 2. Permissions
+#
+# GitHub Pages deployment requires:
+#   contents: read  -> checkout repository
+#   pages: write     -> deploy Pages artifact
+#   id-token: write  -> OIDC authentication for Pages deployment
+#
+# actions: read is retained explicitly for Actions artifact access.
 # ------------------------------------------------------------------------------
 permissions:
-  contents: read      # Read code repository
-  pages: write        # Write compiled HTML artifact to GitHub Pages
-  id-token: write     # Cryptographic OIDC token issuance for deployment verification
+  contents: read
+  actions: read
+  pages: write
+  id-token: write
 
 # ------------------------------------------------------------------------------
-# 3. Pipeline Concurrency Management
-# Rationale: Prevents race conditions by cancelling out-of-date runs when multiple
-#            commits arrive in quick succession.
+# 3. Concurrency
+#
+# Only one Pages deployment should be active at a time.
+# A newer deployment supersedes an older one.
 # ------------------------------------------------------------------------------
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
 # ------------------------------------------------------------------------------
-# 4. Job Steps: Build and Publish Static HTML Site
+# 4. Build and Deploy
 # ------------------------------------------------------------------------------
 jobs:
   build-and-deploy:
+    name: Build and Deploy Documentation
+
+    runs-on: ubuntu-latest
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
 
     steps:
-      # Step A: Checkout source code from repository
-      # Rationale: fetch-depth: 0 (full history) is required, not optional —
-      #            mkdocs-git-revision-date-localized-plugin needs the full
-      #            commit history per file to compute "last updated" dates.
+
+      # ------------------------------------------------------------------------
+      # Step A: Checkout repository
+      # ------------------------------------------------------------------------
       - name: Checkout Repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
-      # Step B: Install Astral uv for ultra-fast dependency isolation
-      # Rationale: Pinned to a full 40-character commit SHA to prevent supply-chain drift.
+      # ------------------------------------------------------------------------
+      # Step B: Install uv
+      #
+      # setup-uv v8.1.0 is an immutable release.
+      # The full SHA prevents the workflow from silently changing underneath us.
+      # ------------------------------------------------------------------------
       - name: Install uv Package Manager
-        uses: astral-sh/setup-uv@f3c3d191015f0281305fa4f1a233b87ad9fa969f # v5.3.0
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "latest"
+          version: latest
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            pyproject.toml
 
-      # Step C: Setup Python engine version
-      # Rationale: Reads .python-version directly to guarantee the CI runner
-      #            and local developer environments match at the patch level.
+      # ------------------------------------------------------------------------
+      # Step C: Set up Python
+      #
+      # The repository's .python-version remains the authoritative Python
+      # version declaration.
+      # ------------------------------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
-          python-version-file: ".python-version"
+          python-version-file: .python-version
 
-      # Step D: Install documentation group dependencies using uv lock synchronization
+      # ------------------------------------------------------------------------
+      # Step D: Install locked documentation dependencies
+      #
+      # --only-group docs installs the documentation dependency group without
+      # unnecessarily installing unrelated development/runtime groups.
+      #
+      # --locked ensures the CI environment cannot silently modify uv.lock.
+      # ------------------------------------------------------------------------
       - name: Install Documentation Dependencies
-        run: uv sync --only-group docs
+        run: uv sync --locked --only-group docs
 
-      # Step E: Native CSS Bundling
-      # Rationale: The docs/assets/css/extra.css file utilizes multiple @import rules
-      #            for developer maintainability. To prevent blocking HTTP requests on
-      #            the client, this step parses those imports, concatenates the files
-      #            in their declared order, and overwrites extra.css prior to MkDocs
-      #            compilation. This achieves CSS bundling natively without introducing
-      #            Node.js/NPM into a pure Python/uv pipeline.
+      # ------------------------------------------------------------------------
+      # Step E: Bundle modular CSS
+      #
+      # The documentation currently uses a modular CSS architecture.
+      # extra.css acts as the entry point and imports the component styles.
+      #
+      # The script below resolves CSS @import statements and produces one
+      # deployable stylesheet.
+      # ------------------------------------------------------------------------
       - name: Bundle Modular CSS
+        shell: bash
         run: |
-          cd docs/assets/stylesheets
+          set -euo pipefail
 
-          # 1. Extract the filenames from the @import url("..."); declarations
-          FILES=$(grep -E "^@import" extra.css | sed -E "s/.*url\(['\"]?([^'\"]+)['\"]?\).*/\1/")
+          CSS_DIR="docs/assets/stylesheets"
+          ENTRY_FILE="${CSS_DIR}/extra.css"
+          BUNDLE_FILE="${CSS_DIR}/bundle.css"
 
-          # 2. Concatenate the targeted files into a single temporary bundle
-          if [ ! -z "$FILES" ]; then
-            cat $FILES > bundle.css
-
-            # 3. Overwrite extra.css with the bundled content, eliminating the imports
-            mv bundle.css extra.css
-            echo "CSS successfully bundled into a single extra.css artifact."
-          else
-            echo "No CSS imports found to bundle."
+          if [[ ! -f "$ENTRY_FILE" ]]; then
+            echo "::error::CSS entry point not found: $ENTRY_FILE"
+            exit 1
           fi
 
-      # Step F: Compile Markdown source files into static HTML
-      # Rationale: --strict causes the build to fail if broken links or syntax errors exist
+          cd "$CSS_DIR"
+
+          IMPORTS="$(
+            grep -E '^@import' extra.css \
+              | sed -E "s/.*url\\(['\"]?([^'\"]+)['\"]?\\).*/\\1/" \
+              || true
+          )"
+
+          if [[ -n "$IMPORTS" ]]; then
+            : > bundle.css
+
+            while IFS= read -r file; do
+              [[ -z "$file" ]] && continue
+
+              if [[ ! -f "$file" ]]; then
+                echo "::error::Imported CSS file not found: $file"
+                exit 1
+              fi
+
+              cat "$file" >> bundle.css
+              printf '\n' >> bundle.css
+            done <<< "$IMPORTS"
+
+            mv bundle.css extra.css
+
+            echo "CSS successfully bundled into extra.css."
+          else
+            echo "No CSS imports found. Existing extra.css retained."
+          fi
+
+      # ------------------------------------------------------------------------
+      # Step F: Build the static documentation site
+      #
+      # Zensical is installed from the locked documentation dependency group.
+      # ------------------------------------------------------------------------
       - name: Build Static Site with Zensical
         run: uv run zensical build
 
-      # Step G: Upload site output artifact for GitHub Pages deployer
+      # ------------------------------------------------------------------------
+      # Step G: Upload GitHub Pages artifact
+      #
+      # Zensical's default output directory is site/.
+      # ------------------------------------------------------------------------
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
-          path: "site/"
+          path: site/
 
-      # Step H: Publish uploaded artifact to GitHub Pages host endpoint
+      # ------------------------------------------------------------------------
+      # Step H: Deploy artifact to GitHub Pages
+      #
+      # deploy-pages v4.0.5 uses GitHub's Pages deployment API and OIDC.
+      # ------------------------------------------------------------------------
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@d6db5d6b50d748d0570b424a148f72e0316a50e9 # v4.0.5
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
