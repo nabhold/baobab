@@ -58,15 +58,14 @@ jobs:
       #            mkdocs-git-revision-date-localized-plugin needs the full
       #            commit history per file to compute "last updated" dates.
       - name: Checkout Repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
       # Step B: Install Astral uv for ultra-fast dependency isolation
-      # Rationale: Pinned to the latest verified v8 immutable tag to prevent
-      #            supply-chain drift.
+      # Rationale: Pinned to a full 40-character commit SHA to prevent supply-chain drift.
       - name: Install uv Package Manager
-        uses: astral-sh/setup-uv@v8.1.0
+        uses: astral-sh/setup-uv@887802b23759976f9b14b8f04172421375a0653d # v5.3.0
         with:
           version: "latest"
 
@@ -74,7 +73,7 @@ jobs:
       # Rationale: Reads .python-version directly to guarantee the CI runner
       #            and local developer environments match at the patch level.
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version-file: ".python-version"
 
@@ -114,11 +113,11 @@ jobs:
 
       # Step G: Upload site output artifact for GitHub Pages deployer
       - name: Upload GitHub Pages Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
           path: "site/"
 
       # Step H: Publish uploaded artifact to GitHub Pages host endpoint
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db5d6b50d748d0570b424a148f72e0316a50e9 # v4.0.5
