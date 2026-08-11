@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Move Issue to Sprint Column
-        uses: github/update-project-action@v2
+        uses: github/update-project-action@v4
         with:
           # Your Personal Access Token stored safely in secrets
           github_token: ${{ secrets.MY_PROJECT_PAT }}
