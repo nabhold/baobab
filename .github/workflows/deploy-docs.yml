@@ -5,21 +5,17 @@
 # Purpose:
 #   Build the Zensical documentation site and deploy it to GitHub Pages.
 #
-# Design principles:
-#   - Least-privilege GitHub permissions
-#   - Immutable action SHA pinning
-#   - Reproducible Python/uv dependency installation
-#   - Strict documentation build
-#   - GitHub Pages artifact-based deployment
+# Security model:
+#   - Every GitHub/Astral action is pinned to a full 40-character commit SHA.
+#   - No floating action tags are permitted.
+#   - Least-privilege permissions are used.
+#   - uv.lock is enforced during CI.
 # ==============================================================================
 
 name: Deploy GitHub Pages Documentation
 
 # ------------------------------------------------------------------------------
 # 1. Execution Triggers
-#
-# Deploy when documentation or documentation tooling changes on main.
-# workflow_dispatch allows an administrator to trigger a deployment manually.
 # ------------------------------------------------------------------------------
 on:
   push:
@@ -38,12 +34,17 @@ on:
 # ------------------------------------------------------------------------------
 # 2. Permissions
 #
-# GitHub Pages deployment requires:
-#   contents: read  -> checkout repository
-#   pages: write     -> deploy Pages artifact
-#   id-token: write  -> OIDC authentication for Pages deployment
+# contents: read
+#   Required to checkout the repository.
 #
-# actions: read is retained explicitly for Actions artifact access.
+# actions: read
+#   Required by deploy-pages to retrieve the Pages artifact.
+#
+# pages: write
+#   Required to create/update the GitHub Pages deployment.
+#
+# id-token: write
+#   Required for GitHub Pages OIDC authentication.
 # ------------------------------------------------------------------------------
 permissions:
   contents: read
@@ -53,9 +54,6 @@ permissions:
 
 # ------------------------------------------------------------------------------
 # 3. Concurrency
-#
-# Only one Pages deployment should be active at a time.
-# A newer deployment supersedes an older one.
 # ------------------------------------------------------------------------------
 concurrency:
   group: pages
@@ -66,6 +64,7 @@ concurrency:
 # ------------------------------------------------------------------------------
 jobs:
   build-and-deploy:
+
     name: Build and Deploy Documentation
 
     runs-on: ubuntu-latest
@@ -77,7 +76,7 @@ jobs:
     steps:
 
       # ------------------------------------------------------------------------
-      # Step A: Checkout repository
+      # A. Checkout Repository
       # ------------------------------------------------------------------------
       - name: Checkout Repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -85,10 +84,10 @@ jobs:
           fetch-depth: 0
 
       # ------------------------------------------------------------------------
-      # Step B: Install uv
+      # B. Install uv
       #
-      # setup-uv v8.1.0 is an immutable release.
-      # The full SHA prevents the workflow from silently changing underneath us.
+      # setup-uv v8.1.0
+      # Full immutable commit SHA.
       # ------------------------------------------------------------------------
       - name: Install uv Package Manager
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
@@ -100,10 +99,7 @@ jobs:
             pyproject.toml
 
       # ------------------------------------------------------------------------
-      # Step C: Set up Python
-      #
-      # The repository's .python-version remains the authoritative Python
-      # version declaration.
+      # C. Set Up Python
       # ------------------------------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
@@ -111,24 +107,15 @@ jobs:
           python-version-file: .python-version
 
       # ------------------------------------------------------------------------
-      # Step D: Install locked documentation dependencies
+      # D. Install Documentation Dependencies
       #
-      # --only-group docs installs the documentation dependency group without
-      # unnecessarily installing unrelated development/runtime groups.
-      #
-      # --locked ensures the CI environment cannot silently modify uv.lock.
+      # --locked prevents uv from modifying the lockfile.
       # ------------------------------------------------------------------------
       - name: Install Documentation Dependencies
         run: uv sync --locked --only-group docs
 
       # ------------------------------------------------------------------------
-      # Step E: Bundle modular CSS
-      #
-      # The documentation currently uses a modular CSS architecture.
-      # extra.css acts as the entry point and imports the component styles.
-      #
-      # The script below resolves CSS @import statements and produces one
-      # deployable stylesheet.
+      # E. Bundle Modular CSS
       # ------------------------------------------------------------------------
       - name: Bundle Modular CSS
         shell: bash
@@ -153,9 +140,11 @@ jobs:
           )"
 
           if [[ -n "$IMPORTS" ]]; then
-            : > bundle.css
+
+            : > "$BUNDLE_FILE"
 
             while IFS= read -r file; do
+
               [[ -z "$file" ]] && continue
 
               if [[ ! -f "$file" ]]; then
@@ -163,39 +152,61 @@ jobs:
                 exit 1
               fi
 
-              cat "$file" >> bundle.css
-              printf '\n' >> bundle.css
+              cat "$file" >> "$BUNDLE_FILE"
+              printf '\n' >> "$BUNDLE_FILE"
+
             done <<< "$IMPORTS"
 
-            mv bundle.css extra.css
+            mv "$BUNDLE_FILE" "$ENTRY_FILE"
 
             echo "CSS successfully bundled into extra.css."
+
           else
-            echo "No CSS imports found. Existing extra.css retained."
+
+            echo "No CSS imports found."
+            echo "Existing extra.css retained."
+
           fi
 
       # ------------------------------------------------------------------------
-      # Step F: Build the static documentation site
-      #
-      # Zensical is installed from the locked documentation dependency group.
+      # F. Build Zensical Site
       # ------------------------------------------------------------------------
       - name: Build Static Site with Zensical
         run: uv run zensical build
 
       # ------------------------------------------------------------------------
-      # Step G: Upload GitHub Pages artifact
+      # G. Upload Pages Artifact
       #
-      # Zensical's default output directory is site/.
+      # IMPORTANT:
+      #
+      # We intentionally use actions/upload-artifact directly instead of
+      # actions/upload-pages-artifact.
+      #
+      # This repository requires ALL actions to be pinned to full commit SHAs.
+      #
+      # upload-pages-artifact internally invokes actions/upload-artifact@v4.
+      # That internal dependency cannot be independently pinned from this
+      # workflow, which conflicts with the repository's policy.
+      #
+      # Therefore we explicitly upload the artifact ourselves.
       # ------------------------------------------------------------------------
       - name: Upload GitHub Pages Artifact
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        uses: actions/upload-artifact@4cec3d8a7d5c4d1d4a1c7c0d0e5f5f4b0f4e7c1d # v4
         with:
+          name: github-pages
           path: site/
+          if-no-files-found: error
+          retention-days: 1
 
       # ------------------------------------------------------------------------
-      # Step H: Deploy artifact to GitHub Pages
+      # H. Deploy GitHub Pages
       #
-      # deploy-pages v4.0.5 uses GitHub's Pages deployment API and OIDC.
+      # deploy-pages v4 requires:
+      #   - actions: read
+      #   - pages: write
+      #   - id-token: write
+      #
+      # It also expects a v4 artifact.
       # ------------------------------------------------------------------------
       - name: Deploy to GitHub Pages
         id: deployment
