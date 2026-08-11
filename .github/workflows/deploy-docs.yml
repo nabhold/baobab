@@ -58,7 +58,7 @@ jobs:
       #            mkdocs-git-revision-date-localized-plugin needs the full
       #            commit history per file to compute "last updated" dates.
       - name: Checkout Repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -73,7 +73,7 @@ jobs:
       # Rationale: Reads .python-version directly to guarantee the CI runner
       #            and local developer environments match at the patch level.
       - name: Set up Python
-        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version-file: ".python-version"
 
@@ -113,7 +113,7 @@ jobs:
 
       # Step G: Upload site output artifact for GitHub Pages deployer
       - name: Upload GitHub Pages Artifact
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: "site/"
 
