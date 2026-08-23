@@ -35,7 +35,7 @@
 # License : Apache License 2.0
 # ==============================================================================
 
-FROM ghcr.io/nabhold/baobab-dev:latest AS development
+FROM ghcr.io/nabhold/baobab-dev:1.0.0 AS development
 
 # ------------------------------------------------------------------------------
 # Build Metadata
