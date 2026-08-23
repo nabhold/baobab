@@ -1,19 +1,22 @@
 {
-  "name": "BAOBAB Development Environment",
+  "name": "Baobab Development Environment",
 
-  "build": {
-    "context": "..",
-    "dockerfile": "docker/Dockerfile",
-    "target": "development",
-    "args": {
-      "UBUNTU_VERSION": "26.04",
-      "BAOBAB_ENV": "development"
-    }
-  },
+  // -----------------------------------------------------------------------
+  // Image
+  // -----------------------------------------------------------------------
+  // Consumes the published, versioned BAOBAB development image directly
+  // rather than building a local Dockerfile on top of it. The image
+  // (github.com/nabhold/baobab-dev) already bakes in the full toolchain
+  // deterministically at build time — Python 3.14, uv, PostgreSQL/Redis
+  // clients, Docker CLI, GitHub CLI, Node.js LTS, Flutter/Dart — so there
+  // is currently nothing for a repo-local build layer to add. Pinned to an
+  // explicit release tag (never :latest) so every contributor and every
+  // Codespace resolves to byte-identical tooling; bump deliberately via PR
+  // when baobab-dev cuts a new release.
+  "image": "ghcr.io/nabhold/baobab-dev:1.0.0",
 
   "features": {
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
 
   "remoteUser": "vscode",
@@ -29,22 +32,44 @@
   ],
 
   "mounts": [
-    "source=baobab-pip-cache,target=/home/vscode/.cache/pip,type=volume",
     "source=baobab-uv-cache,target=/home/vscode/.cache/uv,type=volume"
   ],
 
   "containerEnv": {
     "BAOBAB_ENV": "development",
-    "PYTHONUNBUFFERED": "1",
-    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
     "UV_LINK_MODE": "copy"
   },
 
-  "postCreateCommand": "bash .devcontainer/docker/scripts/run.sh bootstrap",
+  // -----------------------------------------------------------------------
+  // Lifecycle
+  // -----------------------------------------------------------------------
+  // updateContentCommand : runs on every content update, and is the stage
+  //                     GitHub Codespaces prebuilds actually snapshot.
+  //                     Runs a repo-owned script (git identity priming,
+  //                     .env bootstrap, `uv sync`, toolchain verification).
+  //                     Deliberately NOT the image's own generic
+  //                     baobab-post-create hook: that command requires a
+  //                     workspace-local config/versions.yaml +
+  //                     config/resolve.sh (a convention this repo hasn't
+  //                     adopted) and, separately, assumes Poetry for any
+  //                     repo with a root pyproject.toml — this repo uses
+  //                     uv. See .devcontainer/post-create.sh for details.
+  // postCreateCommand : safety-net re-run of the same repo-owned script on
+  //                     actual container/Codespace creation, in case a
+  //                     prebuild was stale relative to the checked-out
+  //                     commit. Every step in it is idempotent.
+  // postStartCommand  : lightweight environment banner on every start.
+  //                     baobab-summary has no workspace config/
+  //                     dependency — it falls back to the image's own
+  //                     baked-in configuration — so it is safe to call
+  //                     directly.
+  // -----------------------------------------------------------------------
 
-  "updateContentCommand": "bash .devcontainer/docker/scripts/run.sh post-create",
+  "updateContentCommand": "bash .devcontainer/post-create.sh",
 
-  "postStartCommand": "bash .devcontainer/docker/scripts/summary.sh",
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  "postStartCommand": "baobab-summary",
 
   "customizations": {
     "vscode": {
@@ -69,7 +94,9 @@
 
         "terminal.integrated.defaultProfile.linux": "bash",
 
+        "python.defaultInterpreterPath": ".venv/bin/python",
         "python.analysis.typeCheckingMode": "basic",
+        "python.terminal.activateEnvironment": true,
 
         "git.autofetch": true,
 
@@ -80,6 +107,7 @@
         "ms-python.python",
         "ms-python.vscode-pylance",
         "charliermarsh.ruff",
+        "tamasfe.even-better-toml",
 
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
@@ -109,7 +137,7 @@
 
   "portsAttributes": {
     "3000": {
-      "label": "Next.js Frontend",
+      "label": "Frontend (Next.js, planned)",
       "onAutoForward": "notify"
     },
 

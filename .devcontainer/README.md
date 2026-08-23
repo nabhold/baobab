@@ -2,9 +2,23 @@
 
 ## Purpose
 
-The BAOBAB Development Container provides a consistent, reproducible, and cloud-ready development environment for all contributors.
+The BAOBAB Development Container provides a consistent, reproducible, cloud-ready development environment for every contributor. It is used by GitHub Codespaces and Visual Studio Code Dev Containers to ensure every developer works in an identical environment with minimal setup.
 
-It is used by GitHub Codespaces and Visual Studio Code Dev Containers to ensure every developer works in an identical environment with minimal setup.
+---
+
+# Architecture
+
+Unlike a repository that builds its own development image, BAOBAB consumes a **published, versioned image** maintained in a dedicated repository:
+
+| Component | Location |
+| --- | --- |
+| Image source | <https://github.com/nabhold/baobab-dev> |
+| Published image | `ghcr.io/nabhold/baobab-dev` |
+| Current pin | `1.0.0` (see `devcontainer.json`) |
+
+`baobab-dev` is a deterministic, multi-stage, checksum-verified image build with its own CI pipeline, version-resolution lockfile, and documentation. It already bakes in the full toolchain — Python 3.14, `uv`, PostgreSQL/Redis client tools, Docker CLI, GitHub CLI, Node.js LTS, and Flutter/Dart — at **image build time**, deterministically, once. This repository's `.devcontainer/` therefore does **not** build a local Dockerfile or reinstall language runtimes; it only references the published image and layers on the small amount of setup that is specific to *this* repository.
+
+Reference documentation for the image itself (toolchain contents, helper commands, verification, version policy) lives in the `baobab-dev` repository's own `docs/` tree — see in particular `docs/reference/helper-commands.md` and `docs/introduction/included.md`.
 
 ---
 
@@ -12,17 +26,9 @@ It is used by GitHub Codespaces and Visual Studio Code Dev Containers to ensure 
 
 ```text
 .devcontainer/
-├── .env.example
 ├── devcontainer.json
-├── README.md
-└── docker/
-    ├── Dockerfile
-    └── scripts/
-        ├── README.md
-        ├── bootstrap.sh
-        ├── post-create.sh
-        ├── run.sh
-        └── verify.sh
+├── post-create.sh
+└── README.md
 ```
 
 ---
@@ -31,127 +37,62 @@ It is used by GitHub Codespaces and Visual Studio Code Dev Containers to ensure 
 
 ## `devcontainer.json`
 
-Defines how GitHub Codespaces and Visual Studio Code provision the BAOBAB development environment.
+Defines how GitHub Codespaces and Visual Studio Code provision the BAOBAB development environment: which published image to use, Dev Container Features, lifecycle hooks, VS Code settings/extensions, and forwarded ports.
 
-Responsibilities include:
+## `post-create.sh`
 
-* Development container configuration
-* Dev Container Features
-* Visual Studio Code settings
-* Recommended extensions
-* Forwarded development ports
-* Workspace behaviour
+A small, repository-owned script that runs *this repository's* setup on top of the image: creating `.env` from `.env.example`, and installing the root `uv` workspace's Python dependencies.
+
+This is deliberately **not** delegated to the image's own generic `baobab-post-create` dependency-install logic: that logic installs Python dependencies with **Poetry** whenever it finds a root `pyproject.toml`. BAOBAB standardises on **`uv`** (see `uv.lock`, `Makefile`, and the "UV WORKSPACE READINESS ROADMAP" in `pyproject.toml`) — Poetry is not used in this repository. Everything else the image's `baobab-post-create` provides (git identity priming, toolchain verification) is generic and safe, and is still used directly via `onCreateCommand`.
 
 ---
 
-## `docker/Dockerfile`
+# Lifecycle
 
-Defines the development container image.
+| Hook | Runs | Does |
+| --- | --- | --- |
+| `onCreateCommand` | Once, at creation | `baobab-post-create --stage=on-create` (image-provided: git identity priming, `baobab-verify`) |
+| `updateContentCommand` | Every content update — the stage GitHub Codespaces **prebuilds** snapshot | `post-create.sh` (`.env` bootstrap, `uv sync`) |
+| `postCreateCommand` | Once, after workspace mount | `post-create.sh` again — a safety net in case a prebuild was stale |
+| `postStartCommand` | Every container start | `baobab-summary` (image-provided environment banner) |
 
-Its responsibilities are limited to:
-
-* Selecting the base image
-* Defining image metadata
-* Configuring the container environment
-* Providing the development workspace
-
-It does **not** install application services or define runtime orchestration.
-
-Application runtime is managed separately through Docker Compose.
+All steps are idempotent and safe to re-run.
 
 ---
 
-## `docker/scripts/`
+# Helper Commands
 
-Contains shell scripts used to provision and configure the development environment.
+The image installs the following commands directly onto `PATH`; they are available in every container without any additional setup:
 
-Typical responsibilities include:
+| Command | Purpose |
+| --- | --- |
+| `baobab-verify` | Validate the toolchain is installed and correctly configured |
+| `baobab-summary` | Print installed tool versions and environment metadata |
+| `baobab-post-create` | Image-provided lifecycle hook (`--stage=on-create` / `post-create` / `update-content`) |
+| `baobab-bootstrap` | Full provisioning entry point for non-Codespaces use (bare `docker run`, self-hosted runners) |
 
-* Installing development tooling
-* Configuring shell environments
-* Bootstrapping the workspace
-* Performing post-build configuration
-* Automating repetitive setup tasks
-
-As the platform evolves, this directory allows provisioning logic to remain modular instead of accumulating in the Dockerfile.
-
----
-
-# Development Container Features
-
-BAOBAB uses Dev Container Features wherever practical to install and maintain common development tooling.
-
-Current Features include:
-
-| Feature    | Purpose                                                    |
-| ---------- | ---------------------------------------------------------- |
-| Python     | Backend development using Django, FastAPI and `uv`         |
-| Node.js    | Frontend development with Next.js                          |
-| Java       | Android tooling required for Flutter development           |
-| Docker CLI | Build and manage local containers                          |
-| GitHub CLI | Interact with GitHub from within the development container |
-
-Additional Features may be introduced in future sprints as new platform capabilities are implemented.
+Run `baobab-verify` any time you want to confirm the environment is healthy, and `baobab-summary` when reporting an issue.
 
 ---
 
-# Relationship to the Platform
+# Rebuilding / Updating the Development Container
 
-```text
-GitHub Codespaces
-        │
-        ▼
-Development Container
-        │
-        ▼
-Docker Compose
-        │
-        ▼
-Platform Services
-        ├── Backend (Django)
-        ├── AI (FastAPI)
-        ├── Frontend (Next.js)
-        ├── Mobile (Flutter)
-        ├── Worker
-        ├── PostgreSQL
-        ├── Redis
-        └── Mailpit
-```
+Because the container now references a published image rather than building one locally, "rebuilding" means either:
 
-The Development Container provides the development environment.
+1. **Picking up the current pin** — Command Palette → **Dev Containers: Rebuild Container** (or recreate the Codespace) re-pulls `ghcr.io/nabhold/baobab-dev:1.0.0` if it has changed.
+2. **Moving to a new image release** — bump the tag in `devcontainer.json`'s `image` field via a reviewed pull request once a new `baobab-dev` release is published, then rebuild as above.
 
-Docker Compose orchestrates the local platform.
-
-The platform services provide BAOBAB's application functionality.
-
----
-
-# Rebuilding the Development Container
-
-Whenever `devcontainer.json`, `docker/Dockerfile`, or scripts under `docker/scripts/` are modified, rebuild the development container.
-
-### Visual Studio Code
-
-1. Open the Command Palette.
-2. Select **Dev Containers: Rebuild Container**.
-
-### GitHub Codespaces
-
-Rebuild or recreate the Codespace from the repository.
+The image tag is deliberately pinned (never `:latest`) so every contributor and every Codespace resolve to byte-identical tooling.
 
 ---
 
 # Engineering Principles
 
-The BAOBAB Development Container follows these principles:
-
 * Reproducible development environments
-* Infrastructure as Code
-* Minimal manual configuration
-* Cross-platform compatibility
-* Security by default
-* Incremental evolution
-* Separation of concerns
+* Single, centrally governed source of truth for the toolchain
+* Minimal repository-local provisioning logic
+* Separation of concerns between the platform image and this repository's own setup
+* Security by default (the image's own build pipeline owns checksum verification and CVE tracking for the toolchain)
 
 ---
 
@@ -162,11 +103,10 @@ The BAOBAB Development Container follows these principles:
 * `docs/governance/engineering-handbook.md`
 * `docs/governance/repository-governance.md`
 * `docs/governance/decision-record-process.md`
+* [`nabhold/baobab-dev`](https://github.com/nabhold/baobab-dev) — image source, version policy, and full toolchain reference
 
 ---
 
 # Ownership
 
-This configuration is maintained by the BAOBAB Engineering Team.
-
-Changes to the development environment should be reviewed through the project's pull request process and, where appropriate, documented through an Architecture Decision Record (ADR).
+This configuration is maintained by the BAOBAB Engineering Team. Changes to the development environment should be reviewed through the project's pull request process and, where appropriate, documented through an Architecture Decision Record (ADR).
