@@ -15,6 +15,34 @@
 # WHY pull_request_target is safe here: this job never checks out the PR's
 # own code (no `actions/checkout` step in this file), so a malicious fork
 # PR has no code-execution surface despite the base-repo token permissions.
+#
+# NOTE ON THIS REVISION: an earlier copy of this file (carried over
+# directly from baobab-dev) referenced "config/resolve.sh" and
+# "config/versions.lock" in the pr-message text below — neither exists in
+# this repository (baobab's own version manifest is
+# .devcontainer/docker/scripts/config/versions.sh plus the root
+# .python-version file; see pages.yml's header). That mismatch didn't
+# break the workflow mechanically, but it would have posted a factually
+# wrong comment to first-time contributors. Corrected below to describe
+# this repository's actual layout.
+#
+# IF THIS WORKFLOW STILL ISN'T FIRING: the workflow mechanics here are
+# identical to baobab-dev's (same shared/ pin, same trigger shape), so a
+# missing greeting on this repo's first issue/PR is most likely a
+# repository-settings issue rather than a workflow-file issue — check,
+# in this repo's own Settings (not visible from a local clone):
+#   1. Settings -> Actions -> General -> Actions permissions: if this repo
+#      restricts to an explicit allow-list rather than "Allow all actions
+#      and reusable workflows", nabhold/shared must be added to it, or
+#      every job below fails at the `uses:` step before it can run.
+#   2. Settings -> Actions -> General -> Workflow permissions: must allow
+#      GITHUB_TOKEN to create issue/PR comments for actions/first-
+#      interaction to succeed (org- or repo-level default can override
+#      the job-level `permissions:` block below downward, never upward).
+#   3. That this file is present on the repository's *default* branch —
+#      GitHub only evaluates workflow files as they exist on the branch
+#      an event targets (or, for pull_request_target, the base branch),
+#      so a copy sitting only on a feature branch never triggers.
 # ==============================================================================
 
 name: Greetings
@@ -48,14 +76,15 @@ jobs:
         👋 Thanks for opening your first issue in **BAOBAB Enterprise Platform**!
 
         A maintainer will take a look shortly. In the meantime, if this is a bug
-        report, a repro (image tag, architecture, and the exact command that
+        report, a repro (module/service affected and the exact steps that
         failed) will help us get to a fix faster.
       pr-message: |
         🎉 Thanks for your first pull request to **BAOBAB Enterprise Platform**!
 
         A maintainer will review it soon. If your change touches
-        `.devcontainer/`, `config/`, or `scripts/`, note that `config/versions.lock`
-        is generated exclusively by `config/resolve.sh` — please don't hand-edit it.
+        `.devcontainer/`, `pyproject.toml`, or `.python-version`, please keep
+        them in sync — `.python-version` is this repository's single source of
+        truth for the pinned Python version (see `pyproject.toml`'s
+        `requires-python`).
 
-        See the [Contributing guide](https://nabhold.github.io/baobab-dev/project/contributing/)
-        for more.
+        See the [Contributing guide](https://github.com/nabhold/baobab/blob/main/CONTRIBUTING.md) for more.

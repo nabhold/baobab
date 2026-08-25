@@ -1,0 +1,112 @@
+# ==============================================================================
+# BAOBAB Enterprise Platform
+# Deploy Documentation
+#
+# File: .github/workflows/pages.yml
+#
+# PURPOSE:
+#   Owns everything specific to THIS repository — trigger, path filters,
+#   and resolving the pinned Python version — then delegates the generic
+#   uv+Zensical build/deploy mechanism to nabhold/shared. See that
+#   repository's pages-zensical.yml for why Python-version derivation is
+#   deliberately kept out of the shared workflow.
+#
+# WHY THIS DOESN'T USE nabhold/shared's derive-value-from-yaml ACTION:
+#   baobab-dev (where that action was first adopted) keeps its Python pin
+#   in config/versions.yaml, a YAML manifest. baobab has no such file —
+#   its pin lives in the plain-text .python-version at the repo root
+#   (currently "3.14.6", matching pyproject.toml's requires-python), and
+#   separately, as a looser "3.14" default, in
+#   .devcontainer/docker/scripts/config/versions.sh for the devcontainer
+#   image build. .python-version is the exact pin and the one uv itself
+#   already honours locally, so it's the right single source of truth for
+#   this workflow — a plain `cat` reads it correctly. A previous copy of
+#   this workflow (committed as deploy-docs.yml) pointed the shared
+#   derive-value-from-yaml action at "config/versions.yaml", a file that
+#   doesn't exist in this repository — that job failed at the first step
+#   every run. This version fixes that by reading the file this repo
+#   actually has instead of the one baobab-dev has.
+#
+# CHANGE LOG (most recent first)
+# ------------------------------------------------------------------------------
+# * Replaced deploy-docs.yml. Renamed to pages.yml to match nabhold/shared's
+#   templates/caller-pages-zensical.yml naming convention (and baobab-dev's
+#   own file), and fixed resolve-python-version to read .python-version
+#   directly instead of a non-existent config/versions.yaml.
+# ==============================================================================
+
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "zensical.toml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "zensical.toml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  resolve-python-version:
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.resolve.outputs.value }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # baobab's exact Python pin lives in .python-version (plain text),
+      # not a YAML manifest — see file header for why this reads
+      # differently than baobab-dev's equivalent job.
+      - id: resolve
+        run: |
+          set -euo pipefail
+          VERSION="$(cat .python-version)"
+          if [[ -z "$VERSION" ]]; then
+            echo "::error file=.python-version::File is empty."
+            exit 1
+          fi
+          echo "value=${VERSION}" >> "$GITHUB_OUTPUT"
+
+  docs:
+    needs: resolve-python-version
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    # SHA is nabhold/shared's v1.0.0 tag (annotated — this is the peeled
+    # commit, not the tag object's own SHA), verified live via
+    # `git ls-remote --tags https://github.com/nabhold/shared.git v1.0.0`
+    # on 2026-08-25. Future nabhold/shared releases should flow through
+    # Dependabot from here (see .github/dependabot.yml's github-actions
+    # entry) — but re-verify manually on the first bump PR regardless,
+    # since Dependabot has a documented issue (dependabot-core#14716)
+    # resolving updates correctly the first time a previously-untagged
+    # pin moves onto an actual tag.
+    uses: nabhold/shared/.github/workflows/pages-zensical.yml@ad5cdb028023cd6b9c48cd8d7e6151ef4ab0cd73 # v1.0.0
+    with:
+      python-version: ${{ needs.resolve-python-version.outputs.version }}
+      # working-directory and site-dir are left at their defaults ("." and
+      # "site") — pyproject.toml/zensical.toml live at this repo's root,
+      # and zensical.toml's own site_dir = "site" matches the shared
+      # workflow's default exactly, so neither needs to be set here.

@@ -1,28 +1,123 @@
-# .github/dependabot.yml
+# ==============================================================================
+# Baobab Enterprise Platform
+# Dependabot Configuration
+#
+# File: .github/dependabot.yml
+#
+# PURPOSE
+# -------
+# Automated dependency-drift detection and update PRs.
+#
+# ECOSYSTEMS COVERED
+# -------------------
+#   1. github-actions — action/reusable-workflow versions used across every
+#      workflow in .github/workflows/, including nabhold/shared references
+#      (tracked the same way as any other action pin — see pages.yml and
+#      greetings.yml headers on this org's SHA-pinning policy).
+#   2. uv              — Python tooling declared in the repository ROOT's
+#      pyproject.toml / uv.lock (dev/quality/docs/test dependency groups —
+#      notably zensical, which the Deploy Documentation workflow depends
+#      on). This does NOT yet cover the per-subproject pyproject.toml files
+#      under packages/, sdk/, services/, and shared/python/ — see the
+#      "NOT YET COVERED" note below.
+#
+# NOT YET COVERED (deliberate, for now)
+# ---------------------------------------
+# This repository's scaffold already contains several additional
+# dependency manifests: packages/python/pyproject.toml,
+# packages/typescript/package.json, sdk/python/pyproject.toml,
+# sdk/typescript/package.json, sdk/dart/pubspec.yaml, sdk/java/pom.xml,
+# services/ai/pyproject.toml, services/backend/pyproject.toml,
+# services/worker/pyproject.toml, shared/python/pyproject.toml, and the
+# apps/*/package.json / apps/mobile/pubspec.yaml set. As of this revision
+# every one of those directories is still a `.gitkeep` placeholder with no
+# real dependency graph behind the manifest, so a Dependabot entry per
+# directory today would mostly generate noise (or fail outright against an
+# empty/near-empty lockfile). Add a package-ecosystem entry (npm/pip/uv/
+# pub/maven, matching each directory's own manifest) for each of these as
+# real code and dependencies land in them — don't wait for every one to be
+# populated at once; add the entry in the same PR that gives a subproject
+# its first real dependency.
+#
+# COMPLIANCE
+# ----------
+# Checked automatically by
+# nabhold/shared/.github/workflows/enforce-dependabot-config.yml, IF this
+# repository adopts that check (see templates/caller-enforce-dependabot-
+# config.yml in nabhold/shared — not yet adopted here; recommended
+# alongside this file).
+# ==============================================================================
+
 version: 2
+
 updates:
-  # Enable Dependabot updates for GitHub Actions
+  # ============================================================================
+  # Ecosystem 1: GitHub Actions
+  # ============================================================================
   - package-ecosystem: "github-actions"
-    directory: "/" # Scans all workflows in .github/workflows
+    directory: "/" # Scans every workflow in .github/workflows/
+
     schedule:
-      interval: "weekly" # Options: "daily", "weekly", or "monthly"
+      interval: "weekly"
       day: "monday"
       time: "09:00"
       timezone: "UTC"
 
-    # Optional: Group action updates into a single PR to reduce notification noise
     groups:
       github-actions:
         patterns:
           - "*"
 
-    # Optional: Customize the commit message format
     commit-message:
       prefix: "build(deps)"
       include: "scope"
 
-    # Optional: Open PRs with specific reviewers or labels
     labels:
       - "dependencies"
       - "github-actions"
+
+    open-pull-requests-limit: 10
+
+  # ============================================================================
+  # Ecosystem 2: uv (repository-root pyproject.toml / uv.lock)
+  # ============================================================================
+  - package-ecosystem: "uv"
+    directory: "/"
+
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+
+    groups:
+      # Routine, low-risk bumps.
+      python-minor-patch:
+        applies-to: "version-updates"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Major version bumps kept separate — these are the ones most likely
+      # to need a changelog read and a manual `uv lock --upgrade` sanity
+      # check before merge (e.g. zensical 0.x -> 1.x).
+      python-major:
+        applies-to: "version-updates"
+        update-types:
+          - "major"
+
+      # Security advisories are never bundled into a routine batch.
+      python-security:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+
+    commit-message:
+      prefix: "build(deps)"
+      include: "scope"
+
+    labels:
+      - "dependencies"
+      - "python"
+
     open-pull-requests-limit: 10
