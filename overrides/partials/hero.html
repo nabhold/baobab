@@ -40,190 +40,63 @@
         <img src="assets/images/illustration.svg" alt="" width="1659" height="1200" draggable="false">
       </div>
 
-    </div>
-
-    {# ==========================================================================
-       RIGHT COLUMN — Hero Illustration
-       NOT wrapped in .md-typeset: this is graphical, not prose content,
-       and should not inherit paragraph/heading typographic rules.
-
-       data-enhance="three" is an inert marker only (Phase 4). No script
-       reads it yet. It exists purely as the future attachment point for a
-       deferred Three.js/GSAP module, so that work doesn't require another
-       markup change when it lands.
-    ========================================================================== #}
-
-    <div class="hero-illustration" data-enhance="three">
-
-      {# --------------------------------------------------------------------
-         .hero-illustration-stage — PHASE 2 ADDITION (structural fix, not a
-         redesign). Groups every absolutely-positioned illustration piece
-         (glow / tree / trunk emblem / platform badge / orbit nodes) inside
-         one relatively-positioned box with a reserved aspect-ratio height.
-         Without this wrapper, those absolutely-positioned children are
-         removed from normal flow and contribute no height to
-         .hero-illustration, so .hero-capability-strip (a normal-flow
-         sibling) would render at the very top instead of below the tree.
-         Discovered empirically while writing Phase 2 CSS; documenting here
-         rather than working around it with fragile margin hacks.
-      -------------------------------------------------------------------- #}
-      <div class="hero-illustration-stage">
-
-      {# Ambient radial glow behind the tree. Purely decorative — a plain
-         layer div rather than baked into the SVG so Phase 2/4 can control
-         its opacity, blur, or parallax offset independently of the tree
-         artwork itself. #}
-      <div class="hero-illustration-glow" data-layer="glow" aria-hidden="true"></div>
-
-      {# --------------------------------------------------------------------
-         PLACEHOLDER TREE ARTWORK (see Open Item #2 above).
-         Three top-level <g> layers, matching the brief's stated concept:
-           roots  = enterprise foundation
-           trunk  = the Baobab platform itself
-           canopy = branches = industries / business domains
-         Kept as separate groups (not a single flattened <path> soup) so:
-           - Phase 2 CSS can target each layer independently (e.g. a subtly
-             different fill/opacity for roots vs. canopy).
-           - A future Three.js pass can swap ONE group for a 3D-rendered
-             equivalent without touching the other two, or without touching
-             the icon-badge overlay layer described below at all.
-         viewBox-based sizing only — no fixed pixel width/height — so it
-         scales proportionally at every breakpoint per brief §11 (Tablet).
-      -------------------------------------------------------------------- #}
-      <svg
-        class="hero-tree-graphic"
-        viewBox="0 0 600 600"
-        role="presentation"
-        focusable="false"
-        aria-hidden="true">
-
-        <g class="hero-tree-roots" data-layer="roots">
-          {# Placeholder root silhouette — simple branching lines standing
-             in for a proper root illustration. Replace wholesale when
-             brand artwork is supplied; do not hand-tune these paths. #}
-          <path d="M300,430 L180,520 M300,430 L230,540 M300,430 L370,540 M300,430 L420,520
-                   M300,430 L120,500 M300,430 L480,500" />
-        </g>
-
-        <g class="hero-tree-trunk" data-layer="trunk">
-          {# Placeholder trunk silhouette — a simple tapered rectangle. #}
-          <path d="M280,260 L320,260 L330,430 L270,430 Z" />
-        </g>
-
-        <g class="hero-tree-canopy" data-layer="canopy">
-          {# Placeholder canopy silhouette — overlapping ellipses standing
-             in for a proper foliage illustration. #}
-          <ellipse cx="300" cy="180" rx="140" ry="90" />
-          <ellipse cx="220" cy="210" rx="90" ry="60" />
-          <ellipse cx="380" cy="210" rx="90" ry="60" />
-        </g>
-
-      </svg>
-
-      {# Gold trunk emblem — decorative badge overlaid mid-trunk in the
-         mockup. Icon choice is provisional (see Open Item #1). #}
-      <div class="hero-trunk-emblem" data-layer="emblem" aria-hidden="true">
-        {% include ".icons/material/rhombus-outline.svg" %}
+      <!-- Hero content -->
+      <div class="mdx-hero__content">
+        <h1>Run Intelligent Enterprises, Faster</h1>
+        <p>{{ config.site_description }}. Set up in 5 minutes.</p>
+        <a href="{{ page.next_page.url | url }}" title="{{ page.next_page.title | e }}"
+          class="md-button md-button--primary">
+          Quick start
+        </a>
+        <a href="{{ 'insiders/' | url }}" title="Material for MkDocs Insiders" class="md-button">
+          Get Insiders
+        </a>
       </div>
-
-      {# "BAOBAB PLATFORM" pill label, positioned at the root/trunk
-         junction in the mockup. Real, accessible text — not decorative. #}
-      <p class="hero-platform-badge" data-layer="platform-badge">
-        <span>Baobab Platform</span>
-      </p>
+      {# end .hero-illustration-stage #}
 
       {# ----------------------------------------------------------------------
-         Orbit nodes — the five industry badges positioned around the
-         canopy (Government / Agriculture / Finance / Education /
-         Healthcare). A real <ul> because the labels are meaningful
-         content, not decoration; only each item's icon glyph is
-         aria-hidden. Positioning is entirely deferred to Phase 2 via the
-         data-node attribute — no inline styles here.
-      ---------------------------------------------------------------------- #}
-      <ul class="hero-orbit-nodes">
+      Capability strip — the six icon badges beneath the root system
+      (AI / Data / Security / Identity / APIs / Workflows). Distinct
+      content from the page-level Trust Bar below (different label
+      set), so it is its own component, not a reuse of `.hero-trust-
+      bar`. Also a real <ul> for the same reason as the orbit nodes.
+        ---------------------------------------------------------------------- #}
+        <ul class="hero-capability-strip">
 
-        <li class="hero-node" data-node="government">
-          <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/landmark.svg" %}</span>
-          <span class="hero-node-label">Government</span>
-        </li>
+          <li class="hero-capability" data-capability="ai">
+            <span class="hero-capability-icon" aria-hidden="true">{% include ".icons/lucide/brain-circuit.svg" %}</span>
+            <span class="hero-capability-label">AI</span>
+          </li>
 
-        <li class="hero-node" data-node="agriculture">
-          <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/leaf.svg" %}</span>
-          <span class="hero-node-label">Agriculture</span>
-        </li>
+          <li class="hero-capability" data-capability="data">
+            <span class="hero-capability-icon" aria-hidden="true">{% include ".icons/lucide/database.svg" %}</span>
+            <span class="hero-capability-label">Data</span>
+          </li>
 
-        <li class="hero-node" data-node="finance">
-          <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/bar-chart-3.svg" %}</span>
-          <span class="hero-node-label">Finance</span>
-        </li>
+          <li class="hero-capability" data-capability="security">
+            <span class="hero-capability-icon" aria-hidden="true">{% include ".icons/lucide/shield-check.svg" %}</span>
+            <span class="hero-capability-label">Security</span>
+          </li>
 
-        <li class="hero-node" data-node="education">
-          <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/graduation-cap.svg" %}</span>
-          <span class="hero-node-label">Education</span>
-        </li>
+          <li class="hero-capability" data-capability="identity">
+            <span class="hero-capability-icon" aria-hidden="true">{% include ".icons/lucide/user.svg" %}</span>
+            <span class="hero-capability-label">Identity</span>
+          </li>
 
-        <li class="hero-node" data-node="healthcare">
-          <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/heart-pulse.svg" %}</span>
-          <span class="hero-node-label">Healthcare</span>
-        </li>
+          <li class="hero-capability" data-capability="apis">
+            <span class="hero-capability-icon" aria-hidden="true">{% include ".icons/lucide/code-2.svg" %}</span>
+            <span class="hero-capability-label">APIs</span>
+          </li>
 
-      </ul>
+          <li class="hero-capability" data-capability="workflows">
+            <span class="hero-capability-icon" aria-hidden="true">{% include ".icons/lucide/workflow.svg" %}</span>
+            <span class="hero-capability-label">Workflows</span>
+          </li>
 
-      </div>
+        </ul>
+
     </div>
     {# end .hero-illustration #}
-
-  </section>
-
-  {# ==========================================================================
-     TRUST BAR (brief §8)
-     Deliberately OUTSIDE the two-column .landing-hero grid, as its own
-     full-width band — the brief describes it as appearing "immediately
-     beneath the Hero content" and spanning "the width of the content
-     container," not as a third grid column. Kept as a sibling section
-     rather than forced into the existing grid-column mechanics.
-
-     Distinct from .hero-capability-strip above: different label set
-     (platform qualities, not architecture layers), different visual
-     role (page-level trust signal vs. illustration detail) — so this is
-     its own component rather than a second use of the same markup.
-  ========================================================================== #}
-
-  <div class="hero-trust-bar-wrap">
-
-    <ul class="hero-trust-bar">
-
-      <li class="hero-trust-item">
-        <span class="hero-trust-icon" aria-hidden="true">{% include ".icons/lucide/cpu.svg" %}</span>
-        <span class="hero-trust-label">AI Native</span>
-      </li>
-
-      <li class="hero-trust-item">
-        <span class="hero-trust-icon" aria-hidden="true">{% include ".icons/lucide/shield-check.svg" %}</span>
-        <span class="hero-trust-label">Enterprise Ready</span>
-      </li>
-
-      <li class="hero-trust-item">
-        <span class="hero-trust-icon" aria-hidden="true">{% include ".icons/lucide/cloud.svg" %}</span>
-        <span class="hero-trust-label">Cloud Native</span>
-      </li>
-
-      <li class="hero-trust-item">
-        <span class="hero-trust-icon" aria-hidden="true">{% include ".icons/lucide/lock.svg" %}</span>
-        <span class="hero-trust-label">Secure by Design</span>
-      </li>
-
-      <li class="hero-trust-item">
-        <span class="hero-trust-icon" aria-hidden="true">{% include ".icons/lucide/users.svg" %}</span>
-        <span class="hero-trust-label">Multi-Tenant</span>
-      </li>
-
-      <li class="hero-trust-item">
-        <span class="hero-trust-icon" aria-hidden="true">{% include ".icons/lucide/code-2.svg" %}</span>
-        <span class="hero-trust-label">Open APIs</span>
-      </li>
-
-    </ul>
 
   </div>
 </section>
