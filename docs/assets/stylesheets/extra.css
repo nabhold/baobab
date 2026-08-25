@@ -85,6 +85,7 @@
 ==============================================================================*/
 
 @import url("animations.css");
+@import url("custom.css");
 
 
 /*==============================================================================
@@ -103,108 +104,22 @@
   in-docs mini-hero use.
 
   Lives in overrides/partials/hero.html, rendered via Material's `hero`
-  block — but the <section> itself carries BOTH `.md-content` and
-  `.landing-hero`. That combination is deliberate and is the fix for
-  earlier review feedback: `.md-content` is the single, site-wide
-  mechanism for content max-width and responsive horizontal padding —
-  `.landing-hero` no longer duplicates that with its own max-width /
-  padding-inline rules the way an earlier draft did. `.landing-hero`
-  now ONLY adds hero-specific concerns `.md-content` doesn't already
-  provide: vertical rhythm and (on larger viewports) viewport-height
-  fitting. The two-column grid itself lives on `.hero-grid`, a child of
-  this section — see that rule below for why it's a separate class
-  rather than being merged back into `.landing-hero`.
+  block — OUTSIDE `.md-content`. Two consequences that don't apply to any
+  other class in this file:
 
-  `.landing-hero-bleed` still exists purely to give the hero its own
-  full-width BACKGROUND band, independent of `--baobab-container-max` —
-  that part of the "full-bleed section, contained content" pattern is
-  unchanged.
+    1. .landing-hero-bleed exists purely to give the hero its own
+       full-width background, independent of `--baobab-container-max`.
+       .landing-hero itself still constrains its CONTENT to that same
+       max-width, centered inside the full-bleed band — the standard
+       "full-bleed section, contained content" pattern.
 
-  COLOUR TOKENS: this file used to declare a full set of hero-scoped
-  custom properties directly on `.landing-hero-bleed`. Per review
-  feedback, they have been relocated to palette.css (light values) and
-  dark.css (dark-mode overrides) as `--baobab-hero-*`, following the
-  exact same :root / bare-[data-md-color-scheme="slate"] pattern every
-  other token in this project already uses. That relocation is also the
-  fix for a real bug: the hero headline's base colour was silently
-  falling back to its light-mode value in dark mode, because the old
-  token scope required `.landing-hero-bleed` to be a descendant of the
-  scheme attribute AND carry that specific class — functionally correct
-  in theory, but fragile in a way the project's proven, unqualified
-  pattern isn't. See palette.css / dark.css for the token declarations
-  and full rationale; nothing in this file declares a --baobab-hero-*
-  value any more, it only consumes them.
+    2. .landing-hero now needs its own explicit horizontal padding.
+       Previously it sat inside `.md-content`, which supplies horizontal
+       padding on every ordinary page. Outside `.md-content`, nothing
+       does that automatically, so it's declared here instead.
 ==============================================================================*/
 
-.landing-hero-bleed {
-
-    width: 100%;
-    background: var(--baobab-hero-bg);
-
-}
-
-[data-md-color-scheme="slate"] .landing-hero-bleed {
-
-    background: var(--baobab-hero-bg);
-
-}
-
 .landing-hero {
-
-    display: flex;
-    flex-direction: column;
-    gap: var(--baobab-space-8);
-    padding-block: var(--baobab-space-10);
-
-}
-
-/*
-  Viewport-fit behaviour (review feedback: "fit into viewport height of
-  screens the size of laptops or bigger, if possible"). Deliberately
-  gated to >=1024px only — the existing mobile layout was explicitly
-  praised as-is, and forcing a min-height on small screens would fight
-  the natural, already-correct mobile flow instead of helping it.
-
-  --baobab-header-height is a PLACEHOLDER fallback (4rem), not a
-  measured value — Zensical's actual rendered header height has not
-  been inspected against a live build. Uses the var(--x, fallback)
-  syntax so this degrades gracefully (a slightly-too-tall/short
-  min-height, never a broken one) until that measurement happens in
-  Phase 5. If a real --baobab-header-height token gets added to
-  palette.css later for this or any other purpose, this rule picks it
-  up automatically with no change needed here.
-*/
-
-@media (min-width:1024px){
-
-    .landing-hero{
-
-        min-height: calc(100vh - var(--baobab-header-height, 4rem));
-        justify-content: center;
-        padding-block: var(--baobab-space-8);
-
-    }
-
-}
-
-/*
-  .hero-grid
-  ------------------------------------------------------------------------
-  The two-column layout itself, split out from `.landing-hero` (see that
-  rule's comment) specifically so `.hero-trust-bar` can sit as a normal
-  block-level sibling of this grid — inside the same `.md-content`
-  section, inheriting the same width/padding — without being forced to
-  participate in a 2-column grid it was never meant to occupy a column
-  of.
-
-  Column ratio widened toward the left per review feedback ("make the
-  left column a little wider than that of illustration on the right");
-  1.1fr:0.9fr read as too close to even in practice — 1.35fr:0.85fr
-  gives the messaging column visibly more room while still leaving the
-  illustration a clearly substantial share of the row.
-*/
-
-.hero-grid {
 
     display: grid;
     gap: var(--baobab-space-8);
@@ -212,9 +127,9 @@
 
 }
 
-@media (min-width:1024px){
+@media (min-width:1024px) {
 
-    .hero-grid{
+    .landing-hero {
 
         grid-template-columns: 1.35fr 0.85fr;
 
@@ -222,762 +137,49 @@
 
 }
 
-.hero-content{
-
-    display:flex;
-    flex-direction:column;
-    gap:var(--baobab-space-5);
-
-}
-
-.hero-actions{
-
-    display:flex;
-    flex-wrap:wrap;
-    gap:var(--baobab-space-3);
-
-}
-
-.hero-badges{
-
-    display:flex;
-    flex-wrap:wrap;
-    gap:0.75rem;
-
-    font-size:0.875rem;
-
-}
-
-
-/*==============================================================================
-  Hero — Eyebrow (brief §6.1)
-==============================================================================*/
-
-.hero-eyebrow {
-
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--baobab-space-2);
-
-    margin: 0;
-
-}
-
-.hero-eyebrow-text {
-
-    font-size: var(--baobab-text-sm);
-    font-weight: var(--baobab-weight-semibold);
-    letter-spacing: var(--baobab-tracking-wide);
-    text-transform: uppercase;
-
-    /* Reuses the existing text-safe green — see palette.css. Not part
-       of the new --baobab-hero-brand-* ramp, which is illustration-only. */
-    color: var(--baobab-green-dark);
-
-}
-
-[data-md-color-scheme="slate"] .hero-eyebrow-text {
-
-    color: var(--baobab-green-light);
-
-}
-
-.hero-eyebrow-rule {
-
-    display: block;
-    width: 2rem;
-    height: 3px;
-    border-radius: var(--baobab-radius-small);
-
-    /* Decorative-only gold, per the standing WCAG ruling — this is a
-       graphical rule, not text, so the AA text-contrast failure that
-       restricts --baobab-gold elsewhere does not apply here. */
-    background-color: var(--baobab-gold);
-
-}
-
-
-/*==============================================================================
-  Hero — Headline (brief §6.2)
-  Deliberately NOT reusing typography.css's `.hero h1` rule: this
-  markup's outer class is `.landing-hero` (not `.hero`), by design, to
-  avoid colliding with the shared docs-page `.hero` rule — see the
-  namespacing note earlier in this file. Full heading treatment is
-  therefore declared explicitly here instead of inherited.
-==============================================================================*/
-
-.hero-headline {
-
-    margin: 0;
-
-    /* FIX (review feedback: "Faster" overflowing). A fixed
-       --baobab-text-5xl (49px) doesn't shrink on narrow viewports, so
-       at some in-between widths the headline (or the trailing accent
-       dot) could run past the column edge before the responsive
-       breakpoint kicked in. clamp() scales continuously with viewport
-       width instead of jumping at a single breakpoint: never smaller
-       than 2rem, never larger than the original --baobab-text-5xl, and
-       following viewport width in between. */
-    font-size: clamp(2rem, 1.2rem + 4vw, var(--baobab-text-5xl));
-    font-weight: var(--baobab-weight-bold);
-    line-height: var(--baobab-leading-tight);
-    letter-spacing: var(--baobab-tracking-tight);
-
-    color: var(--baobab-hero-text-primary);
-
-}
-
-.hero-headline-accent {
-
-    /* Existing, already-audited text-safe green token — intentionally
-       NOT --baobab-hero-brand-600 (see Hero Design Tokens note above: the new
-       ramp is reserved for illustration fills, not text). */
-    color: var(--baobab-green-dark);
-
-}
-
-[data-md-color-scheme="slate"] .hero-headline-accent {
-
-    color: var(--baobab-green-light);
-
-}
-
-.hero-accent-dot {
-
-    /* Decorative punctuation glyph, not informational text — approved
-       use of the decorative-only gold token. See palette.css's WCAG
-       audit note; do not promote this to --baobab-gold-dark, doing so
-       would defeat the point of the two-tone treatment in the mockup. */
-    color: var(--baobab-gold);
-
-}
-
-
-/*==============================================================================
-  Hero — Supporting Statement (brief §6.3)
-  Reuses typography.css's `.lead` rule for size/line-height, and
-  overrides only colour (warmer hero-scoped grey) and measure (line
-  length) here.
-==============================================================================*/
-
-.hero-subtext {
-
-    max-width: 34rem;
-    color: var(--baobab-hero-text-secondary);
-
-}
-
-
-/*==============================================================================
-  Hero — Actions (brief §6.4 / §6.5)
-==============================================================================*/
-
-.hero-cta-primary {
-
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-
-}
-
-.hero-cta-icon svg {
-
-    display: block;
-    width: 1rem;
-    height: 1rem;
-
-}
-
-.hero-secondary-actions {
-
-    display: flex;
-    flex-direction: column;
-    gap: var(--baobab-space-2);
-
-    margin: 0;
-    padding: 0;
-    list-style: none;
-
-}
-
-.hero-secondary-link {
-
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-
-    font-weight: var(--baobab-weight-medium);
-    color: var(--baobab-hero-text-primary);
-    text-decoration: none;
-
-}
-
-.hero-secondary-link:hover,
-.hero-secondary-link:focus-visible {
-
-    color: var(--baobab-green-dark);
-
-}
-
-[data-md-color-scheme="slate"] .hero-secondary-link:hover,
-[data-md-color-scheme="slate"] .hero-secondary-link:focus-visible {
-
-    color: var(--baobab-green-light);
-
-}
-
-.hero-secondary-icon svg,
-.hero-secondary-arrow svg {
-
-    display: block;
-    width: 1rem;
-    height: 1rem;
-    flex-shrink: 0;
-
-}
-
-.hero-secondary-arrow {
-
-    display: inline-flex;
-    transition: transform 0.15s ease;
-
-}
-
-.hero-secondary-link:hover .hero-secondary-arrow,
-.hero-secondary-link:focus-visible .hero-secondary-arrow {
-
-    transform: translateX(3px);
-
-}
-
-
-/*==============================================================================
-  Hero — Illustration (brief §7)
-  ------------------------------------------------------------------------
-  .hero-illustration is the outer column; .hero-illustration-stage (the
-  Phase 2 structural addition — see hero.html's inline note) is the
-  relatively-positioned box that reserves space for every absolutely-
-  positioned piece (glow / tree / trunk emblem / platform badge / orbit
-  nodes). Sized by aspect-ratio, not a fixed pixel height, so it scales
-  proportionally at every breakpoint per brief §11.
-
-  Every position value below (glow, tree-graphic inset, trunk emblem,
-  platform badge, and each .hero-node[data-node] offset) is a FIRST-PASS
-  estimate matched against the mockup by eye. These are exactly the
-  values expected to need fine visual calibration once real illustration
-  artwork replaces the placeholder shapes in hero.html (see Open Item #2
-  there) — flagging now so that recalibration isn't mistaken for a bug
-  later.
-==============================================================================*/
-
-.hero-illustration {
-
-    display: flex;
-    flex-direction: column;
-    gap: var(--baobab-space-6);
-
-}
-
-.hero-illustration-stage {
-
-    position: relative;
-
-    width: 100%;
-    max-width: 34rem;
-    aspect-ratio: 1 / 1;
-    margin-inline: auto;
-
-}
-
-.hero-illustration-glow {
-
-    position: absolute;
-    inset: 0;
-
-    background: radial-gradient(
-        circle at 50% 42%,
-        color-mix(in srgb, var(--baobab-hero-brand-500) 20%, transparent) 0%,
-        transparent 68%
-    );
-
-    pointer-events: none;
-    z-index: 0;
-
-}
-
-.hero-tree-graphic {
-
-    position: absolute;
-    inset: 4% 8% 0 8%;
-
-    width: 84%;
-    height: 96%;
-
-    z-index: 1;
-
-}
-
-.hero-tree-roots path {
-
-    fill: none;
-    stroke: var(--baobab-hero-brand-800);
-    stroke-width: 3;
-    stroke-linecap: round;
-    opacity: 0.55;
-
-}
-
-.hero-tree-trunk path {
-
-    fill: var(--baobab-hero-brand-900);
-
-}
-
-.hero-tree-canopy ellipse:first-child {
-
-    fill: var(--baobab-hero-brand-700);
-
-}
-
-.hero-tree-canopy ellipse:not(:first-child) {
-
-    fill: var(--baobab-hero-brand-600);
-
-}
-
-.hero-trunk-emblem {
-
-    position: absolute;
-    top: 58%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 2.25rem;
-    height: 2.25rem;
-
-    color: var(--baobab-gold);
-
-    z-index: 2;
-
-}
-
-.hero-trunk-emblem svg {
-
-    width: 100%;
-    height: 100%;
-
-}
-
-.hero-platform-badge {
-
-    position: absolute;
-    top: 68%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-
-    margin: 0;
-    padding: 0.6em 1.4em;
-    border-radius: 999px;
-
-    background: var(--baobab-hero-bg);
-    box-shadow: var(--baobab-shadow-small);
-
-    font-size: var(--baobab-text-sm);
-    font-weight: var(--baobab-weight-bold);
-    letter-spacing: var(--baobab-tracking-wide);
-    text-transform: uppercase;
-    white-space: nowrap;
-    color: var(--baobab-green-dark);
-
-    z-index: 3;
-
-}
-
-[data-md-color-scheme="slate"] .hero-platform-badge {
-
-    color: var(--baobab-green-light);
-    box-shadow: var(--baobab-shadow-small-dark);
-
-}
-
-
-/*
-  Orbit Nodes
-  ------------------------------------------------------------------------
-  Each node is a badge (icon + label) plus a short dashed connector
-  rendered as a ::after pseudo-element, oriented per node via the
-  [data-node] attribute selectors below. Connector geometry is anchored
-  to the PLACEHOLDER tree's approximate bounds and will need re-aligning
-  once real artwork lands — see block comment above.
-==============================================================================*/
-
-.hero-orbit-nodes {
-
-    margin: 0;
-    padding: 0;
-    list-style: none;
-
-}
-
-.hero-node {
-
-    position: absolute;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.35rem;
-
-    text-align: center;
-
-    z-index: 2;
-
-}
-
-.hero-node-icon {
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 3.25rem;
-    height: 3.25rem;
-    border-radius: 50%;
-
-    background: var(--baobab-hero-bg);
-    box-shadow: var(--baobab-shadow-small);
-    color: var(--baobab-hero-brand-700);
-
-}
-
-[data-md-color-scheme="slate"] .hero-node-icon {
-
-    box-shadow: var(--baobab-shadow-small-dark);
-
-}
-
-.hero-node-icon svg {
-
-    width: 1.4rem;
-    height: 1.4rem;
-
-}
-
-.hero-node-label {
-
-    font-size: var(--baobab-text-xs);
-    font-weight: var(--baobab-weight-semibold);
-    letter-spacing: var(--baobab-tracking-wide);
-    text-transform: uppercase;
-
-    color: var(--baobab-hero-text-secondary);
-
-}
-
-/* Per-node placement (percentages relative to .hero-illustration-stage) */
-
-.hero-node[data-node="government"] {
-
-    top: -2%;
-    left: 50%;
-    transform: translateX(-50%);
-
-}
-
-.hero-node[data-node="agriculture"] {
-
-    top: 16%;
-    left: 2%;
-
-}
-
-.hero-node[data-node="finance"] {
-
-    top: 16%;
-    right: 2%;
-
-}
-
-.hero-node[data-node="education"] {
-
-    top: 46%;
-    left: -4%;
-
-}
-
-.hero-node[data-node="healthcare"] {
-
-    top: 46%;
-    right: -4%;
-
-}
-
-/* Dashed connector lines — axis-aligned short segments pointing from
-   each node toward the canopy, matching the mockup's mostly-orthogonal
-   dotted lines. Government's connector is vertical; the remaining four
-   are horizontal, mirrored left/right via [data-node]. */
-
-.hero-node::after {
-
-    content: "";
-    position: absolute;
-
-    background-image: linear-gradient(
-        to right,
-        var(--baobab-hero-brand-500) 50%,
-        transparent 0%
-    );
-    background-size: 6px 2px;
-    background-repeat: repeat-x;
-
-    pointer-events: none;
-    z-index: 1;
-
-}
-
-.hero-node[data-node="government"]::after {
-
-    top: 100%;
-    left: 50%;
-    width: 2px;
-    height: 1.25rem;
-    transform: translateX(-50%);
-
-    background-image: linear-gradient(
-        to bottom,
-        var(--baobab-hero-brand-500) 50%,
-        transparent 0%
-    );
-    background-size: 2px 6px;
-    background-repeat: repeat-y;
-
-}
-
-.hero-node[data-node="agriculture"]::after,
-.hero-node[data-node="education"]::after {
-
-    top: 50%;
-    left: 100%;
-    width: 1.5rem;
-    height: 2px;
-    transform: translateY(-50%);
-
-}
-
-.hero-node[data-node="finance"]::after,
-.hero-node[data-node="healthcare"]::after {
-
-    top: 50%;
-    right: 100%;
-    width: 1.5rem;
-    height: 2px;
-    transform: translateY(-50%);
-
-}
-
-
-/*
-  Capability Strip
-  ------------------------------------------------------------------------
-  Normal-flow (NOT absolutely positioned) — sits below
-  .hero-illustration-stage as its own row. Distinct component from
-  .hero-trust-bar below; do not merge the two even though the visual
-  language (icon + label) is similar — see hero.html's own note on why
-  these are separate.
-==============================================================================*/
-
-.hero-capability-strip {
+.hero-actions {
 
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-
-    /* FIX (review feedback: workflow icon overflowing beneath the
-       tree). .hero-illustration-stage caps at 34rem, but this strip was
-       previously 100% of the (wider) .hero-illustration column, so at
-       intermediate widths its generous gap pushed the sixth item past
-       the tree's visual bounds before flex-wrap kicked in. Matching the
-       stage's own max-width keeps the strip visually anchored under
-       the illustration at every width, and the gap is reduced from
-       --baobab-space-5 (1.5rem) to --baobab-space-4 (1rem) so six items
-       have a realistic chance of fitting one row on the stage's own
-       narrower footprint. */
-    max-width: 34rem;
-    margin-inline: auto;
-    gap: var(--baobab-space-4);
-
-    padding: 0;
-    list-style: none;
+    gap: var(--baobab-space-3);
 
 }
-
-.hero-capability {
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.35rem;
-
-}
-
-.hero-capability-icon {
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 50%;
-
-    border: 1px solid var(--baobab-hero-border-subtle);
-    color: var(--baobab-hero-brand-700);
-
-}
-
-.hero-capability-icon svg {
-
-    width: 1.2rem;
-    height: 1.2rem;
-
-}
-
-.hero-capability-label {
-
-    font-size: var(--baobab-text-xs);
-    font-weight: var(--baobab-weight-medium);
-    letter-spacing: var(--baobab-tracking-wide);
-    text-transform: uppercase;
-
-    color: var(--baobab-hero-text-secondary);
-
-}
-
-@media (max-width:420px){
-
-    /* At the narrowest phone widths, shrink the icon badge and gap
-       further rather than letting the strip wrap to a lopsided
-       5-then-1 final row. */
-    .hero-capability-icon{
-
-        width:2.25rem;
-        height:2.25rem;
-
-    }
-
-    .hero-capability-strip{
-
-        gap:var(--baobab-space-3);
-
-    }
-
-}
-
-
-/*==============================================================================
-  Hero — Trust Bar (brief §8)
-  Full-width band, direct child of the same <section class="md-content
-  landing-hero"> as .hero-grid — see .landing-hero's own comment above
-  for why it no longer has a bespoke wrapper div with its own
-  max-width/padding. Single bordered strip, all six items equal visual
-  weight — deliberately not reusing .tech-item's individually-bordered-
-  tile treatment.
-==============================================================================*/
-
-.hero-trust-bar {
-
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: var(--baobab-space-6);
-
-    margin: 0;
-    padding: var(--baobab-space-5) var(--baobab-space-6);
-    border: 1px solid var(--baobab-hero-border-subtle);
-    border-radius: var(--baobab-radius);
-
-    background: var(--baobab-hero-surface-1);
-    list-style: none;
-
-}
-
-.hero-trust-item {
-
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-
-    font-size: var(--baobab-text-sm);
-    font-weight: var(--baobab-weight-medium);
-    color: var(--baobab-hero-text-primary);
-
-}
-
-.hero-trust-icon {
-
-    display: flex;
-    color: var(--baobab-hero-brand-700);
-
-}
-
-.hero-trust-icon svg {
-
-    width: 1.1rem;
-    height: 1.1rem;
-
-}
-
-
-/*==============================================================================
-  Hero — Scroll Indicator — REMOVED (review feedback: "doesn't serve the
-  purpose"). Deleted outright rather than commented out, per this
-  project's convention of not leaving dead CSS in delivered files. The
-  corresponding markup removal is documented in hero.html.
-==============================================================================*/
-
-
 
 /*
   Technology Strip
 ==============================================================================*/
 
-.tech-strip{
+.tech-strip {
 
-    display:grid;
+    display: grid;
 
-    grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 
-    gap:1rem;
+    gap: 1rem;
 
-    text-align:center;
+    text-align: center;
 
-    margin-block:var(--baobab-space-10);
-
-}
-
-.tech-item{
-
-    padding:1rem;
-
-    border:1px solid var(--baobab-border);
-
-    border-radius:var(--baobab-radius-small);
-
-    background:var(--baobab-surface);
+    margin-block: var(--baobab-space-10);
 
 }
 
-[data-md-color-scheme="slate"] .tech-item{
+.tech-item {
 
-    background:var(--baobab-surface-dark);
+    padding: 1rem;
 
-    border-color:var(--baobab-border-dark);
+    border: 1px solid var(--baobab-border);
+
+    border-radius: var(--baobab-radius-small);
+
+    background: var(--baobab-surface);
+
+}
+
+[data-md-color-scheme="slate"] .tech-item {
+
+    background: var(--baobab-surface-dark);
+
+    border-color: var(--baobab-border-dark);
 
 }
 
@@ -987,29 +189,29 @@
   Capability Icons
 ==============================================================================*/
 
-.icon-grid{
+.icon-grid {
 
-    display:grid;
+    display: grid;
 
-    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 
-    gap:var(--baobab-space-5);
-
-}
-
-.icon-card{
-
-    text-align:center;
-
-    padding:2rem 1rem;
+    gap: var(--baobab-space-5);
 
 }
 
-.icon-card .twemoji{
+.icon-card {
 
-    font-size:2rem;
+    text-align: center;
 
-    margin-bottom:1rem;
+    padding: 2rem 1rem;
+
+}
+
+.icon-card .twemoji {
+
+    font-size: 2rem;
+
+    margin-bottom: 1rem;
 
 }
 
@@ -1019,29 +221,29 @@
   Metrics
 ==============================================================================*/
 
-.metrics{
+.metrics {
 
-    display:grid;
+    display: grid;
 
-    grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 
-    gap:var(--baobab-space-4);
-
-}
-
-.metric{
-
-    text-align:center;
-
-    padding:1.5rem;
+    gap: var(--baobab-space-4);
 
 }
 
-.metric strong{
+.metric {
 
-    display:block;
+    text-align: center;
 
-    font-size:1.8rem;
+    padding: 1.5rem;
+
+}
+
+.metric strong {
+
+    display: block;
+
+    font-size: 1.8rem;
 
 }
 
@@ -1051,25 +253,25 @@
   Documentation Cards
 ==============================================================================*/
 
-.documentation-grid{
+.documentation-grid {
 
-    display:grid;
+    display: grid;
 
-    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 
-    gap:var(--baobab-space-5);
+    gap: var(--baobab-space-5);
 
 }
 
-.documentation-card{
+.documentation-card {
 
-    display:flex;
+    display: flex;
 
-    flex-direction:column;
+    flex-direction: column;
 
-    justify-content:space-between;
+    justify-content: space-between;
 
-    min-height:220px;
+    min-height: 220px;
 
 }
 
@@ -1079,30 +281,28 @@
   CTA Banner
 ==============================================================================*/
 
-.cta-banner{
+.cta-banner {
 
-    margin-block:var(--baobab-space-12);
+    margin-block: var(--baobab-space-12);
 
-    padding:4rem 3rem;
+    padding: 4rem 3rem;
 
-    border-radius:var(--baobab-radius);
+    border-radius: var(--baobab-radius);
 
     background:
-        linear-gradient(
-            135deg,
+        linear-gradient(135deg,
             var(--baobab-primary),
-            var(--baobab-background-dark)
-        );
+            var(--baobab-background-dark));
 
-    color:white;
+    color: white;
 
-    text-align:center;
+    text-align: center;
 
 }
 
-.cta-banner .md-button{
+.cta-banner .md-button {
 
-    margin-top:1.5rem;
+    margin-top: 1.5rem;
 
 }
 
@@ -1117,83 +317,52 @@
   overrides/partials/footer.html rather than only on the landing page.
 ==============================================================================*/
 
-.md-footer-directory{
+.md-footer-directory {
 
-    background:var(--baobab-surface);
+    background: var(--baobab-surface);
 
-    padding-block:var(--baobab-space-8);
-
-}
-
-[data-md-color-scheme="slate"] .md-footer-directory{
-
-    background:var(--baobab-surface-dark);
+    padding-block: var(--baobab-space-8);
 
 }
 
-.footer-grid{
+[data-md-color-scheme="slate"] .md-footer-directory {
 
-    display:grid;
-
-    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-
-    gap:var(--baobab-space-6);
-
-    margin-top:var(--baobab-space-10);
+    background: var(--baobab-surface-dark);
 
 }
 
-.footer-grid h3{
+.footer-grid {
 
-    margin-bottom:1rem;
+    display: grid;
 
-}
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 
-.footer-grid ul{
+    gap: var(--baobab-space-6);
 
-    list-style:none;
-
-    margin:0;
-
-    padding:0;
+    margin-top: var(--baobab-space-10);
 
 }
 
-.footer-grid li{
+.footer-grid h3 {
 
-    margin-bottom:0.5rem;
-    font-size: small;
-
-}
-
-
-
-/*
-  Section Headings
-==============================================================================*/
-
-.section-heading{
-
-    text-align:center;
-
-    max-width:52rem;
-
-    margin-inline:auto;
-
-    margin-bottom:var(--baobab-space-8);
+    margin-bottom: 0.75rem;
 
 }
 
+.footer-grid ul {
 
+    list-style: none;
 
-/*
-  Material Tab Refinements
-==============================================================================*/
+    margin: 0;
 
-.md-typeset .tabbed-set{
+    padding: 0;
 
-    margin-top:var(--baobab-space-8);
+}
 
+.footer-grid li {
+
+    margin-bottom: 0.5rem;
+    font-size: medium
 }
 
 
@@ -1202,57 +371,17 @@
   Responsive Landing Hero
 ==============================================================================*/
 
-@media (max-width:1023px){
+@media (max-width:1023px) {
 
-    .hero-grid{
+    .landing-hero {
 
-        text-align:center;
-
-    }
-
-    .hero-actions{
-
-        justify-content:center;
+        text-align: center;
 
     }
 
-    /* Brief §11 (Tablet/Mobile): eyebrow/actions stay center-aligned
-       with the rest of .hero-content at this breakpoint, rather than
-       staying left-aligned against a now-centered column. */
-    .hero-eyebrow,
-    .hero-secondary-actions{
+    .hero-actions {
 
-        align-items:center;
-
-    }
-
-    .hero-subtext{
-
-        margin-inline:auto;
-
-    }
-
-    /* Illustration scales down slightly on tablet/mobile so the orbit
-       nodes' fixed badge size (3.25rem) doesn't crowd a narrower stage. */
-    .hero-illustration-stage{
-
-        max-width:26rem;
-
-    }
-
-}
-
-@media (max-width:640px){
-
-    /* Trust bar: six equal-weight items no longer fit one row below
-       ~640px. Reflow to a 2-column grid rather than letting flex-wrap
-       produce an uneven, hard-to-scan final row. */
-    .hero-trust-bar{
-
-        display:grid;
-        grid-template-columns:repeat(2,1fr);
-        justify-items:center;
-        gap:var(--baobab-space-4);
+        justify-content: center;
 
     }
 
@@ -1336,11 +465,9 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: color-mix(
-        in srgb,
-        var(--md-primary-fg-color) 12%,
-        transparent
-    );
+    background: color-mix(in srgb,
+            var(--md-primary-fg-color) 12%,
+            transparent);
     font-size: 1.6rem;
     color: var(--md-primary-fg-color);
 
@@ -1481,11 +608,9 @@
     border-bottom: 1px solid var(--baobab-border);
 
     background:
-        linear-gradient(
-            180deg,
-            rgba(255,255,255,.03),
-            rgba(0,0,0,.04)
-        );
+        linear-gradient(180deg,
+            rgba(255, 255, 255, .03),
+            rgba(0, 0, 0, .04));
 
     font-size: .85rem;
     font-weight: 600;
@@ -1678,3 +803,86 @@
     color: var(--md-default-fg-color--light);
 
 }
+
+/*==============================================================================
+  Shared documentation cards for section landing pages
+==============================================================================*/
+
+.doc-intro {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    margin-block: 1.5rem;
+    border: 1px solid var(--baobab-border);
+    border-radius: var(--baobab-radius);
+    background: linear-gradient(135deg, var(--baobab-surface), var(--md-default-bg-color));
+}
+
+[data-md-color-scheme="slate"] .doc-intro {
+    border-color: var(--baobab-border-dark);
+    background: linear-gradient(135deg, var(--baobab-surface-dark), var(--md-default-bg-color));
+}
+
+.doc-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    margin-block: 1.5rem;
+}
+
+.doc-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1.2rem 1.25rem;
+    border: 1px solid var(--baobab-border);
+    border-radius: var(--baobab-radius-small);
+    background: var(--baobab-surface);
+    box-shadow: var(--baobab-shadow-small);
+}
+
+[data-md-color-scheme="slate"] .doc-card {
+    background: var(--baobab-surface-dark);
+    border-color: var(--baobab-border-dark);
+}
+
+.doc-card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--md-primary-fg-color) 16%, transparent);
+    color: var(--md-primary-fg-color);
+    font-size: 1.3rem;
+}
+
+.doc-card h3 {
+    margin: 0;
+}
+
+.doc-card p {
+    margin: 0;
+    color: var(--md-default-fg-color--light);
+}
+
+.doc-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: fit-content;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--md-primary-fg-color) 12%, transparent);
+    color: var(--md-primary-fg-color);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .doc-grid {
+        grid-template-columns: 1fr;
+    }
+}
+

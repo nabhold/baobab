@@ -1,226 +1,195 @@
-{#
-  overrides/partials/hero.html
+<!-- Additional styles for landing page -->
+<style>
+  /* Application header should be static for the landing page */
+  .md-header {
+    position: initial;
+  }
 
-  ==============================================================================
-  BAOBAB ENTERPRISE PLATFORM — Landing Page Hero
-  ==============================================================================
+  /* Remove spacing, as we cannot hide it completely */
+  .md-main__inner {
+    margin: 0;
+  }
 
-  Rebuilt against: "Baobab Landing Page Hero Specification v1.0" + approved
-  high-fidelity mockup.
+  /* Hide main content for now */
+  .md-content {
+    display: none;
+  }
 
-  Target theme engine: Zensical ("modern" variant). Any resemblance to
-  Material for MkDocs template internals in comments below is intentional —
-  Zensical's own documentation states its HTML structure matches Material's
-  in both theme variants — but nothing here depends on Material-specific
-  behaviour. Do not re-introduce Material-only assumptions when editing.
+  /* Hide table of contents */
+  @media screen and (min-width: 60em) {
+    .md-sidebar--secondary {
+      display: none;
+    }
+  }
 
-  ------------------------------------------------------------------------
-  PHASE STATUS: PHASE 3 OF 5 — STRUCTURAL REVISION FROM REVIEW FEEDBACK
-  ------------------------------------------------------------------------
-  Changes in this pass, all driven by review of the Phase 1/2 build:
-    1. Introduced .hero-grid as the two-column wrapper. The outer
-       <section class="md-content landing-hero"> is now a plain
-       .md-content consumer only — width/padding/responsive behaviour
-       come entirely from that shared class, not from a second bespoke
-       mechanism. (Phase 2's .landing-hero previously did double duty as
-       both the md-content shell AND the grid; that conflation is what
-       produced the reviewed inconsistency.)
-    2. The Trust Bar is now a direct child of that same <section> —
-       still its own full-width band (a plain block-level sibling, not a
-       third grid column), but no longer wrapped in a separate
-       max-width/padding div. One container, one responsive system.
-    3. The Scroll Indicator has been REMOVED OUTRIGHT per review
-       feedback ("doesn't serve the purpose") — not commented out; see
-       the note at the bottom of this file.
-  Colour tokens used throughout this file were ALSO relocated in this
-  pass — out of a hero-local scope and into palette.css / dark.css
-  (--baobab-hero-*), per review feedback and this project's single-
-  source-of-truth convention. This file references those tokens only
-  via extra.css's compiled rules; no token values live here.
+  /* Hide navigation */
+  @media screen and (min-width: 76.25em) {
+    .md-sidebar--primary {
+      display: none;
+    }
+  }
+</style>
 
-  ------------------------------------------------------------------------
-  PRIOR PHASE STATUS (retained for history — do not re-solve these as if
-  new): PHASE 1 OF 5 — MARKUP ONLY
-  ------------------------------------------------------------------------
-  This file intentionally contains NO colour values, positioning rules, or
-  animation wiring. Those are Phase 2 (extra.css) and Phase 4 (progressive-
-  enhancement script) respectively, per the agreed phased plan. Reviewing
-  this structure BEFORE styling it is deliberate — cheaper to correct DOM
-  shape now than after CSS/GSAP hooks are built on top of it.
+<!-- Hero for landing page -->
+<section class="mdx-container">
+  <div class="md-grid md-typeset">
+    <div class="mdx-hero">
 
-  ------------------------------------------------------------------------
-  OPEN ITEMS CARRIED FORWARD FROM THIS PHASE (do not silently resolve
-  these elsewhere — surface back to the team lead):
-  ------------------------------------------------------------------------
-  1. ICON FILENAMES ARE UNVERIFIED. Every {% include ".icons/lucide/..." %}
-     / {% include ".icons/material/..." %} path below is a best-guess
-     mapping from the mockup's iconography to Zensical's bundled icon
-     sets, chosen the same way footer.html already does it (see that
-     file's Documentation Directory section for the precedent). None of
-     these have been confirmed to exist by an actual `zensical build`.
-     REQUIRED before Phase 5 sign-off: run a real build and fix any
-     missing-file errors. Do not assume the names below are correct.
+      <!-- Hero image -->
+      <div class="mdx-hero__image">
+        <img src="assets/images/illustration.svg" alt="" width="1659" height="1200" draggable="false">
+      </div>
 
-  2. ILLUSTRATION ARTWORK IS A STRUCTURAL PLACEHOLDER. No brand SVG
-     source exists yet (confirmed with team). The <svg class="hero-tree-
-     graphic"> below uses simple primitive shapes only, sized and
-     layered correctly (roots / trunk / canopy as separate <g> groups)
-     so real artwork can be dropped into each group later WITHOUT
-     changing this file's structure, CSS selectors, or future GSAP/
-     Three.js target hooks. Do not treat the current paths as final.
-
-  3. index.md CURRENTLY DUPLICATES THIS HERO. docs/index.md still
-     contains its own inline <div class="hero"> block with its own <h1>
-     at the top of the page. Once this partial is wired into the `hero`
-     block, that block in index.md will render a second, conflicting
-     hero section and a duplicate <h1> on the same page. NOT fixed here
-     — flagging so it isn't wired in silently without also removing that
-     block from index.md.
-
-  4. CTA HREFS ARE PLACEHOLDERS pending routing decisions (owner: team
-     lead). "Request a Demo" points at a same-page anchor stub; the two
-     secondary links point at architecture/index.md purely so link
-     resolution can be exercised end-to-end during Phase 5 validation —
-     none of these three are final destinations.
-
-  5. DECORATIVE VS. ACCESSIBLE CONTENT is deliberately NOT a blanket
-     aria-hidden on the whole illustration (see inline notes at each
-     element). Icon glyphs are decorative (aria-hidden); node and
-     capability text labels are real information and remain in the
-     accessibility tree.
-  ==============================================================================
-#}
-
-<div class="landing-hero-bleed">
-
-  <section class="landing-hero mdx-content">
+    </div>
 
     {# ==========================================================================
-       .hero-grid — PHASE 3 ADDITION, replacing the earlier approach where
-       .landing-hero itself was both the md-content-constrained shell AND
-       the two-column grid. Splitting these apart is the fix for review
-       feedback: the outer <section> stays a plain .md-content consumer
-       (single source of truth for width/padding/responsive behaviour,
-       same as every other page on the site), while grid-specific rules
-       (columns, column-width ratio) live on this inner wrapper only.
-       This also lets .hero-trust-bar sit as a normal sibling of
-       .hero-grid — still inside the same .md-content section, still
-       getting identical width/padding — without fighting a 2-column
-       grid it was never meant to participate in.
+       RIGHT COLUMN — Hero Illustration
+       NOT wrapped in .md-typeset: this is graphical, not prose content,
+       and should not inherit paragraph/heading typographic rules.
+
+       data-enhance="three" is an inert marker only (Phase 4). No script
+       reads it yet. It exists purely as the future attachment point for a
+       deferred Three.js/GSAP module, so that work doesn't require another
+       markup change when it lands.
     ========================================================================== #}
 
-      <div class="hero-grid">
+    <div class="hero-illustration" data-enhance="three">
 
-          {# ==========================================================================
-            LEFT COLUMN — Primary Messaging
-            Wrapped in .md-typeset deliberately (see original file's own note,
-            retained below): outside .md-content, nothing else supplies that
-            class automatically, and every rule in typography.css/components.css
-            depends on it.
-          ========================================================================== #}
+      {# --------------------------------------------------------------------
+         .hero-illustration-stage — PHASE 2 ADDITION (structural fix, not a
+         redesign). Groups every absolutely-positioned illustration piece
+         (glow / tree / trunk emblem / platform badge / orbit nodes) inside
+         one relatively-positioned box with a reserved aspect-ratio height.
+         Without this wrapper, those absolutely-positioned children are
+         removed from normal flow and contribute no height to
+         .hero-illustration, so .hero-capability-strip (a normal-flow
+         sibling) would render at the very top instead of below the tree.
+         Discovered empirically while writing Phase 2 CSS; documenting here
+         rather than working around it with fragile margin hacks.
+      -------------------------------------------------------------------- #}
+      <div class="hero-illustration-stage">
 
-          <div class="hero-content md-typeset">
+      {# Ambient radial glow behind the tree. Purely decorative — a plain
+         layer div rather than baked into the SVG so Phase 2/4 can control
+         its opacity, blur, or parallax offset independently of the tree
+         artwork itself. #}
+      <div class="hero-illustration-glow" data-layer="glow" aria-hidden="true"></div>
 
-            {# --- 6.1 Product Category (eyebrow) ---------------------------------
-              Decorative underline rule is a separate element (not a CSS
-              ::after) so Phase 2 can animate/colour it independently of the
-              text baseline if needed. #}
-            <p class="hero-eyebrow">
-              <span class="hero-eyebrow-text">The AI Enterprise Operating Platform</span>
-              <span class="hero-eyebrow-rule" aria-hidden="true"></span>
-            </p>
+      {# --------------------------------------------------------------------
+         PLACEHOLDER TREE ARTWORK (see Open Item #2 above).
+         Three top-level <g> layers, matching the brief's stated concept:
+           roots  = enterprise foundation
+           trunk  = the Baobab platform itself
+           canopy = branches = industries / business domains
+         Kept as separate groups (not a single flattened <path> soup) so:
+           - Phase 2 CSS can target each layer independently (e.g. a subtly
+             different fill/opacity for roots vs. canopy).
+           - A future Three.js pass can swap ONE group for a 3D-rendered
+             equivalent without touching the other two, or without touching
+             the icon-badge overlay layer described below at all.
+         viewBox-based sizing only — no fixed pixel width/height — so it
+         scales proportionally at every breakpoint per brief §11 (Tablet).
+      -------------------------------------------------------------------- #}
+      <svg
+        class="hero-tree-graphic"
+        viewBox="0 0 600 600"
+        role="presentation"
+        focusable="false"
+        aria-hidden="true">
 
-            {# --- 6.2 Primary Headline --------------------------------------------
-              "Faster" is wrapped separately from its trailing period per the
-              mockup's two-tone treatment (brand green word, gold accent dot).
-              Confirmed reuse of the existing decorative-only gold token in
-              Phase 2 — see project WCAG audit notes; not reproduced here since
-              this file carries no colour values. #}
-            <h1 class="hero-headline">
-              Run Intelligent Enterprises,
-              <span class="hero-headline-accent">Faster<span class="hero-accent-dot" aria-hidden="true">.</span></span>
-            </h1>
+        <g class="hero-tree-roots" data-layer="roots">
+          {# Placeholder root silhouette — simple branching lines standing
+             in for a proper root illustration. Replace wholesale when
+             brand artwork is supplied; do not hand-tune these paths. #}
+          <path d="M300,430 L180,520 M300,430 L230,540 M300,430 L370,540 M300,430 L420,520
+                   M300,430 L120,500 M300,430 L480,500" />
+        </g>
 
-            {# --- 6.3 Supporting Statement ----------------------------------------
-              Reuses the existing `.lead` rule from typography.css (already
-              styles a de-emphasised, larger lead paragraph) — no new class
-              needed for the text treatment itself. #}
-            <p class="lead hero-subtext">
-              Baobab is an AI-powered Enterprise Operating Platform that enables
-              governments, businesses, and institutions to operate secure,
-              scalable, and intelligent digital ecosystems.
-            </p>
+        <g class="hero-tree-trunk" data-layer="trunk">
+          {# Placeholder trunk silhouette — a simple tapered rectangle. #}
+          <path d="M280,260 L320,260 L330,430 L270,430 Z" />
+        </g>
 
-            {# --- 6.4 / 6.5 Actions -------------------------------------------------
-              Primary CTA reuses the existing .md-button / .md-button--primary
-              component (components.css) — no new button system introduced.
-              Secondary actions are intentionally NOT buttons: brief calls for
-              lower visual emphasis than the primary action, so these are plain
-              links with a leading icon and trailing directional arrow. #}
-            <div class="hero-actions">
+        <g class="hero-tree-canopy" data-layer="canopy">
+          {# Placeholder canopy silhouette — overlapping ellipses standing
+             in for a proper foliage illustration. #}
+          <ellipse cx="300" cy="180" rx="140" ry="90" />
+          <ellipse cx="220" cy="210" rx="90" ry="60" />
+          <ellipse cx="380" cy="210" rx="90" ry="60" />
+        </g>
 
-              <a href="#request-demo" class="md-button md-button--primary hero-cta-primary">
-                <span class="hero-cta-icon" aria-hidden="true">{% include ".icons/lucide/calendar.svg" %}</span>
-                <span class="hero-cta-label">Request a Demo</span>
-              </a>
+      </svg>
 
-              <ul class="hero-secondary-actions">
+      {# Gold trunk emblem — decorative badge overlaid mid-trunk in the
+         mockup. Icon choice is provisional (see Open Item #1). #}
+      <div class="hero-trunk-emblem" data-layer="emblem" aria-hidden="true">
+        {% include ".icons/material/rhombus-outline.svg" %}
+      </div>
 
-                <li>
-                  <a href="architecture/index.md" class="hero-secondary-link">
-                    <span class="hero-secondary-icon" aria-hidden="true">{% include ".icons/lucide/compass.svg" %}</span>
-                    <span class="hero-secondary-label">Explore the Platform</span>
-                    <span class="hero-secondary-arrow" aria-hidden="true">{% include ".icons/lucide/arrow-right.svg" %}</span>
-                  </a>
-                </li>
+      {# "BAOBAB PLATFORM" pill label, positioned at the root/trunk
+         junction in the mockup. Real, accessible text — not decorative. #}
+      <p class="hero-platform-badge" data-layer="platform-badge">
+        <span>Baobab Platform</span>
+      </p>
 
-                <li>
-                  <a href="architecture/index.md" class="hero-secondary-link">
-                    <span class="hero-secondary-icon" aria-hidden="true">{% include ".icons/lucide/file-text.svg" %}</span>
-                    <span class="hero-secondary-label">View Documentation</span>
-                    <span class="hero-secondary-arrow" aria-hidden="true">{% include ".icons/lucide/arrow-right.svg" %}</span>
-                  </a>
-                </li>
+      {# ----------------------------------------------------------------------
+         Orbit nodes — the five industry badges positioned around the
+         canopy (Government / Agriculture / Finance / Education /
+         Healthcare). A real <ul> because the labels are meaningful
+         content, not decoration; only each item's icon glyph is
+         aria-hidden. Positioning is entirely deferred to Phase 2 via the
+         data-node attribute — no inline styles here.
+      ---------------------------------------------------------------------- #}
+      <ul class="hero-orbit-nodes">
 
-              </ul>
+        <li class="hero-node" data-node="government">
+          <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/landmark.svg" %}</span>
+          <span class="hero-node-label">Government</span>
+        </li>
 
-            </div>
+        <li class="hero-node" data-node="agriculture">
+          <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/leaf.svg" %}</span>
+          <span class="hero-node-label">Agriculture</span>
+        </li>
 
-          </div>
+        <li class="hero-node" data-node="finance">
+          <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/bar-chart-3.svg" %}</span>
+          <span class="hero-node-label">Finance</span>
+        </li>
 
+        <li class="hero-node" data-node="education">
+          <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/graduation-cap.svg" %}</span>
+          <span class="hero-node-label">Education</span>
+        </li>
+
+        <li class="hero-node" data-node="healthcare">
+          <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/heart-pulse.svg" %}</span>
+          <span class="hero-node-label">Healthcare</span>
+        </li>
+
+      </ul>
 
       </div>
-      {# end .hero-grid #}
-
+    </div>
+    {# end .hero-illustration #}
 
   </section>
 
-</div>
-{# end .landing-hero-bleed #}
+  {# ==========================================================================
+     TRUST BAR (brief §8)
+     Deliberately OUTSIDE the two-column .landing-hero grid, as its own
+     full-width band — the brief describes it as appearing "immediately
+     beneath the Hero content" and spanning "the width of the content
+     container," not as a third grid column. Kept as a sibling section
+     rather than forced into the existing grid-column mechanics.
 
+     Distinct from .hero-capability-strip above: different label set
+     (platform qualities, not architecture layers), different visual
+     role (page-level trust signal vs. illustration detail) — so this is
+     its own component rather than a second use of the same markup.
+  ========================================================================== #}
 
-<section>
-  <div class="md-content">
-    {# ==========================================================================
-    TRUST BAR (brief §8)
-    PHASE 3 CHANGE: now a direct child of the SAME .md-content section
-    as .hero-grid, rather than a separate div with its own max-width/
-    padding rules. Per review feedback, the site's .md-content class
-    is the single source of truth for content width and responsive
-    padding — introducing a second, parallel width-constraint
-    mechanism for one component (a class formerly named
-    `.hero-trust-bar-wrap`, now removed) was the wrong move for
-    consistency and maintenance. This still reads as its own
-    full-width band because it's a plain block-level sibling of
-    .hero-grid, not a third grid column — no CSS Grid participation
-    is implied by nesting.
-
-    Distinct from .hero-capability-strip above: different label set
-    (platform qualities, not architecture layers), different visual
-    role (page-level trust signal vs. illustration detail) — so this
-    remains its own component rather than a second use of the same
-    markup.
-    ========================================================================== #}
+  <div class="hero-trust-bar-wrap">
 
     <ul class="hero-trust-bar">
 
@@ -255,179 +224,6 @@
       </li>
 
     </ul>
-
-  </div>
-</section>
-<section>
-  <div class="md-content">
-    {# ==========================================================================
-    RIGHT COLUMN — Hero Illustration
-    NOT wrapped in .md-typeset: this is graphical, not prose content,
-    and should not inherit paragraph/heading typographic rules.
-
-    data-enhance="three" is an inert marker only (Phase 4). No script
-    reads it yet. It exists purely as the future attachment point for a
-    deferred Three.js/GSAP module, so that work doesn't require another
-    markup change when it lands.
-    ========================================================================== #}
-
-    <div class="hero-illustration" data-enhance="three">
-
-      {# --------------------------------------------------------------------
-      .hero-illustration-stage — PHASE 2 ADDITION (structural fix, not a
-      redesign). Groups every absolutely-positioned illustration piece
-      (glow / tree / trunk emblem / platform badge / orbit nodes) inside
-      one relatively-positioned box with a reserved aspect-ratio height.
-      Without this wrapper, those absolutely-positioned children are
-      removed from normal flow and contribute no height to
-      .hero-illustration, so .hero-capability-strip (a normal-flow
-      sibling) would render at the very top instead of below the tree.
-      Discovered empirically while writing Phase 2 CSS; documenting here
-      rather than working around it with fragile margin hacks.
-      -------------------------------------------------------------------- #}
-      <div class="hero-illustration-stage">
-
-        {# Ambient radial glow behind the tree. Purely decorative — a plain
-        layer div rather than baked into the SVG so Phase 2/4 can control
-        its opacity, blur, or parallax offset independently of the tree
-        artwork itself. #}
-        <div class="hero-illustration-glow" data-layer="glow" aria-hidden="true"></div>
-
-        {# --------------------------------------------------------------------
-        PLACEHOLDER TREE ARTWORK (see Open Item #2 above).
-        Three top-level <g> layers, matching the brief's stated concept:
-          roots = enterprise foundation
-          trunk = the Baobab platform itself
-          canopy = branches = industries / business domains
-          Kept as separate groups (not a single flattened <path> soup) so:
-            - Phase 2 CSS can target each layer independently (e.g. a subtly
-            different fill/opacity for roots vs. canopy).
-            - A future Three.js pass can swap ONE group for a 3D-rendered
-            equivalent without touching the other two, or without touching
-            the icon-badge overlay layer described below at all.
-            viewBox-based sizing only — no fixed pixel width/height — so it
-            scales proportionally at every breakpoint per brief §11 (Tablet).
-            -------------------------------------------------------------------- #}
-            <svg class="hero-tree-graphic" viewBox="0 0 600 600" role="presentation" focusable="false" aria-hidden="true">
-
-              <g class="hero-tree-roots" data-layer="roots">
-                {# Placeholder root silhouette — simple branching lines standing
-                in for a proper root illustration. Replace wholesale when
-                brand artwork is supplied; do not hand-tune these paths. #}
-                <path d="M300,430 L180,520 M300,430 L230,540 M300,430 L370,540 M300,430 L420,520
-                        M300,430 L120,500 M300,430 L480,500" />
-              </g>
-
-              <g class="hero-tree-trunk" data-layer="trunk">
-                {# Placeholder trunk silhouette — a simple tapered rectangle. #}
-                <path d="M280,260 L320,260 L330,430 L270,430 Z" />
-              </g>
-
-              <g class="hero-tree-canopy" data-layer="canopy">
-                {# Placeholder canopy silhouette — overlapping ellipses standing
-                in for a proper foliage illustration. #}
-                <ellipse cx="300" cy="180" rx="140" ry="90" />
-                <ellipse cx="220" cy="210" rx="90" ry="60" />
-                <ellipse cx="380" cy="210" rx="90" ry="60" />
-              </g>
-
-            </svg>
-
-            {# Gold trunk emblem — decorative badge overlaid mid-trunk in the
-            mockup. Icon choice is provisional (see Open Item #1). #}
-            <div class="hero-trunk-emblem" data-layer="emblem" aria-hidden="true">
-              {% include ".icons/material/rhombus-outline.svg" %}
-            </div>
-
-            {# "BAOBAB PLATFORM" pill label, positioned at the root/trunk
-            junction in the mockup. Real, accessible text — not decorative. #}
-            <p class="hero-platform-badge" data-layer="platform-badge">
-              <span>Baobab Platform</span>
-            </p>
-
-            {# ----------------------------------------------------------------------
-            Orbit nodes — the five industry badges positioned around the
-            canopy (Government / Agriculture / Finance / Education /
-            Healthcare). A real <ul> because the labels are meaningful
-              content, not decoration; only each item's icon glyph is
-              aria-hidden. Positioning is entirely deferred to Phase 2 via the
-              data-node attribute — no inline styles here.
-              ---------------------------------------------------------------------- #}
-              <ul class="hero-orbit-nodes">
-
-                <li class="hero-node" data-node="government">
-                  <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/landmark.svg" %}</span>
-                  <span class="hero-node-label">Government</span>
-                </li>
-
-                <li class="hero-node" data-node="agriculture">
-                  <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/leaf.svg" %}</span>
-                  <span class="hero-node-label">Agriculture</span>
-                </li>
-
-                <li class="hero-node" data-node="finance">
-                  <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/bar-chart-3.svg" %}</span>
-                  <span class="hero-node-label">Finance</span>
-                </li>
-
-                <li class="hero-node" data-node="education">
-                  <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/graduation-cap.svg" %}</span>
-                  <span class="hero-node-label">Education</span>
-                </li>
-
-                <li class="hero-node" data-node="healthcare">
-                  <span class="hero-node-icon" aria-hidden="true">{% include ".icons/lucide/heart-pulse.svg" %}</span>
-                  <span class="hero-node-label">Healthcare</span>
-                </li>
-
-              </ul>
-
-      </div>
-      {# end .hero-illustration-stage #}
-
-      {# ----------------------------------------------------------------------
-      Capability strip — the six icon badges beneath the root system
-      (AI / Data / Security / Identity / APIs / Workflows). Distinct
-      content from the page-level Trust Bar below (different label
-      set), so it is its own component, not a reuse of `.hero-trust-
-      bar`. Also a real <ul> for the same reason as the orbit nodes.
-        ---------------------------------------------------------------------- #}
-        <ul class="hero-capability-strip">
-
-          <li class="hero-capability" data-capability="ai">
-            <span class="hero-capability-icon" aria-hidden="true">{% include ".icons/lucide/brain-circuit.svg" %}</span>
-            <span class="hero-capability-label">AI</span>
-          </li>
-
-          <li class="hero-capability" data-capability="data">
-            <span class="hero-capability-icon" aria-hidden="true">{% include ".icons/lucide/database.svg" %}</span>
-            <span class="hero-capability-label">Data</span>
-          </li>
-
-          <li class="hero-capability" data-capability="security">
-            <span class="hero-capability-icon" aria-hidden="true">{% include ".icons/lucide/shield-check.svg" %}</span>
-            <span class="hero-capability-label">Security</span>
-          </li>
-
-          <li class="hero-capability" data-capability="identity">
-            <span class="hero-capability-icon" aria-hidden="true">{% include ".icons/lucide/user.svg" %}</span>
-            <span class="hero-capability-label">Identity</span>
-          </li>
-
-          <li class="hero-capability" data-capability="apis">
-            <span class="hero-capability-icon" aria-hidden="true">{% include ".icons/lucide/code-2.svg" %}</span>
-            <span class="hero-capability-label">APIs</span>
-          </li>
-
-          <li class="hero-capability" data-capability="workflows">
-            <span class="hero-capability-icon" aria-hidden="true">{% include ".icons/lucide/workflow.svg" %}</span>
-            <span class="hero-capability-label">Workflows</span>
-          </li>
-
-        </ul>
-
-    </div>
-    {# end .hero-illustration #}
 
   </div>
 </section>

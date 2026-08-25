@@ -1,124 +1,231 @@
 # ==============================================================================
-# GitHub Actions CI/CD Pipeline: Build & Deploy GitHub Pages Documentation
-# File Location: baobab/.github/workflows/deploy-docs.yml
-# Rationale: Automates static site building with Zensical and deploys to GitHub Pages
-#            with strict link checks and uv dependency management.
+# GitHub Actions Workflow
+# ==============================================================================
+# Workflow : Deploy Documentation
+#
+# Purpose
+# -------
+# Builds the BAOBAB documentation using Zensical and deploys the generated
+# static site to GitHub Pages.
+#
+# This workflow is intentionally limited to documentation deployment and does
+# not build or publish the development container image.
+#
+# Trigger Conditions
+# ------------------
+# • Pushes to the main branch affecting documentation -> build AND deploy.
+# • Pull requests affecting documentation -> build only, for validation.
+#   Mirrors the build-on-PR / publish-on-push pattern already used by
+#   .github/workflows/publish.yml for the container image.
+# • Manual execution from the GitHub Actions UI -> build AND deploy.
+#
+# Documentation Source
+# --------------------
+# docs/
+#
+# Output
+# ------
+# GitHub Pages
+#
+# CHANGE LOG (this file, most recent first)
+# ------------------------------------------------------------------------------
+# * All five actions used in this file were unpinned (floating major-version
+#   tags only: @v5, @v6, @v4). Pinned to full 40-character commit SHAs,
+#   live-verified against each upstream repository (2026-08-06), to satisfy
+#   the org-wide "Require actions to be pinned to a full-length commit SHA"
+#   policy and bring this file in line with publish.yml/update-lockfile.yml,
+#   where 9 of 11 existing pins were separately found to be incorrect and
+#   have already been corrected.
 # ==============================================================================
 
-name: Deploy GitHub Pages Documentation
+name: Deploy Documentation
 
-# ------------------------------------------------------------------------------
-# 1. Execution Triggers
-# Rationale: Triggers deployment only on changes to main that affect documentation
-#            files or pipeline settings, avoiding unnecessary builds.
-# ------------------------------------------------------------------------------
 on:
   push:
     branches:
       - main
+
     paths:
-      - "docs/**"                        # Markdown source files
-      - "zensical.toml"                  # Navigation and theme config
-      - "pyproject.toml"                 # Dependency definitions
-      - ".python-version"                # Exact interpreter pin (added v1.1 — Step C now reads this file directly, see below)
-      - ".github/workflows/deploy-docs.yml" # Pipeline file itself
-  workflow_dispatch:                     # Allows manual triggering from GitHub UI
+      # Documentation
+      - "docs/**"
+
+      # Site configuration
+      - "zensical.toml"
+
+      # Python dependencies
+      - "pyproject.toml"
+      - "uv.lock"
+
+      # Workflow updates
+      - ".github/workflows/pages.yml"
+
+  pull_request:
+    branches:
+      - main
+
+    paths:
+      - "docs/**"
+      - "zensical.toml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/pages.yml"
+
+  workflow_dispatch:
 
 # ------------------------------------------------------------------------------
-# 2. Identity & Permission Scope (Least Privilege Model)
-# Rationale: Required for GitHub Pages OIDC deployment without static deployment tokens.
+# Required permissions
+#
+# Minimal by default (contents: read only). The elevated pages/id-token
+# permissions needed to actually publish are granted only on the `deploy`
+# job below, not workflow-wide — a pull_request build never needs them, so
+# it never has them.
 # ------------------------------------------------------------------------------
 permissions:
-  contents: read      # Read code repository
-  pages: write        # Write compiled HTML artifact to GitHub Pages
-  id-token: write     # Cryptographic OIDC token issuance for deployment verification
+  contents: read
 
 # ------------------------------------------------------------------------------
-# 3. Pipeline Concurrency Management
-# Rationale: Prevents race conditions by cancelling out-of-date runs when multiple
-#            commits arrive in quick succession.
+# Prevent multiple documentation deployments running simultaneously.
+#
+# Scoped per-ref rather than a single shared key: a pull_request build and a
+# main-branch deploy must never be able to cancel one another. Concurrent
+# pushes to the same ref (e.g. two rapid pushes to main, or repeated pushes
+# to the same PR branch) still cancel their own earlier, now-stale run.
 # ------------------------------------------------------------------------------
 concurrency:
-  group: "pages"
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
-# ------------------------------------------------------------------------------
-# 4. Job Steps: Build and Publish Static HTML Site
-# ------------------------------------------------------------------------------
 jobs:
-  build-and-deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+
+  # ------------------------------------------------------------------------
+  # Build job
+  #
+  # Runs for every trigger (push, pull_request, workflow_dispatch). Only
+  # builds and uploads the Pages artifact — never deploys. Needs no
+  # permissions beyond the workflow-wide default (contents: read).
+  # ------------------------------------------------------------------------
+  build:
+    name: Build Documentation
+
     runs-on: ubuntu-latest
 
     steps:
-      # Step A: Checkout source code from repository
-      # Rationale: fetch-depth: 0 (full history) is required, not optional —
-      #            mkdocs-git-revision-date-localized-plugin needs the full
-      #            commit history per file to compute "last updated" dates.
-      - name: Checkout Repository
-        uses: actions/checkout@v7
+
+      # ------------------------------------------------------------------------
+      # Checkout repository
+      #
+      # fetch-depth: 0 (full history) is required by the
+      # mkdocs-git-revision-date-localized-plugin to compute accurate
+      # per-page "last updated" dates. Without it, every page silently
+      # falls back to the build date instead (fallback_to_build_date: true
+      # in mkdocs.yml prevents a hard failure, but every page would show
+      # today's date rather than its real last-modified date).
+      # ------------------------------------------------------------------------
+      - name: Checkout source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
-      # Step B: Install Astral uv for ultra-fast dependency isolation
-      # Rationale: Pinned to the latest verified v8 immutable tag to prevent
-      #            supply-chain drift.
-      - name: Install uv Package Manager
-        uses: astral-sh/setup-uv@v8.1.0
-        with:
-          version: "latest"
-
-      # Step C: Setup Python engine version
-      # Rationale: Reads .python-version directly to guarantee the CI runner
-      #            and local developer environments match at the patch level.
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version-file: ".python-version"
-
-      # Step D: Install documentation group dependencies using uv lock synchronization
-      - name: Install Documentation Dependencies
-        run: uv sync --only-group docs
-
-      # Step E: Native CSS Bundling
-      # Rationale: The docs/assets/css/extra.css file utilizes multiple @import rules
-      #            for developer maintainability. To prevent blocking HTTP requests on
-      #            the client, this step parses those imports, concatenates the files
-      #            in their declared order, and overwrites extra.css prior to MkDocs
-      #            compilation. This achieves CSS bundling natively without introducing
-      #            Node.js/NPM into a pure Python/uv pipeline.
-      - name: Bundle Modular CSS
+      # ------------------------------------------------------------------------
+      # Derive .python-version from config/versions.yaml
+      #
+      # config/versions.yaml is the single source of truth for the Python
+      # version this whole project is pinned to (the same version the
+      # container itself ships). This workflow doesn't need the rest of
+      # what config/resolve.sh resolves (Flutter, GitHub CLI tool releases,
+      # etc.) — none of that affects a documentation build, and pulling in
+      # resolve.sh's other network calls here would only add unrelated
+      # ways for this workflow to fail. This step reads just the one value
+      # it actually needs directly, so uv pins the exact same Python
+      # version a local contributor running config/resolve.sh would get.
+      # ------------------------------------------------------------------------
+      - name: Derive .python-version from config/versions.yaml
         run: |
-          cd docs/assets/stylesheets
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          PYTHON_VERSION=$(yq -r '.languages.python.version' config/versions.yaml)
+          echo "${PYTHON_VERSION%.*}" > .python-version
+          cat .python-version
 
-          # 1. Extract the filenames from the @import url("..."); declarations
-          FILES=$(grep -E "^@import" extra.css | sed -E "s/.*url\(['\"]?([^'\"]+)['\"]?\).*/\1/")
-
-          # 2. Concatenate the targeted files into a single temporary bundle
-          if [ ! -z "$FILES" ]; then
-            cat $FILES > bundle.css
-
-            # 3. Overwrite extra.css with the bundled content, eliminating the imports
-            mv bundle.css extra.css
-            echo "CSS successfully bundled into a single extra.css artifact."
-          else
-            echo "No CSS imports found to bundle."
-          fi
-
-      # Step F: Compile Markdown source files into static HTML
-      # Rationale: --strict causes the build to fail if broken links or syntax errors exist
-      - name: Build Static Site with Zensical
-        run: uv run zensical build
-
-      # Step G: Upload site output artifact for GitHub Pages deployer
-      - name: Upload GitHub Pages Artifact
-        uses: actions/upload-pages-artifact@v3
+      # ------------------------------------------------------------------------
+      # Install uv
+      #
+      # No separate actions/setup-python step: uv provisions the exact
+      # Python version required by pyproject.toml's requires-python /
+      # .python-version itself, so there's nothing to keep in sync by hand
+      # here and no risk of the two drifting apart.
+      #
+      # enable-cache: true actually turns on uv's GitHub Actions cache
+      # integration — this is opt-in, not automatic, despite what this
+      # step used to claim in a comment here.
+      # ------------------------------------------------------------------------
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
-          path: "site/"
+          enable-cache: true
 
-      # Step H: Publish uploaded artifact to GitHub Pages host endpoint
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      # ------------------------------------------------------------------------
+      # Install project dependencies (docs group only)
+      # ------------------------------------------------------------------------
+      - name: Synchronize project dependencies
+        run: |
+          uv sync --locked --group docs
+
+      # ------------------------------------------------------------------------
+      # Build documentation
+      # ------------------------------------------------------------------------
+      - name: Build documentation
+        run: |
+          uv run zensical build --clean
+
+      # ------------------------------------------------------------------------
+      # Upload generated static site
+      #
+      # Uploaded on every trigger, including pull_request — this only
+      # packages the artifact for the deploy job (or for manual download/
+      # preview) and does not publish anything on its own.
+      # ------------------------------------------------------------------------
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
+        with:
+          path: site
+
+  # ------------------------------------------------------------------------
+  # Deploy job
+  #
+  # Only runs for pushes to main and manual dispatch — never for
+  # pull_request builds. This is the only job in the workflow granted the
+  # elevated pages/id-token permissions actual publishing requires.
+  # ------------------------------------------------------------------------
+  deploy:
+    name: Deploy to GitHub Pages
+
+    needs: build
+
+    if: github.event_name != 'pull_request'
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+
+      # ------------------------------------------------------------------------
+      # Configure GitHub Pages
+      # ------------------------------------------------------------------------
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
+
+      # ------------------------------------------------------------------------
+      # Deploy
+      # ------------------------------------------------------------------------
+      - name: Deploy documentation
+        id: deploy
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
