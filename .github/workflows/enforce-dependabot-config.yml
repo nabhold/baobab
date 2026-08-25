@@ -1,0 +1,47 @@
+# ==============================================================================
+# BAOBAB Enterprise Platform
+# Enforce Dependabot Config
+#
+# File: .github/workflows/enforce-dependabot-config.yml
+#
+# PURPOSE:
+#   Delegates to nabhold/shared's reusable enforce-dependabot-config.yml —
+#   fails CI if this repo's .github/dependabot.yml drifts from the org's
+#   structural requirements (missing ecosystem entry, missing schedule,
+#   missing labels, etc). Pairs with enforce-action-pinning.yml above the
+#   same way it does in nabhold/shared itself.
+#
+#   Copied from nabhold/shared's
+#   templates/caller-enforce-dependabot-config.yml verbatim — no
+#   repo-specific adjustments were needed.
+#
+# CHANGE LOG (most recent first)
+# ------------------------------------------------------------------------------
+# * Initial version — this repo previously had no CI check guarding
+#   .github/dependabot.yml against structural drift.
+# ==============================================================================
+
+name: Enforce Dependabot Config
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/dependabot.yml"
+  pull_request:
+    paths:
+      - ".github/dependabot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    permissions:
+      contents: read
+    # SHA is nabhold/shared's v1.0.0 tag (annotated — peeled commit, not
+    # the tag object's own SHA), re-verified live via
+    # `git ls-remote --tags https://github.com/nabhold/shared.git v1.0.0`
+    # on 2026-08-25.
+    uses: nabhold/shared/.github/workflows/enforce-dependabot-config.yml@ad5cdb028023cd6b9c48cd8d7e6151ef4ab0cd73 # v1.0.0

@@ -7,7 +7,7 @@
 # PURPOSE:
 #   Owns the trigger (a pushed v*.*.* / v*.*.*-* tag) and the elevated
 #   contents:write permission; delegates the actual GitHub Release
-#   creation to nabhold/shared's new reusable release.yml, per this org's
+#   creation to nabhold/shared's reusable release.yml, per this org's
 #   "build common capabilities once, govern centrally" principle — same
 #   pattern as this repo's pages.yml and greetings.yml.
 #
@@ -28,27 +28,20 @@
 #   a real build artifact worth attaching (see the shared workflow's own
 #   `files` input docs).
 #
-# ⚠ SETUP REQUIRED BEFORE THIS WORKFLOW CAN RUN:
-#   The `uses:` pin below is NOT yet a real, resolvable commit —
-#   nabhold/shared/.github/workflows/release.yml doesn't exist in that
-#   repository yet as of this writing (2026-08-25). Sequence required:
-#     1. Merge nabhold/shared/.github/workflows/release.yml and
-#        templates/caller-release.yml into nabhold/shared's main branch.
-#     2. Resolve the real commit SHA that introduces it — either
-#        `git ls-remote https://github.com/nabhold/shared.git main` right
-#        after merging, or (preferably, matching this org's "cut a tag,
-#        pin to its SHA" convention) wait for that change to be included
-#        in a new nabhold/shared release (e.g. v1.1.0) and resolve THAT
-#        tag's SHA instead — same command shown in pages.yml/greetings.yml.
-#     3. Replace the placeholder pin below with the real SHA before
-#        merging this file — until then, any tag push will fail this
-#        job at the very first `uses:` step with an "unable to resolve
-#        action" error, not silently.
-#
 # CHANGE LOG (most recent first)
 # ------------------------------------------------------------------------------
+# * Re-pinned to nabhold/shared's real main HEAD now that
+#   .github/workflows/release.yml has actually been merged there —
+#   verified live via `git ls-remote https://github.com/nabhold/shared.git main`
+#   on 2026-08-25 (af64d3986b8fd9a3ff4d03c77496a59ba984ab4f), and by
+#   confirming release.yml is present in a checkout of that exact commit.
+#   No tag covers this file yet (the only tag, v1.0.0, predates it) — per
+#   shared's own templates/README.md guidance, pin to main HEAD until a
+#   new tag is cut that includes it, then re-pin to that tag's SHA.
 # * Initial version, replacing the previously-empty release.yml
-#   placeholder file.
+#   placeholder file. (Shipped with an honest 0000...0000 placeholder
+#   pin at the time, since nabhold/shared/.github/workflows/release.yml
+#   did not exist yet — see this file's git history for that revision.)
 # ==============================================================================
 
 name: Release
@@ -66,11 +59,7 @@ jobs:
   release:
     permissions:
       contents: write
-    # PLACEHOLDER — NOT YET A VALID PIN. See "SETUP REQUIRED" above: this
-    # SHA must be replaced with the real commit that introduces
-    # nabhold/shared/.github/workflows/release.yml before this workflow
-    # can run successfully.
-    uses: nabhold/shared/.github/workflows/release.yml@0000000000000000000000000000000000000000 # TODO: replace after nabhold/shared adopts release.yml — see header
+    uses: nabhold/shared/.github/workflows/release.yml@af64d3986b8fd9a3ff4d03c77496a59ba984ab4f # main HEAD, no tag covers this file yet — see CHANGE LOG
     with:
       changelog-path: "CHANGELOG.md"
       # files: |
