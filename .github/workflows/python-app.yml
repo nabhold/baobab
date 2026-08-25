@@ -1,39 +1,124 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+# ==============================================================================
+# BAOBAB Enterprise Platform
+# Python CI (lint, type-check, test)
+#
+# File: .github/workflows/python-app.yml
+#
+# PURPOSE:
+#   Lints, type-checks, and tests the repository's Python tooling using this
+#   platform's actual toolchain (uv, ruff, pyright, pytest) — mirroring the
+#   exact commands already defined in Makefile's `lint`/`format`/`typecheck`/
+#   `test` targets, so local `make` runs and CI stay identical by
+#   construction rather than by manual sync.
+#
+# CHANGE LOG (most recent first)
+# ------------------------------------------------------------------------------
+# * Replaced GitHub's generic "Python application" starter workflow. That
+#   version installed Python 3.10 via pip/actions/setup-python and ran
+#   flake8 + a bare `pytest`, none of which matches this repository: the
+#   real pin is 3.14.6 (.python-version), dependencies are uv-managed (no
+#   requirements.txt), and ruff.toml/pyrightconfig.jsonc are this org's
+#   actual lint/type-check policy. Its actions were also unpinned
+#   (@v7 floating tags), unlike every other workflow in this repository.
+#   This version uses uv (which reads .python-version automatically — no
+#   separate setup-python step needed) and pins every action to a
+#   full-length commit SHA per this org's policy (see nabhold/shared's
+#   README.md "Immutable Dependencies").
+#
+# ON THE EMPTY-TEST-SUITE HANDLING BELOW:
+#   tests/{unit,integration,e2e,performance,security,fixtures}/ currently
+#   contain only .gitkeep placeholders (see pyrightconfig.jsonc's own
+#   "SCOPE STATUS AT TIME OF AUTHORING" note — same situation, different
+#   tool). A bare `pytest` run against zero collected tests exits 5 ("no
+#   tests collected"), which would otherwise fail this job for a reason
+#   that isn't actually a problem yet. The test step below treats exit
+#   code 5 specifically as a soft pass and everything else (including exit
+#   1/2 from real failing or erroring tests) as a hard failure — so this
+#   stops being a no-op silently the moment real tests land, with no
+#   further change needed here.
+# ==============================================================================
 
-name: Python application
+name: Python CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
+    paths:
+      - "**.py"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - "ruff.toml"
+      - "pyrightconfig.jsonc"
+      - "pytest.ini"
+      - ".github/workflows/python-app.yml"
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
+    paths:
+      - "**.py"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - "ruff.toml"
+      - "pyrightconfig.jsonc"
+      - "pytest.ini"
+      - ".github/workflows/python-app.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: python-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  ci:
+    name: Lint, type-check, and test
+    runs-on: ubuntu-26.04
     steps:
-    - uses: actions/checkout@v7
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v7
-      with:
-        python-version: "3.10"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
-      run: |
-        pytest
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Same pin already verified and in use by nabhold/shared's
+      # pages-zensical.yml (re-verified live via `git ls-remote --tags
+      # https://github.com/astral-sh/setup-uv.git v6` on 2026-08-25 rather
+      # than trusted from that prior verification, per org policy).
+      # uv provisions the interpreter itself from .python-version — no
+      # separate actions/setup-python step, no second tool to keep in
+      # sync with pyproject.toml's requires-python.
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          enable-cache: true
+
+      # quality (ruff, pyright) + test (pytest, pytest-cov, pytest-xdist)
+      # only — dev and docs are irrelevant to CI and would waste time
+      # installing zensical/ipython/pre-commit/watchdog for no benefit here.
+      - name: Synchronize project dependencies
+        run: uv sync --locked --group quality --group test
+
+      - name: Check formatting (ruff format --check)
+        run: uv run ruff format --check .
+
+      - name: Lint (ruff check)
+        run: uv run ruff check .
+
+      # Reports "0 errors" against the workspace members that still have no
+      # real source (see pyrightconfig.jsonc header) rather than failing —
+      # safe to run unconditionally today and automatically becomes a real
+      # gate as each service in that file's "include" list gains code.
+      - name: Type-check (pyright)
+        run: uv run pyright
+
+      - name: Test (pytest)
+        run: |
+          set +e
+          uv run pytest
+          status=$?
+          set -e
+          if [[ $status -eq 5 ]]; then
+            echo "::notice::No tests collected yet — tests/ currently contains only .gitkeep placeholders. Not treated as a failure; see file header."
+            exit 0
+          fi
+          exit $status

@@ -1,0 +1,26 @@
+{#
+overrides/partials/landing/cta-banner.html
+
+Reuses .cta-banner (extra.css) as-is — no new CSS needed. Its
+gradient (--baobab-primary -> --baobab-background-dark) already gives
+.md-button--primary (green background, white text) enough contrast,
+same as confirmed in baobab-dev's equivalent partial.
+#}
+
+<section class="md-grid md-typeset">
+  <div class="cta-banner">
+    <h2>Help build the foundation</h2>
+    <p>
+      BAOBAB is open source and under active development — contributions
+      to architecture, governance and tooling are especially welcome
+      right now.
+    </p>
+    <a href="{{ page.next_page.url | url }}" title="{{ page.next_page.title | e }}"
+      class="md-button md-button--primary">
+      Read the Documentation
+    </a>
+    <a href="{{ config.repo_url }}" title="View source on GitHub" class="md-button">
+      View on GitHub
+    </a>
+  </div>
+</section>

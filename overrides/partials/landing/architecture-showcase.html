@@ -1,0 +1,89 @@
+{#
+overrides/partials/landing/architecture-showcase.html
+
+Redraws README.md's own "High-Level Platform Architecture" ASCII
+diagram (Client Applications -> Platform Services -> Shared Platform
+Components -> Platform Infrastructure) as HTML/CSS, inside the
+existing .showcase-panel "window chrome" component (extra.css) —
+that component previously only ever wrapped a mermaid diagram or a
+code block; this is its first use for a plain layered-tier diagram,
+via the new .arch-diagram / .arch-tier / .arch-chip / .arch-connector
+rules in the CSS additions. Item labels inside each tier are exactly
+README.md's own labels, not reworded.
+#}
+
+<section class="md-grid md-typeset">
+  <h2>Four tiers, independently scalable</h2>
+  <p>
+    Rather than a single framework, BAOBAB is composed of independent
+    services connected through shared contracts — the same shape as
+    the architecture diagram in the README, redrawn for the web.
+  </p>
+
+  <div class="showcase-panel">
+    <div class="showcase-panel-header">
+      <span class="window-dot red"></span>
+      <span class="window-dot yellow"></span>
+      <span class="window-dot green"></span>
+      <span class="showcase-panel-title">high-level-platform-architecture.txt</span>
+    </div>
+    <div class="arch-diagram">
+
+      <div class="arch-tier">
+        <span class="arch-tier-label">Client Applications</span>
+        <div class="arch-tier-items">
+          <span class="arch-chip">Web Applications</span>
+          <span class="arch-chip">Mobile Applications</span>
+          <span class="arch-chip">External Systems</span>
+        </div>
+      </div>
+
+      <div class="arch-connector" aria-hidden="true">
+        <span class="twemoji">{% include ".icons/lucide/chevron-down.svg" %}</span>
+      </div>
+
+      <div class="arch-tier">
+        <span class="arch-tier-label">Platform Services</span>
+        <div class="arch-tier-items">
+          <span class="arch-chip">Backend Service</span>
+          <span class="arch-chip">Frontend Service</span>
+          <span class="arch-chip">AI Service</span>
+          <span class="arch-chip">Worker Service</span>
+        </div>
+      </div>
+
+      <div class="arch-connector" aria-hidden="true">
+        <span class="twemoji">{% include ".icons/lucide/chevron-down.svg" %}</span>
+      </div>
+
+      <div class="arch-tier">
+        <span class="arch-tier-label">Shared Platform Components</span>
+        <div class="arch-tier-items">
+          <span class="arch-chip">APIs</span>
+          <span class="arch-chip">Contracts</span>
+          <span class="arch-chip">Events</span>
+          <span class="arch-chip">Schemas</span>
+          <span class="arch-chip">Utilities</span>
+          <span class="arch-chip">Localisation</span>
+        </div>
+      </div>
+
+      <div class="arch-connector" aria-hidden="true">
+        <span class="twemoji">{% include ".icons/lucide/chevron-down.svg" %}</span>
+      </div>
+
+      <div class="arch-tier">
+        <span class="arch-tier-label">Platform Infrastructure</span>
+        <div class="arch-tier-items">
+          <span class="arch-chip">PostgreSQL</span>
+          <span class="arch-chip">Redis</span>
+          <span class="arch-chip">Object Storage</span>
+          <span class="arch-chip">Monitoring</span>
+          <span class="arch-chip">AWS</span>
+          <span class="arch-chip">Kubernetes</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>

@@ -146,6 +146,164 @@
 }
 
 /*
+  Landing Hero — full-bleed band, kicker/lead, illustration
+  ------------------------------------------------------------------------
+  Completes the hero concept palette.css's "Hero / Illustration
+  Tokens" block already reserved space for. .landing-hero (grid/
+  columns) and .hero-actions (flex row) above are untouched —
+  everything below is new.
+==============================================================================*/
+
+.landing-hero-bleed {
+
+    position: relative;
+    overflow: hidden;
+    background: var(--baobab-background);
+
+}
+
+[data-md-color-scheme="slate"] .landing-hero-bleed {
+
+    background: var(--baobab-background-dark);
+
+}
+
+.landing-hero-bleed .hero-bg {
+
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: right center;
+    pointer-events: none;
+    z-index: 0;
+    display: none;
+
+}
+
+@media (min-width: 1024px) {
+
+    .landing-hero-bleed .hero-bg {
+
+        display: block;
+
+    }
+
+}
+
+.landing-hero-bleed::before {
+
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+
+    background: linear-gradient(90deg,
+            var(--baobab-background) 0%,
+            var(--baobab-background) 46%,
+            transparent 82%);
+
+}
+
+[data-md-color-scheme="slate"] .landing-hero-bleed::before {
+
+    background: linear-gradient(90deg,
+            var(--baobab-background-dark) 0%,
+            var(--baobab-background-dark) 46%,
+            transparent 82%);
+
+}
+
+.landing-hero-bleed .landing-hero {
+
+    position: relative;
+    z-index: 2;
+    padding-block: var(--baobab-space-12) var(--baobab-space-10);
+
+}
+
+.hero-content {
+
+    max-width: 40rem;
+
+}
+
+@media (min-width: 1024px) {
+
+    .hero-content {
+
+        max-width: min(66vw, 42rem);
+
+    }
+
+}
+
+.hero-kicker {
+
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: var(--baobab-tracking-wide);
+    font-size: var(--baobab-text-sm);
+    font-weight: var(--baobab-weight-semibold);
+    color: var(--baobab-green);
+    margin: 0 0 var(--baobab-space-3);
+
+}
+
+[data-md-color-scheme="slate"] .hero-kicker {
+
+    color: var(--baobab-green-light);
+
+}
+
+.landing-hero h1 {
+
+    font-size: var(--baobab-text-5xl);
+    line-height: var(--baobab-leading-tight);
+    letter-spacing: var(--baobab-tracking-tight);
+    margin: 0 0 var(--baobab-space-4);
+
+}
+
+@media (max-width: 480px) {
+
+    .landing-hero h1 {
+
+        font-size: var(--baobab-text-4xl);
+
+    }
+
+}
+
+.hero-lead {
+
+    font-size: var(--baobab-text-lg);
+    line-height: var(--baobab-leading-snug);
+    color: var(--md-default-fg-color--light);
+    margin: 0 0 var(--baobab-space-6);
+
+}
+
+@media (max-width: 1023px) {
+
+    .hero-content {
+
+        margin-inline: auto;
+        text-align: center;
+
+    }
+
+    .landing-hero-bleed .hero-actions {
+
+        justify-content: center;
+
+    }
+
+}
+
+/*
   Technology Strip
 ==============================================================================*/
 
@@ -531,6 +689,44 @@
 
 }
 
+/*
+  Planned-capability state
+  ------------------------------------------------------------------------
+  Used by feature-grid.html to mark the handful of README-documented
+  *(Planned)* capabilities without presenting them as already shipped.
+==============================================================================*/
+
+.feature-list li.planned {
+
+    color: var(--md-default-fg-color--light);
+
+}
+
+.feature-list li.planned::before {
+
+    content: "";
+    background: transparent;
+    border: 1px dashed var(--baobab-border);
+
+}
+
+[data-md-color-scheme="slate"] .feature-list li.planned::before {
+
+    border-color: var(--baobab-border-dark);
+
+}
+
+.planned-tag {
+
+    font-size: var(--baobab-text-xs);
+    font-weight: var(--baobab-weight-medium);
+    color: var(--md-default-fg-color--light);
+    margin-left: auto;
+    text-transform: uppercase;
+    letter-spacing: var(--baobab-tracking-wide);
+
+}
+
 
 /*==============================================================================
   Responsive
@@ -698,6 +894,101 @@
         margin-top: 1rem;
 
     }
+
+}
+
+/*==============================================================================
+  Architecture Diagram
+  ------------------------------------------------------------------------
+  Lives inside .showcase-panel's existing window chrome — previously
+  only ever used to frame a mermaid diagram or a code block. This is
+  a plain layered-tier diagram instead, redrawing the README's own
+  "High-Level Platform Architecture" ASCII art.
+==============================================================================*/
+
+.arch-diagram {
+
+    padding: var(--baobab-space-6) var(--baobab-space-5);
+    display: flex;
+    flex-direction: column;
+
+}
+
+.arch-tier {
+
+    border: 1px solid var(--baobab-border);
+    border-radius: var(--baobab-radius-small);
+    background: var(--baobab-background);
+    padding: var(--baobab-space-4) var(--baobab-space-5);
+
+}
+
+[data-md-color-scheme="slate"] .arch-tier {
+
+    background: var(--baobab-background-dark);
+    border-color: var(--baobab-border-dark);
+
+}
+
+.arch-tier-label {
+
+    display: block;
+    font-size: var(--baobab-text-xs);
+    font-weight: var(--baobab-weight-semibold);
+    letter-spacing: var(--baobab-tracking-wide);
+    text-transform: uppercase;
+    color: var(--md-default-fg-color--light);
+    margin-bottom: .6rem;
+
+}
+
+.arch-tier-items {
+
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+
+}
+
+.arch-chip {
+
+    font-family: var(--baobab-font-mono);
+    font-size: var(--baobab-text-xs);
+    padding: .3rem .65rem;
+    border-radius: 999px;
+    background: var(--baobab-surface);
+    border: 1px solid var(--baobab-border);
+    color: var(--baobab-text);
+
+}
+
+[data-md-color-scheme="slate"] .arch-chip {
+
+    background: var(--baobab-surface-dark);
+    border-color: var(--baobab-border-dark);
+    color: var(--baobab-text-dark);
+
+}
+
+.arch-connector {
+
+    display: flex;
+    justify-content: center;
+    color: var(--baobab-border);
+    margin-block: .25rem;
+
+}
+
+[data-md-color-scheme="slate"] .arch-connector {
+
+    color: var(--baobab-border-dark);
+
+}
+
+.arch-connector .twemoji svg {
+
+    width: 16px;
+    height: 16px;
 
 }
 
@@ -885,4 +1176,3 @@
         grid-template-columns: 1fr;
     }
 }
-

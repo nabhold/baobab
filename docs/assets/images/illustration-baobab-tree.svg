@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-hidden="true" focusable="false">
+  <!--
+    BAOBAB hero illustration — layered roots / trunk / canopy tree.
+
+    This is the illustration palette.css's "Hero / Illustration Tokens"
+    block has been reserving since before any landing-page redesign:
+    that block's own comment names this exact brief ("the hero's
+    layered SVG illustration (roots / trunk / canopy)") and supplies a
+    5-step green ramp sized for tonal depth rather than a 3-step button
+    ramp. This file is the first thing to actually consume it.
+
+    Consumed via <img class="hero-bg" src="..."> in
+    overrides/partials/hero.html (object-fit: cover, right-aligned,
+    faded into the page background by .landing-hero-bleed::before) —
+    same pattern already proven by baobab-dev's
+    illustration-baobab.svg. Because an img-referenced SVG can't be
+    reached by the host page's CSS, colour values are literal hex
+    here, duplicated from palette.css's "baobab-hero-brand" 900..500
+    ramp — keep in sync if that ramp ever changes:
+      900 #2E4A2E  800 #3C5F36  700 #465D3F  600 #4B6F42  500 #6F945E
+
+    Not scheme-aware: the ramp reads clearly against both the light
+    "hero-bg" surface and the dark "background-dark" hero surface
+    without a swap, so, unlike palette.css's other tokens, this file
+    does not need a second, dark-mode illustration.
+
+    Structure, for CSS/JS reuse:
+      #canopy   — the layered ellipse clusters, static (this is the
+                  "anchor" of the image; keeping it still keeps hero
+                  text legible against it)
+      #trunk    — single tapered path, static
+      #roots    — branching root paths, static
+      .drift    — small accent elements only (falling leaf flecks),
+                  receiving the project's existing ambient-motion
+                  convention (animations.css's baobab-float) via a
+                  self-contained @keyframes block, since this file is
+                  consumed by reference and can't inherit host CSS.
+                  Nothing large or high-contrast moves, so the image
+                  stays legible as a text background and a static
+                  render (prefers-reduced-motion) is still complete
+                  and correct.
+  -->
+
+  <defs>
+    <style><![CDATA[
+      @keyframes leaf-drift {
+        0%   { transform: translate(0, 0) rotate(0deg); opacity: .85; }
+        50%  { transform: translate(-6px, 10px) rotate(8deg); opacity: .55; }
+        100% { transform: translate(0, 0) rotate(0deg); opacity: .85; }
+      }
+      .drift { animation: leaf-drift 6s ease-in-out infinite; transform-origin: center; }
+      [data-drift="slow"]   { animation-duration: 8s; }
+      [data-drift="medium"] { animation-duration: 6s; animation-delay: .6s; }
+      [data-drift="fast"]   { animation-duration: 4.5s; animation-delay: 1.1s; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .drift { animation: none !important; }
+      }
+    ]]></style>
+
+    <radialGradient id="canopyGlow" cx="62%" cy="30%" r="55%">
+      <stop offset="0%" stop-color="#6F945E" stop-opacity=".16"/>
+      <stop offset="100%" stop-color="#6F945E" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ambient background wash -->
+  <rect x="0" y="0" width="1600" height="1000" fill="url(#canopyGlow)"/>
+
+  <!-- ============================== Roots ============================== -->
+  <g id="roots" stroke="#2E4A2E" stroke-width="7" stroke-linecap="round" fill="none" opacity=".85">
+    <path d="M1180 840 C 1120 862, 1060 862, 1000 900"/>
+    <path d="M1180 840 C 1155 868, 1150 900, 1120 940"/>
+    <path d="M1180 840 C 1195 872, 1195 904, 1210 944"/>
+    <path d="M1180 840 C 1230 864, 1290 864, 1350 900"/>
+    <path d="M1180 840 C 1100 856, 1040 840, 970 858"/>
+    <path d="M1180 840 C 1260 856, 1320 840, 1390 858"/>
+  </g>
+
+  <!-- ============================== Trunk ============================== -->
+  <path id="trunk"
+        d="M1120 840 C 1100 700, 1100 560, 1145 420 C 1158 380, 1210 380, 1222 420 C 1266 560, 1266 700, 1246 840 Z"
+        fill="#3C5F36"/>
+  <path d="M1170 840 C 1160 705, 1163 570, 1183 430" stroke="#2E4A2E" stroke-width="4" fill="none" opacity=".45"/>
+  <path d="M1195 840 C 1188 705, 1190 570, 1200 430" stroke="#2E4A2E" stroke-width="3" fill="none" opacity=".3"/>
+
+  <!-- Two supporting boughs, same trunk tone -->
+  <path d="M1145 480 C 1080 460, 1030 410, 1000 340" stroke="#3C5F36" stroke-width="20" stroke-linecap="round" fill="none"/>
+  <path d="M1222 480 C 1290 458, 1345 405, 1380 335" stroke="#3C5F36" stroke-width="20" stroke-linecap="round" fill="none"/>
+
+  <!-- ============================== Canopy ============================== -->
+  <g id="canopy">
+    <ellipse cx="1183" cy="290" rx="330" ry="200" fill="#2E4A2E" opacity=".92"/>
+    <ellipse cx="1000" cy="330" rx="210" ry="140" fill="#3C5F36"/>
+    <ellipse cx="1370" cy="330" rx="210" ry="140" fill="#3C5F36"/>
+    <ellipse cx="1183" cy="230" rx="240" ry="150" fill="#465D3F"/>
+    <ellipse cx="1060" cy="270" rx="150" ry="100" fill="#4B6F42"/>
+    <ellipse cx="1310" cy="270" rx="150" ry="100" fill="#4B6F42"/>
+    <ellipse cx="1183" cy="180" rx="170" ry="105" fill="#6F945E"/>
+    <ellipse cx="1090" cy="210" rx="95" ry="62" fill="#6F945E" opacity=".85"/>
+    <ellipse cx="1276" cy="210" rx="95" ry="62" fill="#6F945E" opacity=".85"/>
+  </g>
+
+  <!-- Drifting leaf flecks -->
+  <g fill="#6F945E">
+    <circle class="drift" data-drift="slow" cx="880" cy="360" r="6"/>
+    <circle class="drift" data-drift="medium" cx="1480" cy="300" r="5"/>
+    <circle class="drift" data-drift="fast" cx="1440" cy="440" r="4"/>
+    <circle class="drift" data-drift="medium" cx="940" cy="470" r="4.5"/>
+    <circle class="drift" data-drift="slow" cx="1420" cy="200" r="4"/>
+  </g>
+
+</svg>

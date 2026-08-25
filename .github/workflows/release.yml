@@ -1,1 +1,77 @@
+# ==============================================================================
+# BAOBAB Enterprise Platform
+# Release
+#
+# File: .github/workflows/release.yml
+#
+# PURPOSE:
+#   Owns the trigger (a pushed v*.*.* / v*.*.*-* tag) and the elevated
+#   contents:write permission; delegates the actual GitHub Release
+#   creation to nabhold/shared's new reusable release.yml, per this org's
+#   "build common capabilities once, govern centrally" principle — same
+#   pattern as this repo's pages.yml and greetings.yml.
+#
+#   The shared workflow extracts this repository's own CHANGELOG.md
+#   section for the pushed version (a "# [<version>]" heading — see
+#   CHANGELOG.md's own "Changelog Structure" section, which already
+#   documents exactly this format) and uses it as the release body,
+#   falling back to GitHub's auto-generated notes if no matching section
+#   exists yet. Pre-release tags (anything containing "-", matching this
+#   repo's own documented alpha/beta/rc convention — see CHANGELOG.md's
+#   "Pre-release Versions" section) are automatically marked as a GitHub
+#   pre-release.
+#
+#   This repository doesn't yet build or publish any artifact of its own
+#   (see release-readiness notes in CHANGELOG.md — still pre-0.1.0), so
+#   `files` is left unset below: this workflow currently produces a
+#   notes-only GitHub Release. Uncomment and fill in `files` once there's
+#   a real build artifact worth attaching (see the shared workflow's own
+#   `files` input docs).
+#
+# ⚠ SETUP REQUIRED BEFORE THIS WORKFLOW CAN RUN:
+#   The `uses:` pin below is NOT yet a real, resolvable commit —
+#   nabhold/shared/.github/workflows/release.yml doesn't exist in that
+#   repository yet as of this writing (2026-08-25). Sequence required:
+#     1. Merge nabhold/shared/.github/workflows/release.yml and
+#        templates/caller-release.yml into nabhold/shared's main branch.
+#     2. Resolve the real commit SHA that introduces it — either
+#        `git ls-remote https://github.com/nabhold/shared.git main` right
+#        after merging, or (preferably, matching this org's "cut a tag,
+#        pin to its SHA" convention) wait for that change to be included
+#        in a new nabhold/shared release (e.g. v1.1.0) and resolve THAT
+#        tag's SHA instead — same command shown in pages.yml/greetings.yml.
+#     3. Replace the placeholder pin below with the real SHA before
+#        merging this file — until then, any tag push will fail this
+#        job at the very first `uses:` step with an "unable to resolve
+#        action" error, not silently.
+#
+# CHANGE LOG (most recent first)
+# ------------------------------------------------------------------------------
+# * Initial version, replacing the previously-empty release.yml
+#   placeholder file.
+# ==============================================================================
 
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+      - "v*.*.*-*"
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    # PLACEHOLDER — NOT YET A VALID PIN. See "SETUP REQUIRED" above: this
+    # SHA must be replaced with the real commit that introduces
+    # nabhold/shared/.github/workflows/release.yml before this workflow
+    # can run successfully.
+    uses: nabhold/shared/.github/workflows/release.yml@0000000000000000000000000000000000000000 # TODO: replace after nabhold/shared adopts release.yml — see header
+    with:
+      changelog-path: "CHANGELOG.md"
+      # files: |
+      #   path/to/artifact

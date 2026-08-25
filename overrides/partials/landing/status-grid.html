@@ -1,0 +1,54 @@
+{#
+overrides/partials/landing/status-grid.html
+
+Reuses .status-grid / .status-card (extra.css) — previously defined
+but unused on the landing page. Content is README.md's own "Project
+Status" (Foundation Development) and "Guiding Principles" sections,
+chosen deliberately to keep the honesty constraint the rest of this
+redesign follows: nothing here claims more than what Project Status
+already states in the README.
+#}
+
+<section class="md-grid md-typeset">
+  <h2>Where BAOBAB is today</h2>
+  <p>
+    Currently in Foundation Development — establishing architecture,
+    governance and CI/CD before business capabilities land.
+  </p>
+
+  <div class="status-grid">
+
+    <div class="status-card">
+      <span class="twemoji">{% include ".icons/lucide/history.svg" %}</span>
+      <div>
+        <h3>Current phase: Foundation Development</h3>
+        <p>Architecture, governance and CI/CD are being established before feature work begins.</p>
+      </div>
+    </div>
+
+    <div class="status-card">
+      <span class="twemoji">{% include ".icons/lucide/shield-check.svg" %}</span>
+      <div>
+        <h3>Security by design</h3>
+        <p>Auth, secrets and dependency management are part of the lifecycle, not an afterthought.</p>
+      </div>
+    </div>
+
+    <div class="status-card">
+      <span class="twemoji">{% include ".icons/lucide/file-text.svg" %}</span>
+      <div>
+        <h3>Documentation as code</h3>
+        <p>Docs evolve alongside the source, kept accurate through the same review process.</p>
+      </div>
+    </div>
+
+    <div class="status-card">
+      <span class="twemoji">{% include ".icons/lucide/layers.svg" %}</span>
+      <div>
+        <h3>Polyglot by design</h3>
+        <p>Each service uses the language and tooling suited to its domain, on shared standards.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
