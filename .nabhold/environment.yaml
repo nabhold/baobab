@@ -77,16 +77,19 @@ compatibility_policy:
 # ------------------------------------------------------------------------------
 
 validation:
+  # Domain-qualified (matches capabilities.yaml's nesting exactly) so
+  # baobab-verify --contract can do a direct yq lookup instead of guessing
+  # which domain a flat name like "node" belongs to.
   required_capabilities:
-    - "python"
-    - "node"
-    - "flutter"
-    - "postgresql"
-    - "uv"
-    - "poetry"
-    - "pnpm"
-    - "docker"
-    - "github_cli"
+    - "languages.python"
+    - "languages.node"
+    - "languages.flutter"
+    - "database.postgresql"
+    - "package_managers.uv"
+    - "package_managers.poetry"
+    - "package_managers.pnpm"
+    - "development.docker"
+    - "development.github_cli"
 
   # cosign is provided by baobab-dev (security domain) but intentionally
   # NOT required here: cosign signs baobab-dev's own published image, it is
