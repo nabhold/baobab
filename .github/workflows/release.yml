@@ -59,7 +59,7 @@ jobs:
   release:
     permissions:
       contents: write
-    uses: nabhold/shared/.github/workflows/release.yml@af64d3986b8fd9a3ff4d03c77496a59ba984ab4f # main HEAD, no tag covers this file yet — see CHANGE LOG
+    uses: nabhold/shared/.github/workflows/release.yml@ba0a60d4d311aa26d9e0b7973b88fcd160cedf4d # main HEAD, no tag covers this file yet — see CHANGE LOG
     with:
       changelog-path: "CHANGELOG.md"
       # files: |
