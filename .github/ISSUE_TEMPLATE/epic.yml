@@ -3,7 +3,6 @@ description: Track a large body of work comprising multiple related issues.
 title: "[Epic]: "
 labels:
   - epic
-
 body:
   - type: markdown
     attributes:
