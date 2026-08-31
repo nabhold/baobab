@@ -4,6 +4,7 @@ import (
 	"errors"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var resourceID = regexp.MustCompile(`^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$`)
@@ -55,8 +56,10 @@ func (c RegisterTenant) Validate() error {
 func validResource(v string) bool { return len(v) >= 3 && len(v) <= 63 && resourceID.MatchString(v) }
 
 type Operation struct {
-	OperationID string `json:"operation_id"`
-	TenantID    string `json:"tenant_id"`
-	State       string `json:"state"`
-	Revision    int    `json:"revision"`
+	OperationID string    `json:"operation_id"`
+	TenantID    string    `json:"tenant_id"`
+	State       string    `json:"state"`
+	Revision    int       `json:"revision"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
