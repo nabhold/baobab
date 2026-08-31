@@ -1,80 +1,194 @@
 package api
 
 import (
-	"crypto/subtle"
+	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"github.com/go-chi/chi/v5"
-	"github.com/nabhold/baobab-cp/internal/domain"
-	"github.com/nabhold/baobab-cp/internal/store"
+	"log/slog"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/nabhold/baobab-cp/internal/auth"
+	"github.com/nabhold/baobab-cp/internal/domain"
+	"github.com/nabhold/baobab-cp/internal/store"
 )
 
+type correlationKey struct{}
+
+type Dependencies struct {
+	Store         store.TenantStore
+	AdminVerifier auth.TokenVerifier
+}
 type API struct {
-	store store.TenantStore
-	token string
+	store         store.TenantStore
+	adminVerifier auth.TokenVerifier
 }
 
-func New(s store.TenantStore, token string) http.Handler {
-	a := &API{s, token}
+func New(dependencies Dependencies) http.Handler {
+	a := &API{store: dependencies.Store, adminVerifier: dependencies.AdminVerifier}
 	r := chi.NewRouter()
-	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) { writeJSON(w, 200, map[string]string{"status": "ok"}) })
+	r.Use(a.securityHeaders, a.correlation, a.requestLog)
+	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	})
 	r.Get("/readyz", a.ready)
-	r.With(a.authorize).Post("/v1/tenants", a.register)
+	r.With(a.authorize(a.adminVerifier, "human", "tenant:write")).Post("/v1/tenants", a.register)
 	return r
 }
-func (a *API) authorize(next http.Handler) http.Handler {
+
+func (a *API) authorize(verifier auth.TokenVerifier, actorType, requiredScope string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			raw, ok := bearerToken(r.Header.Get("Authorization"))
+			if !ok {
+				problem(w, http.StatusUnauthorized, "unauthorized", "a bearer token is required")
+				return
+			}
+			principal, err := verifier.Verify(r.Context(), raw)
+			if err != nil {
+				problem(w, http.StatusUnauthorized, "unauthorized", "the bearer token is invalid")
+				return
+			}
+			if principal.ActorType != actorType || !principal.HasScope(requiredScope) {
+				slog.WarnContext(r.Context(), "authorization denied", "actor_id", principal.Subject, "actor_type", principal.ActorType, "required_scope", requiredScope, "correlation_id", correlationID(r))
+				problem(w, http.StatusForbidden, "forbidden", "the authenticated principal lacks required authority")
+				return
+			}
+			*r = *r.WithContext(auth.WithPrincipal(r.Context(), principal))
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func bearerToken(header string) (string, bool) {
+	scheme, value, ok := strings.Cut(strings.TrimSpace(header), " ")
+	return value, ok && strings.EqualFold(scheme, "Bearer") && value != ""
+}
+
+func (a *API) securityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		got := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if len(got) != len(a.token) || subtle.ConstantTimeCompare([]byte(got), []byte(a.token)) != 1 {
-			problem(w, 401, "unauthorized", "a valid administrative bearer token is required")
-			return
-		}
+		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
 		next.ServeHTTP(w, r)
 	})
 }
+
+func (a *API) correlation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := r.Header.Get("X-Correlation-ID")
+		if id != "" && !validUUID(id) {
+			problem(w, http.StatusBadRequest, "invalid_correlation_id", "X-Correlation-ID must be a UUID")
+			return
+		}
+		if id == "" {
+			id = newUUID()
+		}
+		w.Header().Set("X-Correlation-ID", id)
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), correlationKey{}, id)))
+	})
+}
+
+func (a *API) requestLog(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		started := time.Now()
+		next.ServeHTTP(w, r)
+		principal, _ := auth.PrincipalFromContext(r.Context())
+		slog.InfoContext(r.Context(), "request completed", "method", r.Method, "path", r.URL.Path, "actor_id", principal.Subject, "correlation_id", correlationID(r), "duration_ms", time.Since(started).Milliseconds())
+	})
+}
+
 func (a *API) ready(w http.ResponseWriter, r *http.Request) {
 	if err := a.store.Ping(r.Context()); err != nil {
-		problem(w, 503, "not_ready", "database unavailable")
+		problem(w, http.StatusServiceUnavailable, "not_ready", "database unavailable")
 		return
 	}
-	writeJSON(w, 200, map[string]string{"status": "ready"})
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ready"})
 }
+
 func (a *API) register(w http.ResponseWriter, r *http.Request) {
 	key := r.Header.Get("Idempotency-Key")
 	if len(key) < 16 || len(key) > 128 {
-		problem(w, 400, "invalid_idempotency_key", "Idempotency-Key must contain 16 to 128 characters")
+		problem(w, http.StatusBadRequest, "invalid_idempotency_key", "Idempotency-Key must contain 16 to 128 characters")
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
-	var c domain.RegisterTenant
-	if err := dec.Decode(&c); err != nil {
-		problem(w, 400, "invalid_request", "request body is not valid contract JSON")
+	var command domain.RegisterTenant
+	if err := dec.Decode(&command); err != nil {
+		problem(w, http.StatusBadRequest, "invalid_request", "request body is not valid contract JSON")
 		return
 	}
-	if err := c.Validate(); err != nil {
-		problem(w, 422, "validation_failed", err.Error())
+	if err := command.Validate(); err != nil {
+		problem(w, http.StatusUnprocessableEntity, "validation_failed", err.Error())
 		return
 	}
-	op, err := a.store.RegisterTenant(r.Context(), key, c)
+	principal, _ := auth.PrincipalFromContext(r.Context())
+	metadata := store.RequestMetadata{ActorID: principal.Subject, ActorType: principal.ActorType, CorrelationID: correlationID(r)}
+	operation, err := a.store.RegisterTenant(r.Context(), key, metadata, command)
 	if errors.Is(err, store.ErrIdempotencyConflict) {
-		problem(w, 409, "idempotency_conflict", err.Error())
+		problem(w, http.StatusConflict, "idempotency_conflict", err.Error())
 		return
 	}
 	if err != nil {
-		problem(w, 500, "internal_error", "tenant registration could not be persisted")
+		problem(w, http.StatusInternalServerError, "internal_error", "tenant registration could not be persisted")
 		return
 	}
-	w.Header().Set("Location", "/v1/operations/"+op.OperationID)
-	writeJSON(w, 202, op)
+	w.Header().Set("Location", "/v1/operations/"+operation.OperationID)
+	writeJSON(w, http.StatusAccepted, operation)
 }
-func writeJSON(w http.ResponseWriter, status int, v any) {
+
+func correlationID(r *http.Request) string {
+	id, _ := r.Context().Value(correlationKey{}).(string)
+	return id
+}
+func validUUID(value string) bool {
+	if len(value) != 36 {
+		return false
+	}
+	for i, c := range value {
+		if i == 8 || i == 13 || i == 18 || i == 23 {
+			if c != '-' {
+				return false
+			}
+			continue
+		}
+		if !strings.ContainsRune("0123456789abcdefABCDEF", c) {
+			return false
+		}
+	}
+	return true
+}
+func newUUID() string {
+	var value [16]byte
+	if _, err := rand.Read(value[:]); err != nil {
+		panic("cryptographic random source unavailable")
+	}
+	value[6] = (value[6] & 0x0f) | 0x40
+	value[8] = (value[8] & 0x3f) | 0x80
+	encoded := make([]byte, 36)
+	hex.Encode(encoded[0:8], value[0:4])
+	encoded[8] = '-'
+	hex.Encode(encoded[9:13], value[4:6])
+	encoded[13] = '-'
+	hex.Encode(encoded[14:18], value[6:8])
+	encoded[18] = '-'
+	hex.Encode(encoded[19:23], value[8:10])
+	encoded[23] = '-'
+	hex.Encode(encoded[24:36], value[10:16])
+	return string(encoded)
+}
+func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
+	_ = json.NewEncoder(w).Encode(value)
 }
 func problem(w http.ResponseWriter, status int, code, detail string) {
 	writeJSON(w, status, map[string]any{"type": "https://docs.nabhold.com/problems/" + code, "title": http.StatusText(status), "status": status, "detail": detail, "code": code})

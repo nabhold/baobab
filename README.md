@@ -2,7 +2,7 @@
 
 > The authoritative source of tenant lifecycle, entitlement, and desired-state truth for the Baobab ecosystem.
 
-**Status:** Foundation 2 — executable Go control-plane core under active development (see [ADR-0001](docs/adr/0001-go-control-plane-runtime.md)).
+**Status:** Foundation 3 — OIDC-secured management boundary under active development (see [ADR-0001](docs/adr/0001-go-control-plane-runtime.md)).
 **Architecture:** [ADR-0003 — Multi-Tenant, Production-Ready Control Plane Architecture](docs/adr/0003-multi-tenant-control-plane-architecture.md)
 
 ---
@@ -72,7 +72,7 @@ See [ADR-0003](docs/adr/0003-multi-tenant-control-plane-architecture.md) for the
 | Migrations | `golang-migrate` | plain SQL, reviewable diffs |
 | Messaging | RabbitMQ via `amqp091-go` | matches provisioned topology; DLQ support |
 | Gateway integration | APISIX Admin API client | control plane reconciles routes it owns |
-| AuthN | mTLS (service-to-service) + OIDC (admin API) | see ADR-0003 §7 |
+| AuthN | OIDC (admin API); infrastructure-terminated mTLS + OIDC workload tokens | see ADR-0003 §7 |
 | Observability | OpenTelemetry (traces, metrics, logs) | org-wide observability contract (`nabhold/shared`) |
 | Config | environment variables, validated at startup | 12-factor, container-friendly |
 | Testing | standard `testing` + Testcontainers (Postgres, RabbitMQ) | real dependencies in CI, not mocks-only |
@@ -140,7 +140,7 @@ make test-integration  # Testcontainers-backed integration tests
 |---|---|
 | `nabhold/shared` | Contract source of truth. `baobab-cp` implements the OpenAPI/AsyncAPI schemas defined there; it never redefines them locally. |
 | `nabhold/infrastructure` | Provisions the Postgres, RabbitMQ, and APISIX instances `baobab-cp` depends on and reconciles against. `baobab-cp` never provisions its own infrastructure. |
-| `nabhold/baobab-trade` | Calls `POST /v1/context/resolve` on every commerce request; fails closed if unresolved. Consumer, not a dependency of this repo. |
+| `nabhold/baobab-trade` | Will call `POST /v1/context/resolve` at its trusted engine boundary once the next control-plane vertical slice lands; it must fail closed if unresolved. Consumer, not a dependency of this repo. |
 | `nabhold/baobab-erp` | Contract-level consumer of canonical identifiers; does not yet call this repo's context-resolution API directly (open question — see ADR-0003 §14). |
 | `nabhold/baobab-pulse` | Consumer of tenant/entitlement context (integration not yet established — repository is pre-Foundation). |
 | `nabhold/baobab-dev` | Provides this repository's local/CI development container image. |
@@ -148,7 +148,7 @@ make test-integration  # Testcontainers-backed integration tests
 
 ## Security
 
-- Every request to `/v1/context/resolve` is authenticated via mutual TLS + workload identity; responses are signed.
+- The `/v1/context/resolve` contract requires infrastructure-terminated mutual TLS plus a scoped workload token; its runtime implementation is the next vertical slice.
 - Secrets are never committed. `.env` is for local development only and must never contain production credentials — see [SECURITY.md](SECURITY.md).
 - Every provisioning and lifecycle-transition action is written to an append-only audit log before being acknowledged.
 

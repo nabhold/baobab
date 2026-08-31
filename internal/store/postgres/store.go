@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nabhold/baobab-cp/internal/domain"
@@ -27,10 +28,16 @@ func Open(ctx context.Context, url string) (*Store, error) {
 }
 func (s *Store) Close()                         { s.pool.Close() }
 func (s *Store) Ping(ctx context.Context) error { return s.pool.Ping(ctx) }
-func (s *Store) RegisterTenant(ctx context.Context, key string, c domain.RegisterTenant) (domain.Operation, error) {
-	payload, _ := json.Marshal(c)
-	sum := sha256.Sum256(payload)
+func (s *Store) RegisterTenant(ctx context.Context, key string, metadata basestore.RequestMetadata, c domain.RegisterTenant) (domain.Operation, error) {
+	requestPayload, _ := json.Marshal(c)
+	sum := sha256.Sum256(requestPayload)
 	hash := hex.EncodeToString(sum[:])
+	auditPayload, _ := json.Marshal(map[string]any{
+		"legal_entity_id":    c.LegalEntityID,
+		"requested_products": c.RequestedProducts,
+		"isolation_strategy": c.IsolationStrategy,
+		"residency_region":   c.ResidencyRegion,
+	})
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return domain.Operation{}, err
@@ -38,10 +45,19 @@ func (s *Store) RegisterTenant(ctx context.Context, key string, c domain.Registe
 	defer tx.Rollback(ctx)
 	var op domain.Operation
 	var prior string
-	err = tx.QueryRow(ctx, `SELECT operation_id::text,tenant_id,state,revision,request_hash FROM provisioning_operations WHERE idempotency_key=$1`, key).Scan(&op.OperationID, &op.TenantID, &op.State, &op.Revision, &prior)
+	err = tx.QueryRow(ctx, `SELECT operation_id::text,tenant_id,state,revision,created_at,updated_at,request_hash FROM provisioning_operations WHERE idempotency_key=$1`, key).Scan(&op.OperationID, &op.TenantID, &op.State, &op.Revision, &op.CreatedAt, &op.UpdatedAt, &prior)
 	if err == nil {
 		if prior != hash {
+			if err = insertAudit(ctx, tx, op.TenantID, metadata, key, "denied", "idempotency_conflict", auditPayload); err != nil {
+				return domain.Operation{}, err
+			}
+			if err = tx.Commit(ctx); err != nil {
+				return domain.Operation{}, err
+			}
 			return domain.Operation{}, basestore.ErrIdempotencyConflict
+		}
+		if err = insertAudit(ctx, tx, op.TenantID, metadata, key, "accepted", "idempotent_replay", auditPayload); err != nil {
+			return domain.Operation{}, err
 		}
 		return op, tx.Commit(ctx)
 	}
@@ -59,15 +75,20 @@ func (s *Store) RegisterTenant(ctx context.Context, key string, c domain.Registe
 			return domain.Operation{}, err
 		}
 	}
-	if err = tx.QueryRow(ctx, `INSERT INTO provisioning_operations(tenant_id,idempotency_key,request_hash)VALUES($1,$2,$3)RETURNING operation_id::text,tenant_id,state,revision`, c.TenantID, key, hash).Scan(&op.OperationID, &op.TenantID, &op.State, &op.Revision); err != nil {
+	if err = tx.QueryRow(ctx, `INSERT INTO provisioning_operations(tenant_id,idempotency_key,request_hash)VALUES($1,$2,$3)RETURNING operation_id::text,tenant_id,state,revision,created_at,updated_at`, c.TenantID, key, hash).Scan(&op.OperationID, &op.TenantID, &op.State, &op.Revision, &op.CreatedAt, &op.UpdatedAt); err != nil {
 		return domain.Operation{}, err
 	}
-	event, _ := json.Marshal(map[string]any{"operation_id": op.OperationID, "tenant_id": c.TenantID, "revision": op.Revision})
+	event, _ := json.Marshal(map[string]any{"operation_id": op.OperationID, "tenant_id": c.TenantID, "revision": op.Revision, "correlation_id": metadata.CorrelationID})
 	if _, err = tx.Exec(ctx, `INSERT INTO outbox_events(aggregate_id,event_type,payload)VALUES($1,'tenant.provisioning.started',$2)`, c.TenantID, event); err != nil {
 		return domain.Operation{}, err
 	}
-	if _, err = tx.Exec(ctx, `INSERT INTO audit_events(tenant_id,action,payload)VALUES($1,'tenant.registration.accepted',$2)`, c.TenantID, payload); err != nil {
+	if err = insertAudit(ctx, tx, c.TenantID, metadata, key, "accepted", "scope_allowed", auditPayload); err != nil {
 		return domain.Operation{}, err
 	}
 	return op, tx.Commit(ctx)
+}
+
+func insertAudit(ctx context.Context, tx pgx.Tx, tenantID string, metadata basestore.RequestMetadata, idempotencyKey, result, decision string, payload []byte) error {
+	_, err := tx.Exec(ctx, `INSERT INTO audit_events(tenant_id,actor_id,actor_type,correlation_id,idempotency_key,action,result,policy_decision,payload) VALUES($1,$2,$3,$4,$5,'tenant.registration.requested',$6,$7,$8)`, tenantID, metadata.ActorID, metadata.ActorType, metadata.CorrelationID, idempotencyKey, result, decision, payload)
+	return err
 }
