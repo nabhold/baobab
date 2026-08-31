@@ -1,5 +1,24 @@
 
-# BAOBAB
+# BAOBAB CONTROL PLANE
+
+> **Foundation 0 status (2026-08-31):** This repository is being narrowed from
+> its original enterprise-platform monorepo scaffold to the Go-based Baobab
+> control plane. The older Python/Django, portal, SDK, Compose, and embedded
+> infrastructure material remains temporarily for controlled disposition; it
+> is not the target architecture and must not receive new features. See
+> [ADR-0001](docs/adr/0001-go-control-plane-runtime.md) and the
+> [Foundation 0 architecture](docs/architecture/foundation-0.md).
+
+The control plane owns tenant lifecycle management, desired-state metadata,
+auditable provisioning operations, event publication, and reconciliation. The
+canonical contracts live in `nabhold/shared`; environment provisioning lives in
+`nabhold/infrastructure`; development images live in `nabhold/baobab-dev`.
+
+---
+
+<!-- markdownlint-disable -->
+
+# Legacy BAOBAB scaffold
 
 > **Strong Roots. Inspired Growth.**
 
