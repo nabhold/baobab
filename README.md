@@ -2,7 +2,7 @@
 
 > The authoritative source of tenant lifecycle, entitlement, and desired-state truth for the Baobab ecosystem.
 
-**Status:** Foundation — Go control-plane runtime under active development; legacy monolith content retained temporarily for controlled disposition (see [ADR-0001](docs/adr/0001-go-control-plane-runtime.md)).
+**Status:** Foundation 2 — executable Go control-plane core under active development (see [ADR-0001](docs/adr/0001-go-control-plane-runtime.md)).
 **Architecture:** [ADR-0003 — Multi-Tenant, Production-Ready Control Plane Architecture](docs/adr/0003-multi-tenant-control-plane-architecture.md)
 
 ---

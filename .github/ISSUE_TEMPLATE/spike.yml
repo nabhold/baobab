@@ -28,7 +28,7 @@ body:
     id: research_topic
     attributes:
       label: Research Topic
-      placeholder: Evaluate Django multi-tenant libraries
+      placeholder: Evaluate PostgreSQL outbox publishing strategies
     validations:
       required: true
 

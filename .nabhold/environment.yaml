@@ -1,119 +1,22 @@
-# ==============================================================================
-# BAOBAB Enterprise Platform
-# Development Environment Declaration
-#
-# Target path: nabhold/baobab/.nabhold/environment.yaml
-#
-# Purpose
-# -------
-# States what THIS repository (baobab) requires from its development
-# environment, conforming to:
-#   nabhold/shared/contracts/development-environment/schema.yaml (v1.0)
-#
-# Scope — deliberately boring (per original design intent)
-# -----------------------------------------------------------
-# This file answers exactly one question: "can this version of Baobab be
-# developed reliably inside this version of baobab-dev?" It does NOT declare
-# service topology, ports, or data-store choices — those are baobab
-# architecture facts, not environment-compatibility facts, and belong in
-# baobab's own architecture documentation instead.
-#
-# Profile: full
-# --------------
-# baobab consumes baobab-dev's `full` profile (Python, Node, Flutter,
-# PostgreSQL client, etc.) — not the `frontend` profile, which is for the
-# four digital-estate repos only.
-#
-# Governing decision record: ADR-0001 (nabhold/shared/docs/adr/)
-# ==============================================================================
-
 schema:
-  name: "nabhold-development-environment-contract"
+  name: nabhold-development-environment-contract
   version: "1.0"
-
-# ------------------------------------------------------------------------------
-# Application identity
-# ------------------------------------------------------------------------------
-
 application:
-  name: "baobab"
-
-  # NOTE: placeholder. baobab has not yet shipped a first release; this is
-  # not sourced from an actual pyproject.toml/package.json in the baobab
-  # repo (which does not yet exist beyond scaffolding). Update this the
-  # moment baobab adopts its own versioning scheme — do not leave a
-  # placeholder masquerading as a real version.
-  version: "0.1.0"   # PLACEHOLDER — see note above
-
-  # baobab is the platform itself, not a tenant of it (ADR-0001 section 2.1).
-  # entity_id is intentionally omitted — it does not apply here.
-
-# ------------------------------------------------------------------------------
-# Environment
-# ------------------------------------------------------------------------------
-
+  name: baobab-cp
+  version: "0.1.0"
 environment:
-  provider: "baobab-dev"
-  profile: "full"
-
-  # Grounded in fact: baobab-dev has an actual v1.0.0 release that passes
-  # baobab-verify (33 checks, 0 failures, both architectures).
-  minimum_version: "1.0.0"
-
+  provider: baobab-dev
+  profile: full
+  minimum_version: "1.2.6"
   contract_minimum_version: "1.0"
-
-# ------------------------------------------------------------------------------
-# Compatibility policy
-# ------------------------------------------------------------------------------
-
 compatibility_policy:
   strict_runtime_versions: true
   allow_newer_patch_versions: true
   allow_newer_minor_versions: false
   allow_older_versions: false
-
-# ------------------------------------------------------------------------------
-# Validation
-# ------------------------------------------------------------------------------
-
 validation:
-  # Domain-qualified (matches capabilities.yaml's nesting exactly) so
-  # baobab-verify --contract can do a direct yq lookup instead of guessing
-  # which domain a flat name like "node" belongs to.
   required_capabilities:
-    - "languages.python"
-    - "languages.node"
-    - "languages.flutter"
-    - "database.postgresql"
-    - "package_managers.uv"
-    - "package_managers.poetry"
-    - "package_managers.pnpm"
-    - "development.docker"
-    - "development.github_cli"
-
-  # cosign is provided by baobab-dev (security domain) but intentionally
-  # NOT required here: cosign signs baobab-dev's own published image, it is
-  # not a tool baobab's application developers need for day-to-day work.
-  # If baobab's own release pipeline later needs to sign artifacts, that
-  # capability requirement should be added explicitly then, with its own
-  # justification — not inherited silently from this list.
-  excluded_capabilities:
-    - name: "cosign"
-      reason: "Supply-chain signing tool for baobab-dev's own image; not a baobab application-development requirement."
-
-# ------------------------------------------------------------------------------
-# Notes
-# ------------------------------------------------------------------------------
-
+    - development.docker
+    - development.github_cli
 notes:
-  - >
-    Service topology (web/api/intelligence, ports, frameworks) and data
-    infrastructure (PostgreSQL/Redis/MinIO) are intentionally NOT declared
-    here. They are baobab architecture facts, not environment-compatibility
-    facts. If this project wants them captured formally, the right home is
-    a baobab architecture document (e.g. docs/architecture/service-topology.md
-    in the baobab repo), not this contract.
-  - >
-    `application.version` is a placeholder pending baobab's own first
-    real release/versioning decision. It must not be treated as authoritative
-    until baobab has an actual pyproject.toml/package.json to source it from.
+  - Go 1.27 is layered by the Codespaces feature until baobab-dev publishes a native Go control-plane profile.

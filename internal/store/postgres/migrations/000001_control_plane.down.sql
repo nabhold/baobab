@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS audit_events,outbox_events,provisioning_operations,product_subscriptions,tenants,legal_entities;

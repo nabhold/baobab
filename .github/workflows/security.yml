@@ -93,20 +93,7 @@ jobs:
     # https://github.com/nabhold/shared.git v1.1.0 v1.1.0^{}` on 2026-08-25.
     uses: nabhold/shared/.github/workflows/security-codeql.yml@f8df9b90ffe8fef5cbf6d14a9bcf868f723d1464 # v1.1.0
     with:
-      languages: '["python"]'
-
-  python-sast-audit:
-    name: Bandit + pip-audit
-    permissions:
-      contents: read
-    # SHA is nabhold/shared's v1.1.0 tag (annotated — peeled commit, not
-    # the tag object's own SHA), verified live via `git ls-remote --tags
-    # https://github.com/nabhold/shared.git v1.1.0 v1.1.0^{}` on 2026-08-25.
-    uses: nabhold/shared/.github/workflows/security-python.yml@f8df9b90ffe8fef5cbf6d14a9bcf868f723d1464 # v1.1.0
-    with:
-      bandit-config-path: "bandit.yaml"
-      bandit-target: "."
-      dependency-group: "security"
+      languages: '["go"]'
 
   dependency-review:
     name: Dependency review

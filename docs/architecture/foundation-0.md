@@ -74,11 +74,6 @@ a revision used for optimistic concurrency.
 
 ## Migration from the legacy scaffold
 
-The existing repository contains Django, AI, portal, SDK, Compose, Terraform,
-and Kubernetes placeholders inherited from its former platform-monorepo role.
-They are classified as **legacy pending disposition**.
-
-Foundation 0 does not delete them. A subsequent migration change will inventory
-each path and either move ownership, archive documentation, or remove an unused
-placeholder with a recorded rationale. New features must not extend those
-legacy paths.
+Foundation 2 completed the planned disposition of the former Django, AI,
+portal, SDK, Compose, Terraform, and Kubernetes placeholder trees. The
+control-plane runtime has no dependency on those paths.

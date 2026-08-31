@@ -128,7 +128,7 @@ Context resolution is a hot path — every `baobab-trade` request depends on it,
 
 ## 12. Migration Path
 
-The legacy Django monolith content currently retained in this repository (per the Foundation 0 notice) is not touched by this ADR directly, but this ADR's scope — tenant CRUD and context resolution — is the **feature-parity bar** that must be met before legacy content is removed. No big-bang cutover: the Go control plane runs and is validated against real `baobab-trade` traffic before legacy disposition proceeds.
+Foundation 2 removed the non-executable legacy scaffold after the Go tenant-registration path and persistence boundary were established. Context resolution remains a **feature-parity bar** for production traffic: the Go control plane must be validated against real `baobab-trade` traffic before cutover.
 
 ## 13. Consequences
 
