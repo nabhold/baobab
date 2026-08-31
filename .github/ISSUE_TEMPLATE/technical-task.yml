@@ -8,7 +8,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        ## Technical Task
+        # Technical Task
 
         Use this template for engineering and implementation work. Each Technical Task should contribute to a single Epic and represent one clearly defined unit of work.
 
@@ -132,6 +132,19 @@ body:
         ### Blocks
 
         -
+
+  - type: checkboxes
+    id: definition_of_done
+    attributes:
+      label: Definition of Done Checklist
+      options:
+        - label: Code implemented
+        - label: Coding standards followed
+        - label: Tests passing
+        - label: Code reviewed
+        - label: Documentation updated
+        - label: CI pipeline passed
+        - label: Ready for merge
 
   - type: textarea
     id: definition_of_done
