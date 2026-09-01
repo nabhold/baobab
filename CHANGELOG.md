@@ -735,6 +735,12 @@ The changelog focuses on changes that are meaningful to users, contributors, mai
 - Repository improvements and engineering standards.
 - Ongoing documentation enhancements.
 
+## Security
+
+- Upgraded `golang.org/x/text` to `v0.39.0` to remediate
+  `CVE-2026-56852`; the dependency upgrade also advances
+  `golang.org/x/sync` to `v0.21.0`.
+
 ---
 
 # [0.1.0-alpha] - 2026-07-11
