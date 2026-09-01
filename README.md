@@ -159,3 +159,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Changes to `/v1/context/resolve`'s contr
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE).
+
+## Foundation 4
+
+Codespaces uses the v1.2.6 full profile with a temporary Go feature until a
+native Go profile is published. The SHA-pinned `foundation` workflow enforces
+contract compatibility, reproducibility, ownership, and security scanning.
