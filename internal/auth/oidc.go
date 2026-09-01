@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,6 +17,8 @@ const (
 )
 
 var ErrInvalidToken = errors.New("invalid access token")
+var canonicalTenantID = regexp.MustCompile(`^tn_[a-z0-9]+$`)
+var canonicalScope = regexp.MustCompile(`^[a-z][a-z0-9.-]*:[a-z][a-z0-9.-]*$`)
 
 type Principal struct {
 	Subject   string
@@ -64,8 +67,14 @@ func (v *OIDCVerifier) Verify(ctx context.Context, raw string) (Principal, error
 		return Principal{}, fmt.Errorf("%w: claims are invalid", ErrInvalidToken)
 	}
 	now := time.Now()
-	if c.Subject == "" || c.TokenID == "" || (c.ActorType != "human" && c.ActorType != "workload") {
+	if c.Subject == "" || len(c.Subject) > 255 || c.TokenID == "" || len(c.TokenID) > 255 || (c.ActorType != "human" && c.ActorType != "workload") {
 		return Principal{}, fmt.Errorf("%w: required claims are missing", ErrInvalidToken)
+	}
+	if c.TenantID != "" && (len(c.TenantID) < 6 || len(c.TenantID) > 63 || !canonicalTenantID.MatchString(c.TenantID)) {
+		return Principal{}, fmt.Errorf("%w: tenant claim is invalid", ErrInvalidToken)
+	}
+	if len(c.ClientID) > 255 {
+		return Principal{}, fmt.Errorf("%w: authorised party is invalid", ErrInvalidToken)
 	}
 	issuedAt, expiresAt := time.Unix(c.IssuedAt, 0), time.Unix(c.ExpiresAt, 0)
 	if c.IssuedAt == 0 || c.ExpiresAt == 0 || !expiresAt.After(issuedAt) || expiresAt.Sub(issuedAt) > MaximumLifetime || issuedAt.After(now.Add(ClockSkew)) {
@@ -76,6 +85,9 @@ func (v *OIDCVerifier) Verify(ctx context.Context, raw string) (Principal, error
 	}
 	scopes := make(map[string]struct{})
 	for _, scope := range strings.Fields(c.Scope) {
+		if !canonicalScope.MatchString(scope) {
+			return Principal{}, fmt.Errorf("%w: scope is invalid", ErrInvalidToken)
+		}
 		scopes[scope] = struct{}{}
 	}
 	if len(scopes) == 0 {

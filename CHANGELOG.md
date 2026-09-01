@@ -723,10 +723,23 @@ The changelog focuses on changes that are meaningful to users, contributors, mai
 
 ## Added
 
+- Executable `POST /v1/context/resolve` with workload OIDC, authoritative
+  lifecycle/entitlement checks, 15-second bounded success caching and
+  fail-closed behaviour.
+- Append-only audit provenance for context decisions, including service,
+  token, tenant/product target, result and policy decision.
+- Canonical RFC 9457 problem responses, context contract tests, database
+  migration 000003, API documentation and ADR-0004.
 - Continued development of the enterprise platform architecture.
 - Additional governance documentation.
 - Repository improvements and engineering standards.
 - Ongoing documentation enhancements.
+
+## Security
+
+- Upgraded `golang.org/x/text` to `v0.39.0` to remediate
+  `CVE-2026-56852`; the dependency upgrade also advances
+  `golang.org/x/sync` to `v0.21.0`.
 
 ---
 

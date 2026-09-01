@@ -17,6 +17,9 @@ records the runtime obligations of `baobab-cp`.
 - APISIX and `nabhold/infrastructure` own workload mTLS termination. The
   application still requires a verified workload token and never treats
   caller-supplied identity headers as authoritative.
+- Context resolution additionally requires a workload actor, `azp` service
+  identity, canonical `tenant_id`, and `context:resolve` scope. Tenant and
+  product policy denials are deliberately indistinguishable to the caller.
 
 ## Data handling
 
@@ -29,6 +32,9 @@ records the runtime obligations of `baobab-cp`.
 - Propagate or mint a UUID correlation identifier and attach the verified actor,
   actor type, idempotency key, result, and policy decision to privileged audit
   entries.
+- Persist authenticated context-resolution decisions with the workload client,
+  token identifier and tenant/product target. A read-only resolution has no
+  idempotency key; its audit field remains null rather than inventing one.
 
 ## Provisioner credentials
 

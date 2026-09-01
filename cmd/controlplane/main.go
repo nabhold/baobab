@@ -24,11 +24,18 @@ func main() {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	discoveryContext, cancelDiscovery := context.WithTimeout(ctx, 10*time.Second)
-	adminVerifier, err := auth.NewOIDCVerifier(discoveryContext, cfg.AdminOIDCIssuer, cfg.AdminOIDCAudience)
-	cancelDiscovery()
+	adminDiscoveryContext, cancelAdminDiscovery := context.WithTimeout(ctx, 10*time.Second)
+	adminVerifier, err := auth.NewOIDCVerifier(adminDiscoveryContext, cfg.AdminOIDCIssuer, cfg.AdminOIDCAudience)
+	cancelAdminDiscovery()
 	if err != nil {
 		slog.Error("OIDC provider unavailable", "error", err)
+		os.Exit(1)
+	}
+	workloadDiscoveryContext, cancelWorkloadDiscovery := context.WithTimeout(ctx, 10*time.Second)
+	workloadVerifier, err := auth.NewOIDCVerifier(workloadDiscoveryContext, cfg.WorkloadOIDCIssuer, cfg.WorkloadOIDCAudience)
+	cancelWorkloadDiscovery()
+	if err != nil {
+		slog.Error("workload OIDC provider unavailable", "error", err)
 		os.Exit(1)
 	}
 	db, err := postgres.Open(ctx, cfg.DatabaseURL)
@@ -37,7 +44,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
-	srv := &http.Server{Addr: cfg.HTTPAddress, Handler: api.New(api.Dependencies{Store: db, AdminVerifier: adminVerifier}), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second}
+	srv := &http.Server{Addr: cfg.HTTPAddress, Handler: api.New(api.Dependencies{Store: db, AdminVerifier: adminVerifier, WorkloadVerifier: workloadVerifier}), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second}
 	go func() {
 		slog.Info("control plane listening", "address", cfg.HTTPAddress)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
