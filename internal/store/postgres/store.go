@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -48,7 +50,7 @@ func (s *Store) RegisterTenant(ctx context.Context, key string, metadata basesto
 	err = tx.QueryRow(ctx, `SELECT operation_id::text,tenant_id,state,revision,created_at,updated_at,request_hash FROM provisioning_operations WHERE idempotency_key=$1`, key).Scan(&op.OperationID, &op.TenantID, &op.State, &op.Revision, &op.CreatedAt, &op.UpdatedAt, &prior)
 	if err == nil {
 		if prior != hash {
-			if err = insertAudit(ctx, tx, op.TenantID, metadata, key, "denied", "idempotency_conflict", auditPayload); err != nil {
+			if err = insertAudit(ctx, tx, op.TenantID, metadata, key, "tenant.registration.requested", "tenant:"+op.TenantID, "denied", "idempotency_conflict", auditPayload); err != nil {
 				return domain.Operation{}, err
 			}
 			if err = tx.Commit(ctx); err != nil {
@@ -56,7 +58,7 @@ func (s *Store) RegisterTenant(ctx context.Context, key string, metadata basesto
 			}
 			return domain.Operation{}, basestore.ErrIdempotencyConflict
 		}
-		if err = insertAudit(ctx, tx, op.TenantID, metadata, key, "accepted", "idempotent_replay", auditPayload); err != nil {
+		if err = insertAudit(ctx, tx, op.TenantID, metadata, key, "tenant.registration.requested", "tenant:"+op.TenantID, "accepted", "idempotent_replay", auditPayload); err != nil {
 			return domain.Operation{}, err
 		}
 		return op, tx.Commit(ctx)
@@ -82,13 +84,80 @@ func (s *Store) RegisterTenant(ctx context.Context, key string, metadata basesto
 	if _, err = tx.Exec(ctx, `INSERT INTO outbox_events(aggregate_id,event_type,payload)VALUES($1,'tenant.provisioning.started',$2)`, c.TenantID, event); err != nil {
 		return domain.Operation{}, err
 	}
-	if err = insertAudit(ctx, tx, c.TenantID, metadata, key, "accepted", "scope_allowed", auditPayload); err != nil {
+	if err = insertAudit(ctx, tx, c.TenantID, metadata, key, "tenant.registration.requested", "tenant:"+c.TenantID, "accepted", "scope_allowed", auditPayload); err != nil {
 		return domain.Operation{}, err
 	}
 	return op, tx.Commit(ctx)
 }
 
-func insertAudit(ctx context.Context, tx pgx.Tx, tenantID string, metadata basestore.RequestMetadata, idempotencyKey, result, decision string, payload []byte) error {
-	_, err := tx.Exec(ctx, `INSERT INTO audit_events(tenant_id,actor_id,actor_type,correlation_id,idempotency_key,action,result,policy_decision,payload) VALUES($1,$2,$3,$4,$5,'tenant.registration.requested',$6,$7,$8)`, tenantID, metadata.ActorID, metadata.ActorType, metadata.CorrelationID, idempotencyKey, result, decision, payload)
+func (s *Store) ResolveContext(ctx context.Context, metadata basestore.RequestMetadata, tenantID, productID string) (domain.ResolvedContext, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return domain.ResolvedContext{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	var legalEntityID, desiredState, observedState, subscriptionStatus string
+	err = tx.QueryRow(ctx, `
+		SELECT t.legal_entity_id,t.desired_state,t.observed_state,COALESCE(ps.status,'')
+		FROM tenants t
+		LEFT JOIN product_subscriptions ps ON ps.tenant_id=t.tenant_id AND ps.product_id=$2
+		WHERE t.tenant_id=$1`, tenantID, productID).Scan(&legalEntityID, &desiredState, &observedState, &subscriptionStatus)
+
+	found := true
+	if errors.Is(err, pgx.ErrNoRows) {
+		found = false
+	} else if err != nil {
+		return domain.ResolvedContext{}, err
+	}
+	result, policyDecision := contextPolicyDecision(found, desiredState, observedState, subscriptionStatus)
+
+	auditPayload, marshalErr := json.Marshal(map[string]string{
+		"product_id":          productID,
+		"desired_state":       desiredState,
+		"observed_state":      observedState,
+		"subscription_status": subscriptionStatus,
+	})
+	if marshalErr != nil {
+		return domain.ResolvedContext{}, fmt.Errorf("marshal context audit: %w", marshalErr)
+	}
+	target := "tenant:" + tenantID + "/product:" + productID
+	if err = insertAudit(ctx, tx, tenantID, metadata, "", "context.resolve", target, result, policyDecision, auditPayload); err != nil {
+		return domain.ResolvedContext{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return domain.ResolvedContext{}, err
+	}
+	if result == "denied" {
+		return domain.ResolvedContext{}, basestore.ErrContextDenied
+	}
+
+	return domain.ResolvedContext{
+		TenantID:        tenantID,
+		EntityID:        legalEntityID,
+		LifecycleStatus: "active",
+		ProductID:       productID,
+		Entitled:        true,
+		CacheTTLSeconds: 15,
+		ResolvedAt:      time.Now().UTC(),
+		CorrelationID:   metadata.CorrelationID,
+	}, nil
+}
+
+func contextPolicyDecision(found bool, desiredState, observedState, subscriptionStatus string) (string, string) {
+	if !found {
+		return "denied", "tenant_unknown"
+	}
+	if desiredState != "active" || observedState != "active" {
+		return "denied", "tenant_not_active"
+	}
+	if subscriptionStatus != "active" {
+		return "denied", "product_not_entitled"
+	}
+	return "allowed", "context_allowed"
+}
+
+func insertAudit(ctx context.Context, tx pgx.Tx, tenantID string, metadata basestore.RequestMetadata, idempotencyKey, action, target, result, decision string, payload []byte) error {
+	_, err := tx.Exec(ctx, `INSERT INTO audit_events(tenant_id,actor_id,actor_type,client_id,token_id,correlation_id,idempotency_key,action,target,result,policy_decision,payload) VALUES($1,$2,$3,$4,$5,$6,NULLIF($7,''),$8,$9,$10,$11,$12)`, tenantID, metadata.ActorID, metadata.ActorType, metadata.ClientID, metadata.TokenID, metadata.CorrelationID, idempotencyKey, action, target, result, decision, payload)
 	return err
 }

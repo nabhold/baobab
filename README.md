@@ -2,7 +2,7 @@
 
 > The authoritative source of tenant lifecycle, entitlement, and desired-state truth for the Baobab ecosystem.
 
-**Status:** Foundation 3 — OIDC-secured management boundary under active development (see [ADR-0001](docs/adr/0001-go-control-plane-runtime.md)).
+**Status:** A4 — executable, fail-closed tenant context resolution (see [ADR-0004](docs/adr/0004-context-resolution-policy.md)).
 **Architecture:** [ADR-0003 — Multi-Tenant, Production-Ready Control Plane Architecture](docs/adr/0003-multi-tenant-control-plane-architecture.md)
 
 ---
@@ -140,7 +140,7 @@ make test-integration  # Testcontainers-backed integration tests
 |---|---|
 | `nabhold/shared` | Contract source of truth. `baobab-cp` implements the OpenAPI/AsyncAPI schemas defined there; it never redefines them locally. |
 | `nabhold/infrastructure` | Provisions the Postgres, RabbitMQ, and APISIX instances `baobab-cp` depends on and reconciles against. `baobab-cp` never provisions its own infrastructure. |
-| `nabhold/baobab-trade` | Will call `POST /v1/context/resolve` at its trusted engine boundary once the next control-plane vertical slice lands; it must fail closed if unresolved. Consumer, not a dependency of this repo. |
+| `nabhold/baobab-trade` | Will consume the implemented `POST /v1/context/resolve` boundary in PR A5; it must fail closed if unresolved or its 15-second success cache expires. Consumer, not a dependency of this repo. |
 | `nabhold/baobab-erp` | Contract-level consumer of canonical identifiers; does not yet call this repo's context-resolution API directly (open question — see ADR-0003 §14). |
 | `nabhold/baobab-pulse` | Consumer of tenant/entitlement context (integration not yet established — repository is pre-Foundation). |
 | `nabhold/baobab-dev` | Provides this repository's local/CI development container image. |
@@ -148,7 +148,7 @@ make test-integration  # Testcontainers-backed integration tests
 
 ## Security
 
-- The `/v1/context/resolve` contract requires infrastructure-terminated mutual TLS plus a scoped workload token; its runtime implementation is the next vertical slice.
+- The implemented `/v1/context/resolve` boundary requires infrastructure-terminated mutual TLS plus a scoped workload token carrying canonical tenant and service identity.
 - Secrets are never committed. `.env` is for local development only and must never contain production credentials — see [SECURITY.md](SECURITY.md).
 - Every provisioning and lifecycle-transition action is written to an append-only audit log before being acknowledged.
 

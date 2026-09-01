@@ -100,11 +100,33 @@ func TestOIDCVerifierAcceptsWorkloadIdentityShape(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	principal, err := verifier.Verify(context.Background(), issuer.token(t, map[string]any{"sub": "baobab-trade", "actor_type": "workload", "scope": "context:resolve", "azp": "baobab-trade"}))
+	principal, err := verifier.Verify(context.Background(), issuer.token(t, map[string]any{"sub": "baobab-trade", "actor_type": "workload", "scope": "context:resolve", "azp": "baobab-trade", "tenant_id": "tn_01k4m7x9q2v6c8r3d5f1h0j4"}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if principal.ActorType != "workload" || principal.ClientID != "baobab-trade" || !principal.HasScope("context:resolve") {
+	if principal.ActorType != "workload" || principal.ClientID != "baobab-trade" || principal.TenantID != "tn_01k4m7x9q2v6c8r3d5f1h0j4" || !principal.HasScope("context:resolve") {
 		t.Fatalf("unexpected workload principal: %#v", principal)
+	}
+}
+
+func TestOIDCVerifierRejectsNonCanonicalTenantClaim(t *testing.T) {
+	issuer := newTestIssuer(t)
+	verifier, err := NewOIDCVerifier(context.Background(), issuer.server.URL, "baobab-control-plane")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = verifier.Verify(context.Background(), issuer.token(t, map[string]any{"actor_type": "workload", "scope": "context:resolve", "azp": "baobab-trade", "tenant_id": "zuribeans_za"})); err == nil {
+		t.Fatal("noncanonical tenant claim was accepted")
+	}
+}
+
+func TestOIDCVerifierRejectsMalformedScope(t *testing.T) {
+	issuer := newTestIssuer(t)
+	verifier, err := NewOIDCVerifier(context.Background(), issuer.server.URL, "baobab-control-plane")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = verifier.Verify(context.Background(), issuer.token(t, map[string]any{"scope": "tenant:write invalid"})); err == nil {
+		t.Fatal("malformed scope was accepted")
 	}
 }
