@@ -1,0 +1,145 @@
+package resolver
+
+import (
+	"context"
+	"errors"
+	"sort"
+)
+
+// Context represents a trusted runtime context produced by the resolver layer.
+type Context struct {
+	TenantID      string                 `json:"tenant_id,omitempty"`
+	LegalEntityID string                 `json:"legal_entity_id,omitempty"`
+	MarketID      string                 `json:"market_id,omitempty"`
+	CountryCode   string                 `json:"country_code,omitempty"`
+	CurrencyCode  string                 `json:"currency_code,omitempty"`
+	Locale        string                 `json:"locale,omitempty"`
+	Provenance    map[string]ContextSource `json:"provenance,omitempty"`
+}
+
+// TrustLevel identifies the trust level of the source evidence used to derive a context value.
+type TrustLevel string
+
+const (
+	TrustUntrusted  TrustLevel = "UNTRUSTED"
+	TrustVerified   TrustLevel = "VERIFIED"
+	TrustAuthorised TrustLevel = "AUTHORISED"
+	TrustSystem     TrustLevel = "SYSTEM"
+)
+
+type ContextSource struct {
+	Source     string
+	TrustLevel TrustLevel
+	Evidence   string
+}
+
+// ResolutionEvidence is the input used by the resolver to derive runtime context.
+type ResolutionEvidence struct {
+	TenantID      string
+	LegalEntityID string
+	MarketID      string
+	CountryCode   string
+	CurrencyCode  string
+	Locale        string
+	Provenance    map[string]ContextSource
+}
+
+// ContextResolverImpl resolves runtime context using supplied evidence and trust metadata.
+type ContextResolverImpl struct{}
+
+func (ContextResolverImpl) Resolve(ctx context.Context, evidence ResolutionEvidence) (Context, error) {
+	if ctx == nil {
+		return Context{}, errors.New("context is required")
+	}
+	if evidence.TenantID == "" {
+		return Context{}, errors.New("tenant_id is required")
+	}
+	if evidence.Provenance == nil {
+		evidence.Provenance = map[string]ContextSource{}
+	}
+	for key, value := range evidence.Provenance {
+		if value.TrustLevel == "" {
+			value.TrustLevel = TrustUntrusted
+			evidence.Provenance[key] = value
+		}
+	}
+	return Context{
+		TenantID:      evidence.TenantID,
+		LegalEntityID: evidence.LegalEntityID,
+		MarketID:      evidence.MarketID,
+		CountryCode:   evidence.CountryCode,
+		CurrencyCode:  evidence.CurrencyCode,
+		Locale:        evidence.Locale,
+		Provenance:    evidence.Provenance,
+	}, nil
+}
+
+// ScopeValues represents a single logical scope dimension payload.
+type ScopeValues struct {
+	TenantID      string
+	LegalEntityID string
+	MarketID      string
+	CountryCode   string
+	CurrencyCode  string
+	Locale        string
+}
+
+// ScopeMatch is the result of comparing a context against a scope.
+type ScopeMatch struct {
+	Compatible  bool
+	Specificity int
+	Matched     []string
+	Inherited   []string
+	RejectedBy  []string
+}
+
+// DefaultScopeMatcher is the default deterministic scope matcher.
+type DefaultScopeMatcher struct{}
+
+func (DefaultScopeMatcher) Match(ctx Context, scope ScopeValues) ScopeMatch {
+	matched := []string{}
+	inherited := []string{}
+	rejectedBy := []string{}
+	specificity := 0
+
+	matchChecks := []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{name: "tenant", value: ctx.TenantID, want: scope.TenantID},
+		{name: "legal_entity", value: ctx.LegalEntityID, want: scope.LegalEntityID},
+		{name: "market", value: ctx.MarketID, want: scope.MarketID},
+		{name: "country", value: ctx.CountryCode, want: scope.CountryCode},
+		{name: "currency", value: ctx.CurrencyCode, want: scope.CurrencyCode},
+		{name: "locale", value: ctx.Locale, want: scope.Locale},
+	}
+
+	for _, check := range matchChecks {
+		if check.want == "" {
+			continue
+		}
+		if check.value == check.want {
+			matched = append(matched, check.name)
+			specificity++
+			continue
+		}
+		if check.value != "" && check.value != check.want {
+			rejectedBy = append(rejectedBy, check.name)
+			continue
+		}
+		inherited = append(inherited, check.name)
+	}
+
+	compatible := len(rejectedBy) == 0
+	if compatible && len(matched) == 0 && len(inherited) == 0 {
+		compatibility := ScopeMatch{Compatible: true, Specificity: 0, Matched: matched, Inherited: inherited, RejectedBy: rejectedBy}
+		return compatibility
+	}
+
+	sort.Strings(matched)
+	sort.Strings(inherited)
+	sort.Strings(rejectedBy)
+
+	return ScopeMatch{Compatible: compatible, Specificity: specificity, Matched: matched, Inherited: inherited, RejectedBy: rejectedBy}
+}
