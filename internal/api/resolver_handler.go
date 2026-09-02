@@ -15,26 +15,26 @@ type ResolverHandler struct {
 }
 
 type resolverRequest struct {
-	TenantID        string                      `json:"tenant_id"`
-	Context         resolver.Context            `json:"context"`
-	Mappings        []domain.Mapping            `json:"mappings"`
+	TenantID        string                       `json:"tenant_id"`
+	Context         resolver.Context             `json:"context"`
+	Mappings        []domain.Mapping             `json:"mappings"`
 	Bindings        []resolver.CapabilityBinding `json:"bindings"`
-	EngineInstances []resolver.EngineInstance   `json:"engine_instances"`
+	EngineInstances []resolver.EngineInstance    `json:"engine_instances"`
 }
 
 func (h ResolverHandler) Resolve(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		problem(w, http.StatusMethodNotAllowed, "method_not_allowed", "POST only")
+		problem(w, r, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "POST only", false)
 		return
 	}
 
 	var req resolverRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		problem(w, http.StatusBadRequest, "invalid_request", err.Error())
+		problem(w, r, http.StatusBadRequest, "INVALID_REQUEST", err.Error(), false)
 		return
 	}
 	if req.TenantID == "" && req.Context.TenantID == "" {
-		problem(w, http.StatusBadRequest, "tenant_required", "tenant_id is required")
+		problem(w, r, http.StatusBadRequest, "TENANT_REQUIRED", "tenant_id is required", false)
 		return
 	}
 
@@ -46,7 +46,7 @@ func (h ResolverHandler) Resolve(w http.ResponseWriter, r *http.Request) {
 		EngineInstances: req.EngineInstances,
 	})
 	if err != nil {
-		problem(w, http.StatusBadRequest, "resolution_failed", err.Error())
+		problem(w, r, http.StatusBadRequest, "RESOLUTION_FAILED", err.Error(), false)
 		return
 	}
 
@@ -55,19 +55,19 @@ func (h ResolverHandler) Resolve(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"tenant_id": result.Context.TenantID,
 		"mapping": map[string]any{
-			"id": result.Mapping.Mapping.ID,
+			"id":     result.Mapping.Mapping.ID,
 			"status": result.Mapping.Mapping.Status,
 		},
 		"capability": map[string]any{
-			"binding_mode": result.Capability.BindingMode,
+			"binding_mode":       result.Capability.BindingMode,
 			"engine_instance_id": result.Capability.EngineInstanceID,
 		},
 		"policy": map[string]any{
 			"allowed": result.Policy.Allowed,
-			"reason": result.Policy.Reason,
+			"reason":  result.Policy.Reason,
 		},
 		"topology": map[string]any{
-			"id": result.Topology.ID,
+			"id":          result.Topology.ID,
 			"environment": result.Topology.Environment,
 		},
 	})

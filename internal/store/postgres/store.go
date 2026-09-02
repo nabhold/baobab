@@ -65,28 +65,7 @@ func (s *Store) UpdateTenantLifecycle(ctx context.Context, tenantID string, next
 	}
 	return nil
 }
-func (s *Store) ResolveContext(ctx context.Context, req domain.ResolveContextRequest) (domain.ResolvedContext, error) {
-	if err := req.Validate(); err != nil {
-		return domain.ResolvedContext{}, err
-	}
-	var tenantID, legalEntityID, state, productID string
-	if err := s.pool.QueryRow(ctx, `SELECT tenant_id, legal_entity_id, desired_state FROM tenants WHERE tenant_id=$1`, req.TenantID).Scan(&tenantID, &legalEntityID, &state); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return domain.ResolvedContext{}, domain.NotFoundError("tenant not found")
-		}
-		return domain.ResolvedContext{}, err
-	}
-	if req.ProductID != "" {
-		if err := s.pool.QueryRow(ctx, `SELECT product_id FROM product_subscriptions WHERE tenant_id=$1 AND product_id=$2`, req.TenantID, req.ProductID).Scan(&productID); err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return domain.ResolvedContext{}, domain.NotFoundError("tenant product entitlement not found")
-			}
-			return domain.ResolvedContext{}, err
-		}
-	}
-	return domain.ResolvedContext{TenantID: tenantID, EntityID: legalEntityID, LifecycleStatus: state, ProductID: productID, ProductEntitlement: "active"}, nil
-}
-func (s *Store) RegisterTenant(ctx context.Context, key string, c domain.RegisterTenant) (domain.Operation, error) {
+func (s *Store) RegisterTenant(ctx context.Context, key string, metadata basestore.RequestMetadata, c domain.RegisterTenant) (domain.Operation, error) {
 	payload, _ := json.Marshal(c)
 	sum := sha256.Sum256(payload)
 	hash := hex.EncodeToString(sum[:])

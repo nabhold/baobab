@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/nabhold/baobab-cp/internal/auth"
 	"github.com/nabhold/baobab-cp/internal/domain"
+	"github.com/nabhold/baobab-cp/internal/service"
 	"github.com/nabhold/baobab-cp/internal/store"
 )
 
@@ -23,28 +24,31 @@ type Dependencies struct {
 	Store            store.TenantStore
 	AdminVerifier    auth.TokenVerifier
 	WorkloadVerifier auth.TokenVerifier
+	Resolution       service.ResolutionService
 }
 type API struct {
 	store            store.TenantStore
 	adminVerifier    auth.TokenVerifier
 	workloadVerifier auth.TokenVerifier
+	resolution       service.ResolutionService
 }
 
 func New(dependencies Dependencies) http.Handler {
-	a := &API{store: dependencies.Store, adminVerifier: dependencies.AdminVerifier, workloadVerifier: dependencies.WorkloadVerifier}
+	a := &API{store: dependencies.Store, adminVerifier: dependencies.AdminVerifier, workloadVerifier: dependencies.WorkloadVerifier, resolution: dependencies.Resolution}
 	r := chi.NewRouter()
 	r.Use(a.securityHeaders, a.correlation, a.requestLog)
 	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 	r.Get("/readyz", a.ready)
-	r.With(a.authorize).Post("/v1/tenants", a.register)
-	r.With(a.authorize).Get("/v1/tenants/{tenantID}", a.getTenant)
-	r.With(a.authorize).Post("/v1/tenants/{tenantID}/suspend", a.tenantLifecycleAction("suspend"))
-	r.With(a.authorize).Post("/v1/tenants/{tenantID}/activate", a.tenantLifecycleAction("activate"))
-	r.With(a.authorize).Post("/v1/tenants/{tenantID}/decommission", a.tenantLifecycleAction("decommission"))
-	r.With(a.authorize).Get("/v1/entitlements", a.getEntitlement)
-	r.With(a.authorize).Post("/v1/context/resolve", a.resolveContext)
+	r.With(a.authorize(a.adminVerifier, "admin", "tenant:write")).Post("/v1/tenants", a.register)
+	r.With(a.authorize(a.adminVerifier, "admin", "tenant:read")).Get("/v1/tenants/{tenantID}", a.getTenant)
+	r.With(a.authorize(a.adminVerifier, "admin", "tenant:write")).Post("/v1/tenants/{tenantID}/suspend", a.tenantLifecycleAction("suspend"))
+	r.With(a.authorize(a.adminVerifier, "admin", "tenant:write")).Post("/v1/tenants/{tenantID}/activate", a.tenantLifecycleAction("activate"))
+	r.With(a.authorize(a.adminVerifier, "admin", "tenant:write")).Post("/v1/tenants/{tenantID}/decommission", a.tenantLifecycleAction("decommission"))
+	r.With(a.authorize(a.adminVerifier, "admin", "tenant:read")).Get("/v1/entitlements", a.getEntitlement)
+	r.With(a.authorize(a.workloadVerifier, "workload", "context:resolve")).Post("/v1/context/resolve", a.resolveContext)
+	r.With(a.authorize(a.workloadVerifier, "workload", "context:resolve")).Post("/v1/resolve", ResolverHandler{Service: a.resolution}.Resolve)
 	return r
 }
 
@@ -62,13 +66,10 @@ func (a *API) authorize(verifier auth.TokenVerifier, actorType, requiredScope st
 			}
 			principal, err := verifier.Verify(r.Context(), raw)
 			if err != nil {
-				slog.WarnContext(r.Context(), "authentication denied", "reason", "invalid_token", "correlation_id", correlationID(r))
 				problem(w, r, http.StatusUnauthorized, "AUTH_TOKEN_INVALID", "the bearer token is invalid", false)
 				return
 			}
-			workloadContextMissing := actorType == "workload" && (principal.TenantID == "" || principal.ClientID == "")
-			if principal.ActorType != actorType || !principal.HasScope(requiredScope) || workloadContextMissing {
-				slog.WarnContext(r.Context(), "authorization denied", "actor_id", principal.Subject, "actor_type", principal.ActorType, "client_id", principal.ClientID, "tenant_id", principal.TenantID, "required_scope", requiredScope, "correlation_id", correlationID(r))
+			if principal.ActorType != actorType || !principal.HasScope(requiredScope) || (actorType == "workload" && (principal.TenantID == "" || principal.ClientID == "")) {
 				problem(w, r, http.StatusForbidden, "AUTHORIZATION_DENIED", "the authenticated principal lacks required authority", false)
 				return
 			}
@@ -173,46 +174,20 @@ func (a *API) register(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusAccepted, operation)
 }
 
-func (a *API) resolveContext(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	var req domain.ResolveContextRequest
-	if err := dec.Decode(&req); err != nil {
-		problem(w, 400, "invalid_request", "request body is not valid contract JSON")
-		return
-	}
-	if err := req.Validate(); err != nil {
-		problem(w, 422, "validation_failed", err.Error())
-		return
-	}
-	ctx, err := a.store.ResolveContext(r.Context(), req)
-	if err != nil {
-		var notFound domain.NotFoundError
-		if errors.As(err, &notFound) {
-			problem(w, 403, "tenant_context_unresolved", err.Error())
-			return
-		}
-		problem(w, 500, "internal_error", "tenant context could not be resolved")
-		return
-	}
-	writeJSON(w, 200, ctx)
-}
-
 func (a *API) getTenant(w http.ResponseWriter, r *http.Request) {
 	tenantID := chi.URLParam(r, "tenantID")
 	if !domain.ValidResource(tenantID) {
-		problem(w, 400, "invalid_tenant_id", "tenant_id is invalid")
+		problem(w, r, 400, "invalid_tenant_id", "tenant_id is invalid", false)
 		return
 	}
 	tenant, err := a.store.GetTenant(r.Context(), tenantID)
 	if err != nil {
 		var notFound domain.NotFoundError
 		if errors.As(err, &notFound) {
-			problem(w, 404, "tenant_not_found", err.Error())
+			problem(w, r, 404, "tenant_not_found", err.Error(), false)
 			return
 		}
-		problem(w, 500, "internal_error", "tenant lookup failed")
+		problem(w, r, 500, "internal_error", "tenant lookup failed", true)
 		return
 	}
 	writeJSON(w, 200, tenant)
@@ -223,17 +198,17 @@ func (a *API) getEntitlement(w http.ResponseWriter, r *http.Request) {
 	productID := r.URL.Query().Get("productId")
 	q := domain.EntitlementQuery{TenantID: tenantID, ProductID: productID}
 	if err := q.Validate(); err != nil {
-		problem(w, 422, "validation_failed", err.Error())
+		problem(w, r, 422, "validation_failed", err.Error(), false)
 		return
 	}
 	ent, err := a.store.GetEntitlement(r.Context(), tenantID, productID)
 	if err != nil {
 		var notFound domain.NotFoundError
 		if errors.As(err, &notFound) {
-			problem(w, 404, "entitlement_not_found", err.Error())
+			problem(w, r, 404, "entitlement_not_found", err.Error(), false)
 			return
 		}
-		problem(w, 500, "internal_error", "entitlement lookup failed")
+		problem(w, r, 500, "internal_error", "entitlement lookup failed", true)
 		return
 	}
 	writeJSON(w, 200, ent)
@@ -244,7 +219,7 @@ func (a *API) tenantLifecycleAction(action string) http.HandlerFunc {
 		tenantID := chi.URLParam(r, "tenantID")
 		cmd := domain.LifecycleAction{TenantID: tenantID, Action: action}
 		if err := cmd.Validate(); err != nil {
-			problem(w, 422, "validation_failed", err.Error())
+			problem(w, r, 422, "validation_failed", err.Error(), false)
 			return
 		}
 		var next domain.LifecycleStatus
@@ -259,10 +234,10 @@ func (a *API) tenantLifecycleAction(action string) http.HandlerFunc {
 		if err := a.store.UpdateTenantLifecycle(r.Context(), tenantID, next); err != nil {
 			var notFound domain.NotFoundError
 			if errors.As(err, &notFound) {
-				problem(w, 404, "tenant_not_found", err.Error())
+				problem(w, r, 404, "tenant_not_found", err.Error(), false)
 				return
 			}
-			problem(w, 500, "internal_error", "tenant lifecycle update failed")
+			problem(w, r, 500, "internal_error", "tenant lifecycle update failed", true)
 			return
 		}
 		writeJSON(w, 200, map[string]string{"tenant_id": tenantID, "status": string(next)})
@@ -271,7 +246,7 @@ func (a *API) tenantLifecycleAction(action string) http.HandlerFunc {
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(value)
+	_ = json.NewEncoder(w).Encode(v)
 }
 func problem(w http.ResponseWriter, r *http.Request, status int, code, detail string, retryable bool) {
 	w.Header().Set("Content-Type", "application/problem+json")
@@ -281,4 +256,40 @@ func problem(w http.ResponseWriter, r *http.Request, status int, code, detail st
 
 func requestMetadata(r *http.Request, principal auth.Principal) store.RequestMetadata {
 	return store.RequestMetadata{ActorID: principal.Subject, ActorType: principal.ActorType, ClientID: principal.ClientID, TokenID: principal.TokenID, CorrelationID: correlationID(r)}
+}
+
+func correlationID(r *http.Request) string {
+	if value, ok := r.Context().Value(correlationKey{}).(string); ok {
+		return value
+	}
+	return ""
+}
+
+func validUUID(value string) bool {
+	if len(value) != 36 {
+		return false
+	}
+	for index, character := range value {
+		if index == 8 || index == 13 || index == 18 || index == 23 {
+			if character != '-' {
+				return false
+			}
+			continue
+		}
+		if !((character >= '0' && character <= '9') || (character >= 'a' && character <= 'f') || (character >= 'A' && character <= 'F')) {
+			return false
+		}
+	}
+	return true
+}
+
+func newUUID() string {
+	bytes := make([]byte, 16)
+	if _, err := rand.Read(bytes); err != nil {
+		return "00000000-0000-4000-8000-000000000000"
+	}
+	bytes[6] = (bytes[6] & 0x0f) | 0x40
+	bytes[8] = (bytes[8] & 0x3f) | 0x80
+	encoded := hex.EncodeToString(bytes)
+	return encoded[:8] + "-" + encoded[8:12] + "-" + encoded[12:16] + "-" + encoded[16:20] + "-" + encoded[20:]
 }

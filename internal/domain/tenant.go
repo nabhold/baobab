@@ -39,14 +39,6 @@ func (c ResolveContextRequest) Validate() error {
 	return nil
 }
 
-type ResolvedContext struct {
-	TenantID           string `json:"tenant_id"`
-	EntityID           string `json:"entity_id,omitempty"`
-	LifecycleStatus    string `json:"lifecycle_status"`
-	ProductID          string `json:"product_id,omitempty"`
-	ProductEntitlement string `json:"product_entitlement,omitempty"`
-}
-
 type Tenant struct {
 	TenantID          string            `json:"tenant_id"`
 	LegalEntityID     string            `json:"legal_entity_id"`
@@ -101,9 +93,9 @@ func (a LifecycleAction) Validate() error {
 type LifecycleStatus string
 
 const (
-	LifecycleProvisioning  LifecycleStatus = "provisioning"
-	LifecycleActive        LifecycleStatus = "active"
-	LifecycleSuspended     LifecycleStatus = "suspended"
+	LifecycleProvisioning    LifecycleStatus = "provisioning"
+	LifecycleActive          LifecycleStatus = "active"
+	LifecycleSuspended       LifecycleStatus = "suspended"
 	LifecycleDecommissioning LifecycleStatus = "decommissioning"
 	LifecycleDecommissioned  LifecycleStatus = "decommissioned"
 )
@@ -125,9 +117,9 @@ func TransitionLifecycle(from, to LifecycleStatus) (LifecycleStatus, bool) {
 		return "", false
 	}
 	allowed := map[LifecycleStatus][]LifecycleStatus{
-		LifecycleProvisioning: {LifecycleActive, LifecycleSuspended},
-		LifecycleActive:       {LifecycleSuspended, LifecycleDecommissioning},
-		LifecycleSuspended:    {LifecycleActive, LifecycleDecommissioning},
+		LifecycleProvisioning:    {LifecycleActive, LifecycleSuspended},
+		LifecycleActive:          {LifecycleSuspended, LifecycleDecommissioning},
+		LifecycleSuspended:       {LifecycleActive, LifecycleDecommissioning},
 		LifecycleDecommissioning: {LifecycleDecommissioned},
 		LifecycleDecommissioned:  {LifecycleDecommissioned},
 	}

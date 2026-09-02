@@ -2,13 +2,11 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/nabhold/baobab-cp/internal/auth"
 	"github.com/nabhold/baobab-cp/internal/domain"
@@ -25,6 +23,7 @@ type fakeStore struct {
 	entitlement     domain.Entitlement
 	entitlementErr  error
 	entitlementCall int
+	metadata        store.RequestMetadata
 }
 
 func (f *fakeStore) Ping(context.Context) error { return nil }
@@ -33,12 +32,13 @@ func (f *fakeStore) RegisterTenant(_ context.Context, _ string, metadata store.R
 	f.metadata = metadata
 	return domain.Operation{OperationID: "7c8f131b-d8ba-4d89-b60b-a187d3944074", TenantID: command.TenantID, State: "accepted", Revision: 1}, nil
 }
-func (f *fakeStore) ResolveContext(_ context.Context, req domain.ResolveContextRequest) (domain.ResolvedContext, error) {
+func (f *fakeStore) ResolveContext(_ context.Context, metadata store.RequestMetadata, tenantID, productID string) (domain.ResolvedContext, error) {
 	f.resolvedCalls++
+	f.metadata = metadata
 	if f.resolveErr != nil {
 		return domain.ResolvedContext{}, f.resolveErr
 	}
-	return domain.ResolvedContext{TenantID: req.TenantID, EntityID: req.TenantID, LifecycleStatus: "active", ProductID: req.ProductID, ProductEntitlement: "active"}, nil
+	return domain.ResolvedContext{TenantID: tenantID, EntityID: tenantID, LifecycleStatus: "active", ProductID: productID, Entitled: true, CacheTTLSeconds: 15, CorrelationID: metadata.CorrelationID}, nil
 }
 func (f *fakeStore) GetTenant(_ context.Context, tenantID string) (domain.Tenant, error) {
 	if f.tenantErr != nil {
@@ -71,7 +71,11 @@ func TestRegisterTenant(t *testing.T) {
 	handler := New(Dependencies{Store: database, AdminVerifier: fakeVerifier{principal: adminPrincipal()}})
 	body := `{"legal_entity_id":"zuribeans_za","tenant_id":"zuribeans_za","display_name":"Zuri Beans","isolation_strategy":"schema_per_tenant","residency_region":"af-south-1"}`
 	response := httptest.NewRecorder()
-	handler.ServeHTTP(response, request(body))
+	req := httptest.NewRequest(http.MethodPost, "/v1/tenants", strings.NewReader(body))
+	req.Header.Set("Authorization", "Bearer admin-token")
+	req.Header.Set("Idempotency-Key", strings.Repeat("x", 16))
+	req.Header.Set("X-Correlation-ID", "7c8f131b-d8ba-4d89-b60b-a187d3944074")
+	handler.ServeHTTP(response, req)
 	if response.Code != http.StatusAccepted {
 		t.Fatalf("got status %d: %s", response.Code, response.Body.String())
 	}
@@ -86,7 +90,9 @@ func TestRegisterTenant(t *testing.T) {
 func TestRegisterTenantRejectsInvalidToken(t *testing.T) {
 	handler := New(Dependencies{Store: &fakeStore{}, AdminVerifier: fakeVerifier{err: errors.New("invalid")}})
 	response := httptest.NewRecorder()
-	handler.ServeHTTP(response, request(`{}`))
+	req := httptest.NewRequest(http.MethodPost, "/v1/tenants", strings.NewReader(`{}`))
+	req.Header.Set("Authorization", "Bearer invalid")
+	handler.ServeHTTP(response, req)
 	if response.Code != http.StatusUnauthorized {
 		t.Fatalf("got status %d", response.Code)
 	}
@@ -94,10 +100,10 @@ func TestRegisterTenantRejectsInvalidToken(t *testing.T) {
 
 func TestResolveContext(t *testing.T) {
 	store := &fakeStore{}
-	handler := New(store, strings.Repeat("a", 32))
-	body := `{"tenant_id":"zuribeans_za","product_id":"baobab_trade"}`
+	handler := New(Dependencies{Store: store, WorkloadVerifier: fakeVerifier{principal: workloadPrincipal()}})
+	body := `{"product_id":"baobab_trade"}`
 	req := httptest.NewRequest(http.MethodPost, "/v1/context/resolve", strings.NewReader(body))
-	req.Header.Set("Authorization", "Bearer "+strings.Repeat("a", 32))
+	req.Header.Set("Authorization", "Bearer workload-token")
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, req)
 	if response.Code != http.StatusOK {
@@ -109,10 +115,10 @@ func TestResolveContext(t *testing.T) {
 }
 
 func TestResolveContextFailsClosed(t *testing.T) {
-	store := &fakeStore{resolveErr: storeErrNotFound}
-	handler := New(store, strings.Repeat("a", 32))
-	req := httptest.NewRequest(http.MethodPost, "/v1/context/resolve", strings.NewReader(`{"tenant_id":"zuribeans_za"}`))
-	req.Header.Set("Authorization", "Bearer "+strings.Repeat("a", 32))
+	store := &fakeStore{resolveErr: store.ErrContextDenied}
+	handler := New(Dependencies{Store: store, WorkloadVerifier: fakeVerifier{principal: workloadPrincipal()}})
+	req := httptest.NewRequest(http.MethodPost, "/v1/context/resolve", strings.NewReader(`{"product_id":"baobab_trade"}`))
+	req.Header.Set("Authorization", "Bearer workload-token")
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, req)
 	if response.Code != http.StatusForbidden {
@@ -122,9 +128,9 @@ func TestResolveContextFailsClosed(t *testing.T) {
 
 func TestGetTenant(t *testing.T) {
 	store := &fakeStore{}
-	handler := New(store, strings.Repeat("a", 32))
+	handler := New(Dependencies{Store: store, AdminVerifier: fakeVerifier{principal: adminPrincipal()}})
 	req := httptest.NewRequest(http.MethodGet, "/v1/tenants/zuribeans_za", nil)
-	req.Header.Set("Authorization", "Bearer "+strings.Repeat("a", 32))
+	req.Header.Set("Authorization", "Bearer admin-token")
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, req)
 	if response.Code != http.StatusOK {
@@ -137,9 +143,9 @@ func TestGetTenant(t *testing.T) {
 
 func TestGetEntitlement(t *testing.T) {
 	store := &fakeStore{}
-	handler := New(store, strings.Repeat("a", 32))
+	handler := New(Dependencies{Store: store, AdminVerifier: fakeVerifier{principal: adminPrincipal()}})
 	req := httptest.NewRequest(http.MethodGet, "/v1/entitlements?tenantId=zuribeans_za&productId=baobab_trade", nil)
-	req.Header.Set("Authorization", "Bearer "+strings.Repeat("a", 32))
+	req.Header.Set("Authorization", "Bearer admin-token")
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, req)
 	if response.Code != http.StatusOK {
@@ -152,7 +158,7 @@ func TestGetEntitlement(t *testing.T) {
 
 func TestLifecycleActionEndpoint(t *testing.T) {
 	store := &fakeStore{}
-	handler := New(store, strings.Repeat("a", 32))
+	handler := New(Dependencies{Store: store, AdminVerifier: fakeVerifier{principal: adminPrincipal()}})
 	for _, tc := range []struct {
 		path   string
 		method string
@@ -162,7 +168,7 @@ func TestLifecycleActionEndpoint(t *testing.T) {
 		{path: "/v1/tenants/zuribeans_za/decommission", method: http.MethodPost},
 	} {
 		req := httptest.NewRequest(tc.method, tc.path, nil)
-		req.Header.Set("Authorization", "Bearer "+strings.Repeat("a", 32))
+		req.Header.Set("Authorization", "Bearer admin-token")
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, req)
 		if response.Code != http.StatusOK {
@@ -171,4 +177,36 @@ func TestLifecycleActionEndpoint(t *testing.T) {
 	}
 }
 
-var storeErrNotFound = domain.NotFoundError("tenant not found")
+func TestResolverRouteIsRegistered(t *testing.T) {
+	handler := New(Dependencies{
+		Store:            &fakeStore{},
+		WorkloadVerifier: fakeVerifier{principal: workloadPrincipal()},
+	})
+	req := httptest.NewRequest(http.MethodPost, "/v1/resolve", strings.NewReader(`{}`))
+	req.Header.Set("Authorization", "Bearer workload-token")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, req)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected registered resolver route to reject empty input with 400, got %d: %s", response.Code, response.Body.String())
+	}
+}
+
+type fakeVerifier struct {
+	principal auth.Principal
+	err       error
+}
+
+func (f fakeVerifier) Verify(context.Context, string) (auth.Principal, error) {
+	if f.err != nil {
+		return auth.Principal{}, f.err
+	}
+	return f.principal, nil
+}
+
+func adminPrincipal() auth.Principal {
+	return auth.Principal{Subject: "admin-123", ActorType: "admin", TokenID: "token-123", Scopes: map[string]struct{}{"tenant:write": {}, "tenant:read": {}}}
+}
+
+func workloadPrincipal() auth.Principal {
+	return auth.Principal{Subject: "workload-123", ActorType: "workload", TenantID: "zuribeans_za", ClientID: "client-123", TokenID: "token-456", Scopes: map[string]struct{}{"context:resolve": {}}}
+}
