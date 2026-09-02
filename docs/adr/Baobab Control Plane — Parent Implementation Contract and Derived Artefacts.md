@@ -1,15 +1,15 @@
 # Baobab Control Plane — Parent Implementation Contract and Derived Artefacts
 
-**Parent Contract:** `BCP-IMPL-001`  
-**System:** Baobab Control Plane  
-**Repository:** `nabhold/baobab-cp`  
-**Implementation Language:** Go  
-**Authoritative Runtime Store:** PostgreSQL 17  
-**HTTP Contract:** OpenAPI 3.2.0  
-**Event Contract:** AsyncAPI 3.0.0  
-**Contract Authority:** `nabhold/shared`  
-**Status:** Proposed Normative Implementation Baseline  
-**Architecture Style:** Modular monolith control plane with explicit bounded contexts and independently evolvable adapters  
+**Parent Contract:** `BCP-IMPL-001`
+**System:** Baobab Control Plane
+**Repository:** `nabhold/baobab-cp`
+**Implementation Language:** Go
+**Authoritative Runtime Store:** PostgreSQL 17
+**HTTP Contract:** OpenAPI 3.2.0
+**Event Contract:** AsyncAPI 3.0.0
+**Contract Authority:** `nabhold/shared`
+**Status:** Proposed Normative Implementation Baseline
+**Architecture Style:** Modular monolith control plane with explicit bounded contexts and independently evolvable adapters
 **Scope:** Canonical identity, mappings, markets, estates, topology, capabilities, isolation, context resolution, audit and messaging
 
 ---
@@ -93,6 +93,7 @@ The sequence SHALL consist initially of:
 000015_messaging.sql
 000016_idempotency_and_revisions.sql
 000017_indexes_and_integrity.sql
+000018_canonical_entity_versions.sql
 ```
 
 These files become immutable after first production deployment.
@@ -3418,7 +3419,7 @@ Problem:
     violations:
       type: array
       items:
-        $ref: '#/components/schemas/Violation'
+        $ref: "#/components/schemas/Violation"
 ```
 
 Violation:
@@ -3522,10 +3523,10 @@ CanonicalEntity:
       type: string
 
     classification:
-      $ref: '#/components/schemas/Classification'
+      $ref: "#/components/schemas/Classification"
 
     status:
-      $ref: '#/components/schemas/LifecycleStatus'
+      $ref: "#/components/schemas/LifecycleStatus"
 
     schema_version:
       type: integer
@@ -3587,7 +3588,7 @@ CreateCanonicalEntityRequest:
     authority:
       type: string
     classification:
-      $ref: '#/components/schemas/Classification'
+      $ref: "#/components/schemas/Classification"
     effective_from:
       type: string
       format: date-time
@@ -3696,7 +3697,7 @@ ExternalReference:
         - "null"
 
     status:
-      $ref: '#/components/schemas/LifecycleStatus'
+      $ref: "#/components/schemas/LifecycleStatus"
 ```
 
 ---
@@ -3732,7 +3733,7 @@ MappingScope:
       format: uuid
     country_code:
       type: string
-      pattern: '^[A-Z]{2}$'
+      pattern: "^[A-Z]{2}$"
 
     digital_estate_id:
       type: string
@@ -3746,7 +3747,7 @@ MappingScope:
 
     currency_code:
       type: string
-      pattern: '^[A-Z]{3}$'
+      pattern: "^[A-Z]{3}$"
     locale:
       type: string
 
@@ -3801,7 +3802,7 @@ Mapping:
       type: string
 
     resolution_mode:
-      $ref: '#/components/schemas/ResolutionMode'
+      $ref: "#/components/schemas/ResolutionMode"
 
     canonical_entity_id:
       type: string
@@ -3820,25 +3821,25 @@ Mapping:
       format: uuid
 
     scope:
-      $ref: '#/components/schemas/MappingScope'
+      $ref: "#/components/schemas/MappingScope"
 
     direction:
-      $ref: '#/components/schemas/MappingDirection'
+      $ref: "#/components/schemas/MappingDirection"
 
     cardinality:
-      $ref: '#/components/schemas/MappingCardinality'
+      $ref: "#/components/schemas/MappingCardinality"
 
     authority:
       type: string
 
     confidence:
-      $ref: '#/components/schemas/MappingConfidence'
+      $ref: "#/components/schemas/MappingConfidence"
 
     resolution_priority:
       type: integer
 
     status:
-      $ref: '#/components/schemas/LifecycleStatus'
+      $ref: "#/components/schemas/LifecycleStatus"
 
     effective_from:
       type: string
@@ -3894,7 +3895,7 @@ SupersedeMappingRequest:
     - reason
   properties:
     replacement:
-      $ref: '#/components/schemas/CreateMappingRequest'
+      $ref: "#/components/schemas/CreateMappingRequest"
     effective_at:
       type: string
       format: date-time
@@ -4044,7 +4045,7 @@ ResolveContextRequest:
 
     requested_currency:
       type: string
-      pattern: '^[A-Z]{3}$'
+      pattern: "^[A-Z]{3}$"
 
     requested_locale:
       type: string
@@ -4174,7 +4175,7 @@ ResolvedContext:
     provenance:
       type: object
       additionalProperties:
-        $ref: '#/components/schemas/ContextProvenance'
+        $ref: "#/components/schemas/ContextProvenance"
 ```
 
 ---
@@ -4220,7 +4221,7 @@ ResolveMappingRequest:
       format: date-time
 
     context:
-      $ref: '#/components/schemas/ContextReference'
+      $ref: "#/components/schemas/ContextReference"
 ```
 
 ---
@@ -4235,10 +4236,10 @@ ResolvedMapping:
     - resolution
   properties:
     mapping:
-      $ref: '#/components/schemas/Mapping'
+      $ref: "#/components/schemas/Mapping"
 
     external_reference:
-      $ref: '#/components/schemas/ExternalReference'
+      $ref: "#/components/schemas/ExternalReference"
 
     target_canonical_entity_id:
       type:
@@ -4291,7 +4292,7 @@ ResolveCapabilityRequest:
       format: date-time
 
     context:
-      $ref: '#/components/schemas/ContextReference'
+      $ref: "#/components/schemas/ContextReference"
 ```
 
 Response:
@@ -4307,22 +4308,22 @@ ResolvedCapability:
     - contract_version
   properties:
     capability:
-      $ref: '#/components/schemas/Capability'
+      $ref: "#/components/schemas/Capability"
 
     binding:
-      $ref: '#/components/schemas/CapabilityBinding'
+      $ref: "#/components/schemas/CapabilityBinding"
 
     engine:
-      $ref: '#/components/schemas/Engine'
+      $ref: "#/components/schemas/Engine"
 
     engine_instance:
-      $ref: '#/components/schemas/EngineInstance'
+      $ref: "#/components/schemas/EngineInstance"
 
     contract_version:
       type: string
 
     resolution:
-      $ref: '#/components/schemas/ResolutionProvenance'
+      $ref: "#/components/schemas/ResolutionProvenance"
 ```
 
 ---
@@ -4458,12 +4459,12 @@ operations:
   publishCanonicalEntityEvents:
     action: send
     channel:
-      $ref: '#/channels/canonicalEntityEvents'
+      $ref: "#/channels/canonicalEntityEvents"
 
   publishMappingEvents:
     action: send
     channel:
-      $ref: '#/channels/mappingEvents'
+      $ref: "#/channels/mappingEvents"
 ```
 
 Physical broker/topic naming can be supplied through deployment bindings.
@@ -4597,7 +4598,7 @@ CanonicalEntityCreatedData:
     - canonical_entity
   properties:
     canonical_entity:
-      $ref: './schemas/canonical-entity.yaml'
+      $ref: "./schemas/canonical-entity.yaml"
 ```
 
 Retired event SHOULD include:
@@ -4753,11 +4754,7 @@ baobab.market.retired.v1
 
 ```json
 {
-  "changed": [
-    "currencies",
-    "locales",
-    "countries"
-  ]
+  "changed": ["currencies", "locales", "countries"]
 }
 ```
 
@@ -4949,23 +4946,23 @@ Consumer repositories SHALL run compatibility tests against the shared contract 
 
 ## 111. Parent → database → Go → API/Event traceability
 
-| Parent concept | PostgreSQL | Go module | HTTP/Event |
-|---|---|---|---|
-| CanonicalEntity | `registry.canonical_entity` | `canonical` | `/canonical-entities`, canonical events |
-| ExternalReference | `mapping.external_reference` | `mapping` | `/external-references`, reference events |
-| Mapping | `mapping.mapping` | `mapping` | `/mappings`, mapping events |
-| MappingScope | `mapping.mapping_scope` | `mapping` / `resolver` | embedded scope schema |
-| Market | `market.*` | `market` | `/markets`, market events |
-| DigitalEstate | `estate.*` | `estate` | `/digital-estates`, estate events |
-| Engine | `topology.engine` | `topology` | `/engines`, topology events |
-| EngineInstance | `topology.engine_instance` | `topology` | `/engine-instances` |
-| Capability | `capability.capability` | `capability` | `/capabilities` |
-| CapabilityBinding | `capability.capability_binding` | `capability` / `resolver` | `/capability-bindings` |
-| Context | runtime + audit snapshot | `contextmodel`, `resolver` | `/resolve/context` |
-| IsolationProfile | `policy.isolation_profile` | `isolation` | `/isolation-profiles` |
-| Audit | `audit.audit_record` | `audit` | read APIs |
-| Events | `messaging.outbox` | `messaging` | AsyncAPI |
-| Idempotency | `system.idempotency_record` | `idempotency` | HTTP header contract |
+| Parent concept    | PostgreSQL                      | Go module                  | HTTP/Event                               |
+| ----------------- | ------------------------------- | -------------------------- | ---------------------------------------- |
+| CanonicalEntity   | `registry.canonical_entity`     | `canonical`                | `/canonical-entities`, canonical events  |
+| ExternalReference | `mapping.external_reference`    | `mapping`                  | `/external-references`, reference events |
+| Mapping           | `mapping.mapping`               | `mapping`                  | `/mappings`, mapping events              |
+| MappingScope      | `mapping.mapping_scope`         | `mapping` / `resolver`     | embedded scope schema                    |
+| Market            | `market.*`                      | `market`                   | `/markets`, market events                |
+| DigitalEstate     | `estate.*`                      | `estate`                   | `/digital-estates`, estate events        |
+| Engine            | `topology.engine`               | `topology`                 | `/engines`, topology events              |
+| EngineInstance    | `topology.engine_instance`      | `topology`                 | `/engine-instances`                      |
+| Capability        | `capability.capability`         | `capability`               | `/capabilities`                          |
+| CapabilityBinding | `capability.capability_binding` | `capability` / `resolver`  | `/capability-bindings`                   |
+| Context           | runtime + audit snapshot        | `contextmodel`, `resolver` | `/resolve/context`                       |
+| IsolationProfile  | `policy.isolation_profile`      | `isolation`                | `/isolation-profiles`                    |
+| Audit             | `audit.audit_record`            | `audit`                    | read APIs                                |
+| Events            | `messaging.outbox`              | `messaging`                | AsyncAPI                                 |
+| Idempotency       | `system.idempotency_record`     | `idempotency`              | HTTP header contract                     |
 
 Every production implementation ticket SHOULD reference at least one row of this traceability matrix.
 

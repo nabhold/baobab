@@ -10,6 +10,8 @@ import (
 
 	"github.com/nabhold/baobab-cp/internal/auth"
 	"github.com/nabhold/baobab-cp/internal/domain"
+	"github.com/nabhold/baobab-cp/internal/repository"
+	"github.com/nabhold/baobab-cp/internal/service"
 	"github.com/nabhold/baobab-cp/internal/store"
 )
 
@@ -191,6 +193,32 @@ func TestResolverRouteIsRegistered(t *testing.T) {
 	}
 }
 
+func TestCanonicalEntityLifecycleRoutes(t *testing.T) {
+	canonical := service.CanonicalEntityService{Repository: repository.NewCanonicalRepository()}
+	handler := New(Dependencies{Store: &fakeStore{}, AdminVerifier: fakeVerifier{principal: adminPrincipal()}, Canonical: canonical})
+	body := `{"id":"entity-1","canonical_key":"tenant:product","entity_type":"PRODUCT","display_name":"Product","authority":"baobab","classification":"INTERNAL"}`
+	request := httptest.NewRequest(http.MethodPost, "/v1/canonical-entities", strings.NewReader(body))
+	request.Header.Set("Authorization", "Bearer admin-token")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusCreated || response.Header().Get("ETag") != `"1"` {
+		t.Fatalf("create got status %d etag %q: %s", response.Code, response.Header().Get("ETag"), response.Body.String())
+	}
+	for _, action := range []string{"validate", "activate"} {
+		request = httptest.NewRequest(http.MethodPost, "/v1/canonical-entities/entity-1/"+action, nil)
+		request.Header.Set("Authorization", "Bearer admin-token")
+		request.Header.Set("If-Match", `"1"`)
+		if action == "activate" {
+			request.Header.Set("If-Match", `"2"`)
+		}
+		response = httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("%s got status %d: %s", action, response.Code, response.Body.String())
+		}
+	}
+}
+
 type fakeVerifier struct {
 	principal auth.Principal
 	err       error
@@ -204,7 +232,7 @@ func (f fakeVerifier) Verify(context.Context, string) (auth.Principal, error) {
 }
 
 func adminPrincipal() auth.Principal {
-	return auth.Principal{Subject: "admin-123", ActorType: "admin", TokenID: "token-123", Scopes: map[string]struct{}{"tenant:write": {}, "tenant:read": {}}}
+	return auth.Principal{Subject: "admin-123", ActorType: "admin", TokenID: "token-123", Scopes: map[string]struct{}{"tenant:write": {}, "tenant:read": {}, "canonical:write": {}, "canonical:read": {}}}
 }
 
 func workloadPrincipal() auth.Principal {

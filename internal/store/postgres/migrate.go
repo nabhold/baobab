@@ -43,6 +43,7 @@ var canonicalMigrationNames = []string{
 	"000015_messaging.sql",
 	"000016_idempotency_and_revisions.sql",
 	"000017_indexes_and_integrity.sql",
+	"000018_canonical_entity_versions.sql",
 }
 
 func LoadMigrations() ([]Migration, error) {

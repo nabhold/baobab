@@ -25,6 +25,7 @@ type Dependencies struct {
 	AdminVerifier    auth.TokenVerifier
 	WorkloadVerifier auth.TokenVerifier
 	Resolution       service.ResolutionService
+	Canonical        service.CanonicalEntityService
 }
 type API struct {
 	store            store.TenantStore
@@ -49,6 +50,12 @@ func New(dependencies Dependencies) http.Handler {
 	r.With(a.authorize(a.adminVerifier, "admin", "tenant:read")).Get("/v1/entitlements", a.getEntitlement)
 	r.With(a.authorize(a.workloadVerifier, "workload", "context:resolve")).Post("/v1/context/resolve", a.resolveContext)
 	r.With(a.authorize(a.workloadVerifier, "workload", "context:resolve")).Post("/v1/resolve", ResolverHandler{Service: a.resolution}.Resolve)
+	canonical := canonicalHandler{service: dependencies.Canonical}
+	r.With(a.authorize(a.adminVerifier, "admin", "canonical:write")).Post("/v1/canonical-entities", canonical.create)
+	r.With(a.authorize(a.adminVerifier, "admin", "canonical:read")).Get("/v1/canonical-entities/{entityID}", canonical.get)
+	for _, action := range []string{"validate", "activate", "suspend", "retire"} {
+		r.With(a.authorize(a.adminVerifier, "admin", "canonical:write")).Post("/v1/canonical-entities/{entityID}/"+action, canonical.lifecycle(action))
+	}
 	return r
 }
 

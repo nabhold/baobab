@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/nabhold/baobab-cp/internal/domain"
+	"github.com/nabhold/baobab-cp/internal/repository"
 	"github.com/nabhold/baobab-cp/internal/resolver"
 )
 
@@ -29,7 +30,8 @@ type ResolutionResult struct {
 
 // ResolutionService exposes the composed resolver pipeline as a service interface.
 type ResolutionService struct {
-	Pipeline resolver.ResolutionPipeline
+	Pipeline   resolver.ResolutionPipeline
+	Repository repository.ResolverRepository
 }
 
 func (s ResolutionService) Resolve(ctx context.Context, req ResolutionRequest) (ResolutionResult, error) {
@@ -41,6 +43,24 @@ func (s ResolutionService) Resolve(ctx context.Context, req ResolutionRequest) (
 	}
 	if req.Context.TenantID == "" {
 		req.Context.TenantID = req.TenantID
+	}
+	if s.Repository != nil {
+		mappings, err := s.Repository.ListMappings(ctx, req.Context.TenantID)
+		if err != nil {
+			return ResolutionResult{}, fmt.Errorf("load mappings: %w", err)
+		}
+		bindings, err := s.Repository.ListBindings(ctx, "baobab_trade")
+		if err != nil {
+			return ResolutionResult{}, fmt.Errorf("load capability bindings: %w", err)
+		}
+		var instances []resolver.EngineInstance
+		if len(bindings) > 0 {
+			instances, err = s.Repository.ListActiveInstances(ctx, bindings[0].EngineID)
+			if err != nil {
+				return ResolutionResult{}, fmt.Errorf("load engine instances: %w", err)
+			}
+		}
+		req.Mappings, req.Bindings, req.EngineInstances = mappings, bindings, instances
 	}
 
 	pipelineResult, err := s.Pipeline.Resolve(ctx, resolver.ResolutionRequest{

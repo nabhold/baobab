@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/nabhold/baobab-cp/internal/auth"
 	"github.com/nabhold/baobab-cp/internal/domain"
 	"github.com/nabhold/baobab-cp/internal/resolver"
 	"github.com/nabhold/baobab-cp/internal/service"
@@ -36,6 +37,10 @@ func (h ResolverHandler) Resolve(w http.ResponseWriter, r *http.Request) {
 	if req.TenantID == "" && req.Context.TenantID == "" {
 		problem(w, r, http.StatusBadRequest, "TENANT_REQUIRED", "tenant_id is required", false)
 		return
+	}
+	if principal, ok := auth.PrincipalFromContext(r.Context()); ok && principal.ActorType == "workload" {
+		req.TenantID = principal.TenantID
+		req.Context.TenantID = principal.TenantID
 	}
 
 	result, err := h.Service.Resolve(r.Context(), service.ResolutionRequest{

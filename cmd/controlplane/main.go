@@ -10,9 +10,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/nabhold/baobab-cp/internal/api"
+	"github.com/nabhold/baobab-cp/api"
 	"github.com/nabhold/baobab-cp/internal/auth"
 	"github.com/nabhold/baobab-cp/internal/config"
+	resolverrepo "github.com/nabhold/baobab-cp/internal/repository"
+	"github.com/nabhold/baobab-cp/internal/resolver"
+	"github.com/nabhold/baobab-cp/internal/service"
 	"github.com/nabhold/baobab-cp/internal/store/postgres"
 )
 
@@ -44,7 +47,14 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
-	srv := &http.Server{Addr: cfg.HTTPAddress, Handler: api.New(api.Dependencies{Store: db, AdminVerifier: adminVerifier, WorkloadVerifier: workloadVerifier}), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second}
+	resolverRepository, err := resolverrepo.Open(ctx, cfg.DatabaseURL)
+	if err != nil {
+		slog.Error("resolver repository unavailable", "error", err)
+		os.Exit(1)
+	}
+	defer resolverRepository.Close()
+	resolution := service.ResolutionService{Pipeline: resolver.ResolutionPipeline{}, Repository: resolverRepository}
+	srv := &http.Server{Addr: cfg.HTTPAddress, Handler: api.New(api.Dependencies{Store: db, AdminVerifier: adminVerifier, WorkloadVerifier: workloadVerifier, Resolution: resolution}), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second}
 	go func() {
 		slog.Info("control plane listening", "address", cfg.HTTPAddress)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

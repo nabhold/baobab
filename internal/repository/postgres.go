@@ -20,6 +20,7 @@ var _ CapabilityRepository = (*PostgresRepository)(nil)
 var _ ResolverRepository = (*PostgresRepository)(nil)
 var _ MappingWriter = (*PostgresRepository)(nil)
 var _ CapabilityWriter = (*PostgresRepository)(nil)
+var _ CanonicalEntityRepository = (*PostgresRepository)(nil)
 
 func Open(ctx context.Context, url string) (*PostgresRepository, error) {
 	pool, err := pgxpool.New(ctx, url)
@@ -39,6 +40,49 @@ func (r *PostgresRepository) Close() {
 	}
 }
 
+func (r *PostgresRepository) CreateCanonicalEntity(ctx context.Context, entity domain.CanonicalEntity) error {
+	if r == nil || r.pool == nil {
+		return errors.New("repository is not initialized")
+	}
+	if err := entity.Validate(); err != nil {
+		return fmt.Errorf("validate canonical entity: %w", err)
+	}
+	_, err := r.pool.Exec(ctx, `
+		INSERT INTO registry.canonical_entity(canonical_entity_id, tenant_id, legal_entity_id, entity_type, external_key, status)
+		VALUES ($1::uuid, NULLIF($2, ''), NULLIF($3, ''), $4, NULLIF($5, ''), LOWER($6))`, entity.ID, entity.OwnerTenantID, entity.OwnerLegalEntityID, entity.EntityType, entity.CanonicalKey, entity.Status)
+	return err
+}
+
+func (r *PostgresRepository) GetCanonicalEntity(ctx context.Context, id string) (domain.CanonicalEntity, error) {
+	if r == nil || r.pool == nil {
+		return domain.CanonicalEntity{}, errors.New("repository is not initialized")
+	}
+	var entity domain.CanonicalEntity
+	var status string
+	err := r.pool.QueryRow(ctx, `SELECT canonical_entity_id::text, COALESCE(tenant_id,''), COALESCE(legal_entity_id,''), entity_type, COALESCE(external_key,''), UPPER(status), version, created_at, updated_at FROM registry.canonical_entity WHERE canonical_entity_id=$1::uuid`, id).Scan(&entity.ID, &entity.OwnerTenantID, &entity.OwnerLegalEntityID, &entity.EntityType, &entity.CanonicalKey, &status, &entity.Version, &entity.CreatedAt, &entity.UpdatedAt)
+	if err != nil {
+		return domain.CanonicalEntity{}, fmt.Errorf("get canonical entity %s: %w", id, err)
+	}
+	entity.Status, entity.SchemaVersion, entity.Authority, entity.Classification = status, 1, "baobab", "INTERNAL"
+	entity.DisplayName = entity.CanonicalKey
+	entity.EffectiveFrom = entity.CreatedAt
+	return entity, nil
+}
+
+func (r *PostgresRepository) SaveCanonicalEntity(ctx context.Context, entity domain.CanonicalEntity, expectedVersion int64) error {
+	if r == nil || r.pool == nil {
+		return errors.New("repository is not initialized")
+	}
+	result, err := r.pool.Exec(ctx, `UPDATE registry.canonical_entity SET entity_type=$2, external_key=NULLIF($3,''), status=LOWER($4), version=version+1, updated_at=now() WHERE canonical_entity_id=$1::uuid AND version=$5`, entity.ID, entity.EntityType, entity.CanonicalKey, entity.Status, expectedVersion)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("canonical entity %s version conflict or not found", entity.ID)
+	}
+	return nil
+}
+
 func (r *PostgresRepository) ListMappings(ctx context.Context, canonicalEntityID string) ([]domain.Mapping, error) {
 	if r == nil || r.pool == nil {
 		return nil, errors.New("repository is not initialized")
@@ -50,7 +94,7 @@ func (r *PostgresRepository) ListMappings(ctx context.Context, canonicalEntityID
 		FROM mapping.canonical_mapping cm
 		JOIN registry.canonical_entity ce ON ce.canonical_entity_id = cm.source_entity_id
 		LEFT JOIN mapping.mapping_scope ms ON ms.tenant_id = ce.tenant_id
-		WHERE cm.source_entity_id = $1::uuid
+		WHERE ce.tenant_id = $1 OR cm.source_entity_id::text = $1
 		ORDER BY cm.created_at DESC`, canonicalEntityID)
 	if err != nil {
 		return nil, err
