@@ -2,11 +2,9 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nabhold/baobab-cp/internal/domain"
 	"github.com/nabhold/baobab-cp/internal/resolver"
@@ -20,6 +18,8 @@ type PostgresRepository struct {
 var _ MappingRepository = (*PostgresRepository)(nil)
 var _ CapabilityRepository = (*PostgresRepository)(nil)
 var _ ResolverRepository = (*PostgresRepository)(nil)
+var _ MappingWriter = (*PostgresRepository)(nil)
+var _ CapabilityWriter = (*PostgresRepository)(nil)
 
 func Open(ctx context.Context, url string) (*PostgresRepository, error) {
 	pool, err := pgxpool.New(ctx, url)
@@ -44,27 +44,14 @@ func (r *PostgresRepository) ListMappings(ctx context.Context, canonicalEntityID
 		return nil, errors.New("repository is not initialized")
 	}
 	rows, err := r.pool.Query(ctx, `
-		SELECT
-			id,
-			mapping_type,
-			resolution_mode,
-			canonical_entity_id,
-			external_reference_id,
-			target_canonical_entity_id,
-			scope_id,
-			direction,
-			cardinality,
-			authority,
-			confidence,
-			resolution_priority,
-			status,
-			effective_from,
-			effective_to,
-			metadata,
-			mapping_version
-		FROM mapping.mapping
-		WHERE canonical_entity_id = $1
-		ORDER BY resolution_priority DESC, confidence DESC`, canonicalEntityID)
+		SELECT cm.canonical_mapping_id::text, cm.mapping_type, cm.source_entity_id::text,
+		       cm.target_entity_id::text, COALESCE(ms.mapping_scope_id::text, cm.source_entity_id::text),
+		       UPPER(cm.status), cm.created_at::text
+		FROM mapping.canonical_mapping cm
+		JOIN registry.canonical_entity ce ON ce.canonical_entity_id = cm.source_entity_id
+		LEFT JOIN mapping.mapping_scope ms ON ms.tenant_id = ce.tenant_id
+		WHERE cm.source_entity_id = $1::uuid
+		ORDER BY cm.created_at DESC`, canonicalEntityID)
 	if err != nil {
 		return nil, err
 	}
@@ -73,46 +60,26 @@ func (r *PostgresRepository) ListMappings(ctx context.Context, canonicalEntityID
 	var out []domain.Mapping
 	for rows.Next() {
 		var m domain.Mapping
-		var metadata []byte
 		var effectiveFrom string
-		var effectiveTo *string
-		var externalRef, targetEntity *string
 		if err := rows.Scan(
 			&m.ID,
 			&m.MappingType,
-			&m.ResolutionMode,
 			&m.CanonicalEntityID,
-			&externalRef,
-			&targetEntity,
+			&m.TargetCanonicalEntityID,
 			&m.ScopeID,
-			&m.Direction,
-			&m.Cardinality,
-			&m.Authority,
-			&m.Confidence,
-			&m.ResolutionPriority,
 			&m.Status,
 			&effectiveFrom,
-			&effectiveTo,
-			&metadata,
-			&m.Version,
 		); err != nil {
 			return nil, err
 		}
-		if externalRef != nil {
-			m.ExternalReferenceID = *externalRef
-		}
-		if targetEntity != nil {
-			m.TargetCanonicalEntityID = *targetEntity
-		}
-		if effectiveTo != nil {
-			m.EffectiveTo = *effectiveTo
-		}
+		m.ResolutionMode = "SINGLE"
+		m.Direction = "SOURCE_TO_TARGET"
+		m.Cardinality = "ONE_TO_ONE"
+		m.Authority = "baobab"
+		m.Confidence = "CONFIRMED"
+		m.ResolutionPriority = 0
+		m.Version = 1
 		m.EffectiveFrom = effectiveFrom
-		if len(metadata) > 0 {
-			if err := json.Unmarshal(metadata, &m.Metadata); err != nil {
-				return nil, fmt.Errorf("decode mapping metadata: %w", err)
-			}
-		}
 		out = append(out, m)
 	}
 	if err := rows.Err(); err != nil {
@@ -121,21 +88,72 @@ func (r *PostgresRepository) ListMappings(ctx context.Context, canonicalEntityID
 	return out, nil
 }
 
+func (r *PostgresRepository) CreateMapping(ctx context.Context, mapping domain.Mapping) error {
+	if r == nil || r.pool == nil {
+		return errors.New("repository is not initialized")
+	}
+	if err := mapping.Validate(); err != nil {
+		return fmt.Errorf("validate mapping: %w", err)
+	}
+	if mapping.ExternalReferenceID != "" {
+		return errors.New("external-reference mappings are not supported by the current canonical schema")
+	}
+	_, err := r.pool.Exec(ctx, `
+		INSERT INTO mapping.canonical_mapping(canonical_mapping_id, source_entity_id, target_entity_id, mapping_type, status)
+		VALUES ($1::uuid, $2::uuid, $3::uuid, $4, LOWER($5))`, mapping.ID, mapping.CanonicalEntityID, mapping.TargetCanonicalEntityID, mapping.MappingType, mapping.Status)
+	return err
+}
+
+func (r *PostgresRepository) GetMapping(ctx context.Context, mappingID string) (domain.Mapping, error) {
+	if r == nil || r.pool == nil {
+		return domain.Mapping{}, errors.New("repository is not initialized")
+	}
+	var mapping domain.Mapping
+	var effectiveFrom string
+	err := r.pool.QueryRow(ctx, `SELECT canonical_mapping_id::text, mapping_type, source_entity_id::text, target_entity_id::text, source_entity_id::text, UPPER(status), created_at::text FROM mapping.canonical_mapping WHERE canonical_mapping_id=$1::uuid`, mappingID).Scan(&mapping.ID, &mapping.MappingType, &mapping.CanonicalEntityID, &mapping.TargetCanonicalEntityID, &mapping.ScopeID, &mapping.Status, &effectiveFrom)
+	if err != nil {
+		return domain.Mapping{}, fmt.Errorf("get mapping %s: %w", mappingID, err)
+	}
+	mapping.ResolutionMode, mapping.Direction, mapping.Cardinality = "SINGLE", "SOURCE_TO_TARGET", "ONE_TO_ONE"
+	mapping.Authority, mapping.Confidence, mapping.EffectiveFrom, mapping.Version = "baobab", "CONFIRMED", effectiveFrom, 1
+	return mapping, nil
+}
+
+func (r *PostgresRepository) SaveMapping(ctx context.Context, mapping domain.Mapping, expectedVersion int64) error {
+	if r == nil || r.pool == nil {
+		return errors.New("repository is not initialized")
+	}
+	if err := mapping.Validate(); err != nil {
+		return fmt.Errorf("validate mapping: %w", err)
+	}
+	if expectedVersion != 1 {
+		return fmt.Errorf("mapping %s version conflict: expected %d, got 1", mapping.ID, expectedVersion)
+	}
+	result, err := r.pool.Exec(ctx, `UPDATE mapping.canonical_mapping SET mapping_type=$2, status=LOWER($3) WHERE canonical_mapping_id=$1::uuid`, mapping.ID, mapping.MappingType, mapping.Status)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("mapping %s not found", mapping.ID)
+	}
+	return nil
+}
+
 func (r *PostgresRepository) ListBindings(ctx context.Context, capabilityKey string) ([]resolver.CapabilityBinding, error) {
 	if r == nil || r.pool == nil {
 		return nil, errors.New("repository is not initialized")
 	}
 	rows, err := r.pool.Query(ctx, `
 		SELECT
-			cb.id,
+			cb.id::text,
 			cap.code,
 			ei.engine_id,
 			ei.engine_instance_id,
 			cb.binding_mode,
 			cb.priority,
-			cb.status,
+			UPPER(cb.status),
 			cb.contract_version,
-			cb.configuration
+			cb.scope_id::text
 		FROM capability.capability_binding cb
 		JOIN capability.capability cap ON cap.capability_id = cb.capability_id
 		JOIN topology.engine_instance ei ON ei.engine_instance_id = cb.engine_instance_id
@@ -149,9 +167,8 @@ func (r *PostgresRepository) ListBindings(ctx context.Context, capabilityKey str
 	var out []resolver.CapabilityBinding
 	for rows.Next() {
 		var b resolver.CapabilityBinding
-		var config []byte
 		if err := rows.Scan(
-			&b.CapabilityKey,
+			&b.ID,
 			&b.CapabilityKey,
 			&b.EngineID,
 			&b.EngineInstanceID,
@@ -159,17 +176,45 @@ func (r *PostgresRepository) ListBindings(ctx context.Context, capabilityKey str
 			&b.Priority,
 			&b.Status,
 			&b.ContractVersion,
-			&config,
+			&b.ScopeID,
 		); err != nil {
 			return nil, err
 		}
-		_ = config
 		out = append(out, b)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return out, nil
+}
+
+func (r *PostgresRepository) CreateBinding(ctx context.Context, binding resolver.CapabilityBinding) error {
+	if r == nil || r.pool == nil {
+		return errors.New("repository is not initialized")
+	}
+	if binding.CapabilityKey == "" || binding.EngineID == "" || binding.EngineInstanceID == "" || binding.ScopeID == "" {
+		return errors.New("capability, engine, engine instance, and scope are required")
+	}
+	_, err := r.pool.Exec(ctx, `
+		INSERT INTO capability.capability_binding(capability_id, engine_instance_id, scope_id, binding_mode, priority, status, contract_version, effective_from)
+		SELECT c.capability_id, ei.engine_instance_id, $4::uuid, $5, $6, LOWER($7), $8, now()
+		FROM capability.capability c JOIN topology.engine_instance ei ON ei.engine_instance_id=$3::uuid AND ei.engine_id=$2::uuid
+		WHERE c.code=$1`, binding.CapabilityKey, binding.EngineID, binding.EngineInstanceID, binding.ScopeID, binding.BindingMode, binding.Priority, binding.Status, binding.ContractVersion)
+	return err
+}
+
+func (r *PostgresRepository) SaveBinding(ctx context.Context, binding resolver.CapabilityBinding, expectedVersion int64) error {
+	if r == nil || r.pool == nil {
+		return errors.New("repository is not initialized")
+	}
+	result, err := r.pool.Exec(ctx, `UPDATE capability.capability_binding cb SET binding_mode=$2, priority=$3, status=LOWER($4), contract_version=$5, version=version+1, updated_at=now() FROM capability.capability c WHERE cb.id=$1::uuid AND cb.capability_id=c.capability_id AND c.code=$6 AND cb.version=$7`, binding.ID, binding.BindingMode, binding.Priority, binding.Status, binding.ContractVersion, binding.CapabilityKey, expectedVersion)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("binding %s version conflict or not found", binding.EngineInstanceID)
+	}
+	return nil
 }
 
 func (r *PostgresRepository) ListActiveInstances(ctx context.Context, engineID string) ([]resolver.EngineInstance, error) {
@@ -179,7 +224,7 @@ func (r *PostgresRepository) ListActiveInstances(ctx context.Context, engineID s
 	rows, err := r.pool.Query(ctx, `
 		SELECT engine_instance_id, engine_id, region, environment, status
 		FROM topology.engine_instance
-		WHERE engine_id = $1 AND status = 'ACTIVE'
+		WHERE engine_id = $1::uuid AND UPPER(status) = 'ACTIVE'
 		ORDER BY region ASC`, engineID)
 	if err != nil {
 		return nil, err
@@ -206,5 +251,3 @@ func (r *PostgresRepository) Ping(ctx context.Context) error {
 	}
 	return r.pool.Ping(ctx)
 }
-
-var _ = pgx.ErrNoRows

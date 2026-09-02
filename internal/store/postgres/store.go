@@ -30,6 +30,12 @@ func Open(ctx context.Context, url string) (*Store, error) {
 }
 func (s *Store) Close()                         { s.pool.Close() }
 func (s *Store) Ping(ctx context.Context) error { return s.pool.Ping(ctx) }
+func (s *Store) ApplyMigrations(ctx context.Context) error {
+	if s == nil || s.pool == nil {
+		return errors.New("migration database pool is nil")
+	}
+	return ApplyMigrations(ctx, s.pool)
+}
 func (s *Store) GetTenant(ctx context.Context, tenantID string) (domain.Tenant, error) {
 	var tenant domain.Tenant
 	var metadata map[string]string

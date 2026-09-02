@@ -8,9 +8,11 @@ import (
 
 // CapabilityBinding represents the effective binding between a capability and a runtime engine instance.
 type CapabilityBinding struct {
+	ID               string `json:"id,omitempty"`
 	CapabilityKey    string `json:"capability_key,omitempty"`
 	EngineID         string `json:"engine_id,omitempty"`
 	EngineInstanceID string `json:"engine_instance_id,omitempty"`
+	ScopeID          string `json:"scope_id,omitempty"`
 	BindingMode      string `json:"binding_mode,omitempty"`
 	Priority         int    `json:"priority,omitempty"`
 	Status           string `json:"status,omitempty"`
