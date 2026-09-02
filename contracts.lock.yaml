@@ -1,0 +1,13 @@
+schema: nabhold-contract-consumer-lock
+version: "1.0"
+source:
+  repository: nabhold/shared
+  commit: 0bc19d2a74459f98e97ecd852d6dac94f0844483
+contracts:
+  - contracts/control-plane/v1/access-token-claims.schema.json
+  - contracts/control-plane/v1/context-resolution.schema.json
+  - contracts/control-plane/v1/openapi.yaml
+  - contracts/control-plane/v1/security-policy.yaml
+policy:
+  updates: explicit_pull_request
+  compatibility: validate_before_merge

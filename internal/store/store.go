@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+
 	"github.com/nabhold/baobab-cp/internal/domain"
 )
 
@@ -16,4 +17,12 @@ type TenantStore interface {
 	GetEntitlement(context.Context, string, string) (domain.Entitlement, error)
 	UpdateTenantLifecycle(context.Context, string, domain.LifecycleStatus) error
 	Ping(context.Context) error
+}
+
+type RequestMetadata struct {
+	ActorID       string
+	ActorType     string
+	ClientID      string
+	TokenID       string
+	CorrelationID string
 }

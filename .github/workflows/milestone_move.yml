@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Move Issue to Sprint Column
-        uses: github/update-project-action@v2
+        uses: github/update-project-action@af4f6083118f5080c89828b421ef598d1906fb60 # v4
         with:
           # Your Personal Access Token stored safely in secrets
           github_token: ${{ secrets.MY_PROJECT_PAT }}
@@ -24,3 +24,4 @@ jobs:
           # The target Kanban column you want it pushed into
           field: Status
           value: Sprint
+
