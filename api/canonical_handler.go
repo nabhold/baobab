@@ -23,7 +23,10 @@ func (h canonicalHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if entity.ID == "" {
-		entity.ID = newUUID()
+		// CanonicalEntity is a first-class control-plane resource and MUST use
+		// a UUIDv7 minted by Go (BCP-DB-001/BCP-GO-001 sections 4, 30-31), not
+		// the router's generic UUIDv4 correlation-id helper.
+		entity.ID = domain.NewUUIDv7()
 	}
 	created, err := h.service.Create(r.Context(), entity)
 	if err != nil {

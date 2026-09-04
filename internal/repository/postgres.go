@@ -239,9 +239,15 @@ func (r *PostgresRepository) CreateBinding(ctx context.Context, binding resolver
 	if binding.CapabilityKey == "" || binding.EngineID == "" || binding.EngineInstanceID == "" || binding.ScopeID == "" {
 		return errors.New("capability, engine, engine instance, and scope are required")
 	}
+	// status and binding_mode are stored upper-cased so that the
+	// capability_binding_primary_excl exclusion constraint (which is defined
+	// against status = 'ACTIVE' AND binding_mode = 'PRIMARY') actually fires.
+	// This previously lower-cased status only, which silently defeated that
+	// constraint for every binding created through this path: see
+	// docs/adr/ADR-0005-bcp-db-001-conformance-gap.md.
 	_, err := r.pool.Exec(ctx, `
 		INSERT INTO capability.capability_binding(capability_id, engine_instance_id, scope_id, binding_mode, priority, status, contract_version, effective_from)
-		SELECT c.capability_id, ei.engine_instance_id, $4::uuid, $5, $6, LOWER($7), $8, now()
+		SELECT c.capability_id, ei.engine_instance_id, $4::uuid, UPPER($5), $6, UPPER($7), $8, now()
 		FROM capability.capability c JOIN topology.engine_instance ei ON ei.engine_instance_id=$3::uuid AND ei.engine_id=$2::uuid
 		WHERE c.code=$1`, binding.CapabilityKey, binding.EngineID, binding.EngineInstanceID, binding.ScopeID, binding.BindingMode, binding.Priority, binding.Status, binding.ContractVersion)
 	return err
@@ -251,7 +257,7 @@ func (r *PostgresRepository) SaveBinding(ctx context.Context, binding resolver.C
 	if r == nil || r.pool == nil {
 		return errors.New("repository is not initialized")
 	}
-	result, err := r.pool.Exec(ctx, `UPDATE capability.capability_binding cb SET binding_mode=$2, priority=$3, status=LOWER($4), contract_version=$5, version=version+1, updated_at=now() FROM capability.capability c WHERE cb.id=$1::uuid AND cb.capability_id=c.capability_id AND c.code=$6 AND cb.version=$7`, binding.ID, binding.BindingMode, binding.Priority, binding.Status, binding.ContractVersion, binding.CapabilityKey, expectedVersion)
+	result, err := r.pool.Exec(ctx, `UPDATE capability.capability_binding cb SET binding_mode=UPPER($2), priority=$3, status=UPPER($4), contract_version=$5, version=version+1, updated_at=now() FROM capability.capability c WHERE cb.id=$1::uuid AND cb.capability_id=c.capability_id AND c.code=$6 AND cb.version=$7`, binding.ID, binding.BindingMode, binding.Priority, binding.Status, binding.ContractVersion, binding.CapabilityKey, expectedVersion)
 	if err != nil {
 		return err
 	}

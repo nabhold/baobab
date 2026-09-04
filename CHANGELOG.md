@@ -735,6 +735,29 @@ The changelog focuses on changes that are meaningful to users, contributors, mai
 - Repository improvements and engineering standards.
 - Ongoing documentation enhancements.
 
+## Fixed
+
+- `cmd/migrate` no longer fails against a fresh database: migration
+  `000017_indexes_and_integrity.sql` referenced columns and a
+  `mapping.mapping` table that were never created by the migrations ahead of
+  it (`registry.canonical_entity.owner_tenant_id`,
+  `registry.canonical_relationship.source_entity_id`/`target_entity_id`/
+  `status`/`valid_period`, four `mapping.mapping_scope` columns, and
+  `mapping.mapping` itself). Verified end to end against PostgreSQL 16/17
+  from an empty database. See ADR-0005.
+- `capability.capability_binding` writes made through
+  `PostgresRepository.CreateBinding`/`SaveBinding` no longer silently defeat
+  the `capability_binding_primary_excl` exclusion constraint. `status` was
+  written lower-cased while the constraint's predicate (and
+  `binding_mode`'s `CHECK`) expect upper case, so two `PRIMARY` bindings for
+  the same capability and scope with overlapping validity could both be
+  created without error — the invariant BCP-DB-001 relies on to keep
+  capability resolution deterministic was inert. Added a PostgreSQL
+  integration test that reproduces the conflict. See ADR-0005.
+- `POST /v1/canonical-entities` now mints entity IDs as UUIDv7
+  (`domain.NewUUIDv7`) instead of UUIDv4, per BCP-DB-001's identifier
+  contract for first-class control-plane resources. See ADR-0005.
+
 ## Security
 
 - Upgraded `golang.org/x/text` to `v0.39.0` to remediate
