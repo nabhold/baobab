@@ -35,6 +35,7 @@ func TestCanonicalMigrationFilesExist(t *testing.T) {
 		{name: "000020_audit_identity_extensions.sql", needle: "ADD COLUMN actor_id varchar(255)", context: "audit identity extensions migration"},
 		{name: "000021_context_resolution_audit_extensions.sql", needle: "ADD COLUMN target varchar(255)", context: "context resolution audit extensions migration"},
 		{name: "000022_canonical_mapping_temporal_integrity.sql", needle: "canonical_mapping_source_type_active_excl", context: "canonical mapping temporal integrity migration"},
+		{name: "000023_outbox_tenant_identity.sql", needle: "ALTER COLUMN aggregate_id TYPE text", context: "outbox tenant identity migration"},
 	}
 
 	for _, tc := range checks {

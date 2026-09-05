@@ -12,10 +12,33 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nabhold/baobab-cp/internal/domain"
+	"github.com/nabhold/baobab-cp/internal/events"
 	basestore "github.com/nabhold/baobab-cp/internal/store"
 )
 
-type Store struct{ pool *pgxpool.Pool }
+// defaultEventSource is the stable, absolute producer URI used for every
+// event this Store emits, per contracts/events/v1/envelope.schema.json's
+// "source" field. Store.EventSource overrides it when set.
+const defaultEventSource = "https://control-plane.nabhold.internal"
+
+// provisioningStartedDataSchema is the immutable payload schema URI for the
+// tenant-provisioning-started event, per ADR-0004 ("every domain event
+// requires an immutable payload schema URI").
+const provisioningStartedDataSchema = "https://contracts.nabhold.com/control-plane/v1/provisioning-started.schema.json"
+
+type Store struct {
+	pool *pgxpool.Pool
+	// EventSource overrides defaultEventSource when set; production callers
+	// normally leave this at its zero value.
+	EventSource string
+}
+
+func (s *Store) eventSource() string {
+	if s.EventSource != "" {
+		return s.EventSource
+	}
+	return defaultEventSource
+}
 
 func Open(ctx context.Context, url string) (*Store, error) {
 	pool, err := pgxpool.New(ctx, url)
@@ -26,7 +49,7 @@ func Open(ctx context.Context, url string) (*Store, error) {
 		pool.Close()
 		return nil, err
 	}
-	return &Store{pool}, nil
+	return &Store{pool: pool}, nil
 }
 func (s *Store) Close()                         { s.pool.Close() }
 func (s *Store) Ping(ctx context.Context) error { return s.pool.Ping(ctx) }
@@ -125,8 +148,34 @@ func (s *Store) RegisterTenant(ctx context.Context, key string, metadata basesto
 	if err = tx.QueryRow(ctx, `INSERT INTO provisioning_operations(tenant_id,idempotency_key,request_hash)VALUES($1,$2,$3)RETURNING operation_id::text,tenant_id,state,revision,created_at,updated_at`, c.TenantID, key, hash).Scan(&op.OperationID, &op.TenantID, &op.State, &op.Revision, &op.CreatedAt, &op.UpdatedAt); err != nil {
 		return domain.Operation{}, err
 	}
-	event, _ := json.Marshal(map[string]any{"operation_id": op.OperationID, "tenant_id": c.TenantID, "revision": op.Revision, "correlation_id": metadata.CorrelationID})
-	if _, err = tx.Exec(ctx, `INSERT INTO outbox_events(aggregate_id,event_type,payload)VALUES($1,'tenant.provisioning.started',$2)`, c.TenantID, event); err != nil {
+	// Written as the ADR-0004 CloudEvents envelope into the canonical,
+	// schema-qualified outbox (migration 000015, widened to accept a
+	// tn_-prefixed aggregate/tenant identity by migration 000023) rather
+	// than the legacy outbox_events table and its retired snake_case shape
+	// - see docs/reconciliation/shared-control-plane-audit.md §12.
+	env, err := events.New(events.Params{
+		Type:           "com.nabhold.control-plane.tenant-provisioning-started.v1",
+		Source:         s.eventSource(),
+		Subject:        c.TenantID,
+		DataSchema:     provisioningStartedDataSchema,
+		CorrelationID:  metadata.CorrelationID,
+		TenantID:       c.TenantID,
+		IdempotencyKey: key,
+		Data: map[string]any{
+			"operation_id":       op.OperationID,
+			"tenant_id":          c.TenantID,
+			"isolation_strategy": c.IsolationStrategy,
+			"revision":           op.Revision,
+		},
+	})
+	if err != nil {
+		return domain.Operation{}, fmt.Errorf("construct tenant-provisioning-started event: %w", err)
+	}
+	eventPayload, err := json.Marshal(env)
+	if err != nil {
+		return domain.Operation{}, fmt.Errorf("marshal tenant-provisioning-started event: %w", err)
+	}
+	if _, err = tx.Exec(ctx, `INSERT INTO messaging.outbox(aggregate_type,aggregate_id,aggregate_version,event_type,tenant_id,correlation_id,payload) VALUES('tenant',$1,$2,$3,$4,$5,$6)`, c.TenantID, op.Revision, env.Type, c.TenantID, metadata.CorrelationID, eventPayload); err != nil {
 		return domain.Operation{}, err
 	}
 	if err = insertAudit(ctx, tx, c.TenantID, metadata, key, "tenant.registration.requested", "tenant:"+c.TenantID, "accepted", "scope_allowed", auditPayload); err != nil {

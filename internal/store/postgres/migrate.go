@@ -57,6 +57,7 @@ var canonicalMigrationNames = []string{
 	"000020_audit_identity_extensions.sql",
 	"000021_context_resolution_audit_extensions.sql",
 	"000022_canonical_mapping_temporal_integrity.sql",
+	"000023_outbox_tenant_identity.sql",
 }
 
 func LoadMigrations() ([]Migration, error) {
