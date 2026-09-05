@@ -478,29 +478,39 @@ Applied in follow-up commits on this branch, each verified rather than asserted:
   now checks out `nabhold/shared` at exactly the pinned commit and adds a `postgres:17`
   service, so both this and the PostgreSQL integration tests run in CI instead of always
   skipping.
-- **§10 item 6 (P1) — partially done.** `internal/events` implements the ADR-0004
-  CloudEvents envelope as a validated, typed constructor (`events.New`), failing closed on
-  a malformed type, a missing `correlationid`, or a `tenantid` that isn't a canonical
-  Control Plane identifier, matching the "never invent a default tenant" requirement.
-  `contract_compatibility_test.go` validates both a tenant-scoped and a platform-scoped
-  constructed envelope against the real `contracts/events/v1/envelope.schema.json`. **What
-  remains open, and why:** wiring this into a transactional outbox write surfaced a further
-  defect — `messaging.outbox` (migration `000015`) types `tenant_id` and `aggregate_id` as
-  `uuid`, which cannot store the `tn_`-prefixed opaque strings that are the actual
-  identifier grammar for tenant-provisioning aggregates (`domain.schema.json`'s
-  `tenantId`). That column-type mismatch needs its own migration (widening those columns,
-  or introducing a parallel text-typed identity column) before a tenant-provisioning event
-  can actually be written to this table; making that schema change under this same pass,
-  without also building and testing the write path and a consumer against it, risked
-  trading one unverified state for another, so it is left as a scoped follow-up rather than
-  guessed at. The RabbitMQ publisher itself (reading unpublished `messaging.outbox` rows,
-  publisher confirms, dead-lettering) remains entirely unbuilt: no AMQP broker was
-  available in this environment to verify a publisher against, and per this audit's own
-  standard of not shipping unverified integration code, it was not built blind. The
-  envelope contract and its test coverage are the foundation the next pass needs; the
-  outbox schema fix and the publisher itself are the next two steps, in that order.
+- **§10 item 6 (P1) — envelope + transactional outbox wiring done; publisher still open.**
+  `internal/events` implements the ADR-0004 CloudEvents envelope as a validated, typed
+  constructor (`events.New`), failing closed on a malformed type, a missing
+  `correlationid`, or a `tenantid` that isn't a canonical Control Plane identifier, matching
+  the "never invent a default tenant" requirement. `contract_compatibility_test.go`
+  validates both a tenant-scoped and a platform-scoped constructed envelope against the
+  real `contracts/events/v1/envelope.schema.json`.
 
-Verified together, not just individually: `go build ./...`, `go vet ./...`, `gofmt -l cmd
-internal`, `go test ./...` and `go test -race ./...` all pass with both
-`TEST_DATABASE_URL` (a real PostgreSQL instance) and `SHARED_CONTRACTS_DIR` (a real
-`nabhold/shared` checkout at the pinned commit) set.
+  Wiring this into a transactional outbox write surfaced a further defect, now fixed:
+  `messaging.outbox` (migration `000015`) typed `tenant_id` and `aggregate_id` as `uuid`,
+  which cannot store the `tn_`-prefixed opaque strings that are the actual identifier
+  grammar for tenant-provisioning aggregates (`domain.schema.json`'s `tenantId`). Migration
+  `000023_outbox_tenant_identity.sql` widens both columns to `text` (aggregate identity is
+  polymorphic across bounded contexts — a `uuid` for a canonical-entity/mapping aggregate,
+  a `tn_`-prefixed string for a tenant aggregate — so neither type should be forced to fit
+  the other). `store.go`'s `RegisterTenant` now constructs a real
+  `com.nabhold.control-plane.tenant-provisioning-started.v1` envelope via `internal/events`
+  and writes it into `messaging.outbox` atomically with the tenant row, replacing the
+  legacy `outbox_events` insert and its ADR-0004-retired snake_case shape. Verified against
+  real PostgreSQL: `TestTenantLifecycleEndToEnd` confirms exactly one outbox row is written
+  per registration (and that an idempotent replay does not duplicate it), and the new
+  `TestRegisterTenantOutboxEventMatchesSharedSchema` reads that row back and validates it
+  against the real `contracts/events/v1/envelope.schema.json` — full round-trip proof, not
+  an assertion.
+
+  **What remains open, and why:** the RabbitMQ publisher itself (reading unpublished
+  `messaging.outbox` rows, publisher confirms, dead-lettering) is still entirely unbuilt: no
+  AMQP broker was available in this environment to verify a publisher against, and per this
+  audit's own standard of not shipping unverified integration code, it was not built blind.
+  The outbox now contains real, schema-valid events ready for a publisher to consume — that
+  is the next and, as far as this audit found, final step for item 6.
+
+Verified together, not just individually, at every stage of this remediation: `go build
+./...`, `go vet ./...`, `gofmt -l cmd internal`, `go test ./...` and `go test -race ./...`
+all pass with both `TEST_DATABASE_URL` (a real PostgreSQL instance) and
+`SHARED_CONTRACTS_DIR` (a real `nabhold/shared` checkout at the pinned commit) set.
