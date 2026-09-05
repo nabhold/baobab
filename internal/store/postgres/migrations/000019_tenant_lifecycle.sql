@@ -1,3 +1,5 @@
+-- Renumbered from the previously unregistered 000001_control_plane.up.sql; see
+-- docs/reconciliation/shared-control-plane-audit.md §2.1.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE legal_entities (legal_entity_id varchar(63) PRIMARY KEY,created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE tenants (tenant_id varchar(63) PRIMARY KEY,legal_entity_id varchar(63) NOT NULL REFERENCES legal_entities,display_name varchar(255) NOT NULL,isolation_strategy varchar(32) NOT NULL CHECK(isolation_strategy IN('schema_per_tenant','row_level_security')),residency_region varchar(64) NOT NULL,metadata jsonb NOT NULL DEFAULT '{}',desired_state varchar(32) NOT NULL DEFAULT 'active',observed_state varchar(32) NOT NULL DEFAULT 'pending',revision bigint NOT NULL DEFAULT 1,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now());

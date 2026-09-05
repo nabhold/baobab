@@ -1,3 +1,5 @@
+-- Renumbered from the previously unregistered 000002_audit_identity.up.sql; see
+-- docs/reconciliation/shared-control-plane-audit.md §2.1.
 ALTER TABLE audit_events
   ADD COLUMN actor_id varchar(255),
   ADD COLUMN actor_type varchar(16),
