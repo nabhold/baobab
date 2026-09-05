@@ -25,6 +25,15 @@ type Migration struct {
 	Checksum string
 }
 
+// canonicalMigrationNames is the only migration sequence this package will ever
+// apply. 000019-000021 were previously committed as a separate, unregistered
+// golang-migrate-style up/down pair set (000001_control_plane, 000002_audit_identity,
+// 000003_context_resolution_audit) that collided in version number with this list
+// and was never applied by ApplyMigrations, even though internal/store/postgres's
+// TenantStore implementation depends on the tables they create (tenants,
+// legal_entities, product_subscriptions, provisioning_operations, outbox_events,
+// audit_events). They are renumbered here to continue this sequence instead of
+// silently shadowing it; see docs/reconciliation/shared-control-plane-audit.md §2.1.
 var canonicalMigrationNames = []string{
 	"000001_extensions_and_schemas.sql",
 	"000002_canonical_registry.sql",
@@ -44,6 +53,9 @@ var canonicalMigrationNames = []string{
 	"000016_idempotency_and_revisions.sql",
 	"000017_indexes_and_integrity.sql",
 	"000018_canonical_entity_versions.sql",
+	"000019_tenant_lifecycle.sql",
+	"000020_audit_identity_extensions.sql",
+	"000021_context_resolution_audit_extensions.sql",
 }
 
 func LoadMigrations() ([]Migration, error) {

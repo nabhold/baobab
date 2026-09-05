@@ -170,20 +170,19 @@ The project currently uses—or intends to use—the following primary technolog
 
 | Domain | Technology |
 |---------|------------|
-| Backend | Python 3.14 |
-| Web Framework | Django 6 |
-| CMS | Wagtail |
-| Frontend | TypeScript, React, Next.js |
-| Mobile | Flutter |
+| Control-plane runtime | Go (see [ADR-0001](adr/0001-go-control-plane-runtime.md)) |
+| HTTP | `net/http` + `chi` |
 | Database | PostgreSQL 17 |
-| AI Services | Python |
 | Containerisation | Docker |
-| Infrastructure as Code | Terraform |
+| Infrastructure as Code | Terraform (`nabhold/infrastructure`) |
 | Cloud Platform | AWS |
 | Version Control | Git |
 | CI/CD | GitHub Actions |
 
-As the platform evolves, additional technologies may be adopted where they align with BAOBAB's architectural goals and engineering standards.
+`nabhold/baobab-cp` is a single-language Go service; the wider Nabhold platform's other
+repositories (digital estates, `baobab-trade`, `baobab-erp`, `baobab-pulse`) use their own
+appropriate stacks and are governed by their own coding standards, not this document. See
+the root [`README.md`](../README.md) for this repository's actual tech stack and structure.
 
 ---
 
@@ -195,11 +194,7 @@ Examples include:
 
 | Technology | Primary Reference |
 |------------|-------------------|
-| Python | PEP 8 and the Python Enhancement Proposals (PEPs) |
-| Django | Django coding style and best practices |
-| TypeScript | TypeScript Handbook and community conventions |
-| React / Next.js | React and Next.js best practices |
-| Flutter | Effective Dart style guide |
+| Go | Effective Go, `gofmt`/`go vet`, and the Go standard project layout conventions |
 | PostgreSQL | PostgreSQL documentation and SQL standards |
 | Docker | Dockerfile best practices |
 | Terraform | HashiCorp style guide |
