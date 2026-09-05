@@ -1,17 +1,25 @@
+# Standalone local topology - a self-contained stand-in for the two
+# services nabhold/infrastructure's own compose/compose.yaml provisions
+# for this repo (POSTGRES_DB/POSTGRES_USER default to "baobab_control"
+# there too - see that repo's compose/.env.example). Naming matches
+# deliberately so a contributor can point DATABASE_URL/RABBITMQ_URL at
+# either topology without renaming anything else. `make dev-up` runs
+# this file; `make dev-up-infra` instead runs the real infrastructure
+# topology - see README's "Local topology options".
 services:
   postgres:
     image: postgres:17.11-alpine3.24
     container_name: baobab-cp-postgres
     environment:
-      POSTGRES_DB: baobab_control_plane
-      POSTGRES_USER: baobab
-      POSTGRES_PASSWORD: baobab
+      POSTGRES_DB: baobab_control
+      POSTGRES_USER: baobab_control
+      POSTGRES_PASSWORD: baobab_control
     ports:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U baobab -d baobab_control_plane']
+      test: ['CMD-SHELL', 'pg_isready -U baobab_control -d baobab_control']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -20,8 +28,9 @@ services:
     image: rabbitmq:4.3.5-management-alpine
     container_name: baobab-cp-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: baobab
-      RABBITMQ_DEFAULT_PASS: baobab
+      RABBITMQ_DEFAULT_USER: baobab_control
+      RABBITMQ_DEFAULT_PASS: baobab_control
+      RABBITMQ_DEFAULT_VHOST: nabhold
     ports:
       - '5672:5672'
       - '15672:15672'
