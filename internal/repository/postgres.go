@@ -4,11 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nabhold/baobab-cp/internal/domain"
 	"github.com/nabhold/baobab-cp/internal/resolver"
 )
+
+// ErrMappingOverlap is returned when a mapping insert is rejected by the
+// canonical_mapping_source_type_active_excl exclusion constraint (migration
+// 000022): an active mapping of the same type already exists for the source
+// entity with an overlapping validity period. Per the Canonical Mapping
+// Model §67.5, an ambiguous authoritative mapping must fail explicitly
+// rather than silently select one of the candidates.
+var ErrMappingOverlap = errors.New("overlapping active mapping")
 
 // PostgresRepository is the PostgreSQL-backed repository implementation for mapping, capability, and topology data.
 type PostgresRepository struct {
@@ -90,7 +100,7 @@ func (r *PostgresRepository) ListMappings(ctx context.Context, canonicalEntityID
 	rows, err := r.pool.Query(ctx, `
 		SELECT cm.canonical_mapping_id::text, cm.mapping_type, cm.source_entity_id::text,
 		       cm.target_entity_id::text, COALESCE(ms.mapping_scope_id::text, cm.source_entity_id::text),
-		       UPPER(cm.status), cm.created_at::text
+		       UPPER(cm.status), cm.effective_from, cm.effective_to
 		FROM mapping.canonical_mapping cm
 		JOIN registry.canonical_entity ce ON ce.canonical_entity_id = cm.source_entity_id
 		LEFT JOIN mapping.mapping_scope ms ON ms.tenant_id = ce.tenant_id
@@ -104,7 +114,8 @@ func (r *PostgresRepository) ListMappings(ctx context.Context, canonicalEntityID
 	var out []domain.Mapping
 	for rows.Next() {
 		var m domain.Mapping
-		var effectiveFrom string
+		var effectiveFrom time.Time
+		var effectiveTo *time.Time
 		if err := rows.Scan(
 			&m.ID,
 			&m.MappingType,
@@ -113,6 +124,7 @@ func (r *PostgresRepository) ListMappings(ctx context.Context, canonicalEntityID
 			&m.ScopeID,
 			&m.Status,
 			&effectiveFrom,
+			&effectiveTo,
 		); err != nil {
 			return nil, err
 		}
@@ -123,7 +135,10 @@ func (r *PostgresRepository) ListMappings(ctx context.Context, canonicalEntityID
 		m.Confidence = "CONFIRMED"
 		m.ResolutionPriority = 0
 		m.Version = 1
-		m.EffectiveFrom = effectiveFrom
+		m.EffectiveFrom = effectiveFrom.UTC().Format(time.RFC3339)
+		if effectiveTo != nil {
+			m.EffectiveTo = effectiveTo.UTC().Format(time.RFC3339)
+		}
 		out = append(out, m)
 	}
 	if err := rows.Err(); err != nil {
@@ -142,10 +157,33 @@ func (r *PostgresRepository) CreateMapping(ctx context.Context, mapping domain.M
 	if mapping.ExternalReferenceID != "" {
 		return errors.New("external-reference mappings are not supported by the current canonical schema")
 	}
-	_, err := r.pool.Exec(ctx, `
-		INSERT INTO mapping.canonical_mapping(canonical_mapping_id, source_entity_id, target_entity_id, mapping_type, status)
-		VALUES ($1::uuid, $2::uuid, $3::uuid, $4, LOWER($5))`, mapping.ID, mapping.CanonicalEntityID, mapping.TargetCanonicalEntityID, mapping.MappingType, mapping.Status)
-	return err
+	// mapping.Validate() has already confirmed these parse as RFC3339; the
+	// canonical_mapping_source_type_active_excl exclusion constraint (see
+	// migration 000022) is what actually enforces non-overlap - this insert
+	// simply must not silently discard the values, as it previously did.
+	effectiveFrom, err := time.Parse(time.RFC3339, mapping.EffectiveFrom)
+	if err != nil {
+		return fmt.Errorf("parse effective_from: %w", err)
+	}
+	var effectiveTo *time.Time
+	if mapping.EffectiveTo != "" {
+		parsed, err := time.Parse(time.RFC3339, mapping.EffectiveTo)
+		if err != nil {
+			return fmt.Errorf("parse effective_to: %w", err)
+		}
+		effectiveTo = &parsed
+	}
+	_, err = r.pool.Exec(ctx, `
+		INSERT INTO mapping.canonical_mapping(canonical_mapping_id, source_entity_id, target_entity_id, mapping_type, status, effective_from, effective_to)
+		VALUES ($1::uuid, $2::uuid, $3::uuid, $4, LOWER($5), $6, $7)`, mapping.ID, mapping.CanonicalEntityID, mapping.TargetCanonicalEntityID, mapping.MappingType, mapping.Status, effectiveFrom, effectiveTo)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23P01" {
+			return fmt.Errorf("%w: an active mapping of type %s already exists for this source entity in an overlapping period", ErrMappingOverlap, mapping.MappingType)
+		}
+		return err
+	}
+	return nil
 }
 
 func (r *PostgresRepository) GetMapping(ctx context.Context, mappingID string) (domain.Mapping, error) {
@@ -153,13 +191,18 @@ func (r *PostgresRepository) GetMapping(ctx context.Context, mappingID string) (
 		return domain.Mapping{}, errors.New("repository is not initialized")
 	}
 	var mapping domain.Mapping
-	var effectiveFrom string
-	err := r.pool.QueryRow(ctx, `SELECT canonical_mapping_id::text, mapping_type, source_entity_id::text, target_entity_id::text, source_entity_id::text, UPPER(status), created_at::text FROM mapping.canonical_mapping WHERE canonical_mapping_id=$1::uuid`, mappingID).Scan(&mapping.ID, &mapping.MappingType, &mapping.CanonicalEntityID, &mapping.TargetCanonicalEntityID, &mapping.ScopeID, &mapping.Status, &effectiveFrom)
+	var effectiveFrom time.Time
+	var effectiveTo *time.Time
+	err := r.pool.QueryRow(ctx, `SELECT canonical_mapping_id::text, mapping_type, source_entity_id::text, target_entity_id::text, source_entity_id::text, UPPER(status), effective_from, effective_to FROM mapping.canonical_mapping WHERE canonical_mapping_id=$1::uuid`, mappingID).Scan(&mapping.ID, &mapping.MappingType, &mapping.CanonicalEntityID, &mapping.TargetCanonicalEntityID, &mapping.ScopeID, &mapping.Status, &effectiveFrom, &effectiveTo)
 	if err != nil {
 		return domain.Mapping{}, fmt.Errorf("get mapping %s: %w", mappingID, err)
 	}
 	mapping.ResolutionMode, mapping.Direction, mapping.Cardinality = "SINGLE", "SOURCE_TO_TARGET", "ONE_TO_ONE"
-	mapping.Authority, mapping.Confidence, mapping.EffectiveFrom, mapping.Version = "baobab", "CONFIRMED", effectiveFrom, 1
+	mapping.Authority, mapping.Confidence, mapping.Version = "baobab", "CONFIRMED", 1
+	mapping.EffectiveFrom = effectiveFrom.UTC().Format(time.RFC3339)
+	if effectiveTo != nil {
+		mapping.EffectiveTo = effectiveTo.UTC().Format(time.RFC3339)
+	}
 	return mapping, nil
 }
 

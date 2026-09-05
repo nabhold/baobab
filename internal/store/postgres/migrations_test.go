@@ -31,6 +31,10 @@ func TestCanonicalMigrationFilesExist(t *testing.T) {
 		{name: "000016_idempotency_and_revisions.sql", needle: "CREATE TABLE IF NOT EXISTS system.idempotency_record", context: "idempotency and revisions migration"},
 		{name: "000017_indexes_and_integrity.sql", needle: "CREATE INDEX IF NOT EXISTS canonical_entity_type_status_idx", context: "indexes and integrity migration"},
 		{name: "000018_canonical_entity_versions.sql", needle: "ADD COLUMN IF NOT EXISTS version bigint", context: "canonical entity version migration"},
+		{name: "000019_tenant_lifecycle.sql", needle: "CREATE TABLE tenants", context: "tenant lifecycle migration"},
+		{name: "000020_audit_identity_extensions.sql", needle: "ADD COLUMN actor_id varchar(255)", context: "audit identity extensions migration"},
+		{name: "000021_context_resolution_audit_extensions.sql", needle: "ADD COLUMN target varchar(255)", context: "context resolution audit extensions migration"},
+		{name: "000022_canonical_mapping_temporal_integrity.sql", needle: "canonical_mapping_source_type_active_excl", context: "canonical mapping temporal integrity migration"},
 	}
 
 	for _, tc := range checks {
