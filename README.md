@@ -136,6 +136,33 @@ make test              # unit tests
 make test-integration  # runs the *_integration_test.go suites against `make dev-up`'s Postgres
 ```
 
+### Local topology options
+
+`make dev-up` starts a standalone Postgres+RabbitMQ pair defined in this repo's own
+`docker-compose.yml` — self-contained, no other repo required, good for day-to-day
+iteration. Its database/user name (`baobab_control`) and RabbitMQ vhost (`nabhold`)
+deliberately match what `nabhold/infrastructure`'s own compose topology provisions for
+this repo, so switching between the two options below doesn't require renaming
+anything in your `.env` beyond the password.
+
+To instead run against the real topology this repo talks to in shared/staging
+environments — useful before relying on behavior that's specific to that setup (real
+credential rotation, the shared RabbitMQ vhost, eventually APISIX route reconciliation):
+
+```bash
+git clone https://github.com/nabhold/infrastructure.git ../infrastructure  # sibling clone
+cd ../infrastructure/compose && cp .env.example .env   # then edit in real dev secrets
+cd ../../baobab-cp
+make dev-up-infra        # brings up nabhold/infrastructure's real postgresql + rabbitmq
+make dev-env-infra       # prints the DATABASE_URL/RABBITMQ_URL to paste into .env
+make migrate
+make run
+```
+
+`INFRASTRUCTURE_DIR` (default `../infrastructure`) overrides where these targets look for
+that repo if it isn't cloned as a sibling directory. `make dev-down-infra` /
+`make dev-logs-infra` mirror the standalone targets.
+
 ## Relationship with other repositories
 
 | Repository | Relationship |
