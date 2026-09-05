@@ -11,23 +11,23 @@ var canonicalKeyPattern = regexp.MustCompile(`^[a-z0-9]+:[a-z0-9][a-z0-9._:-]*$`
 
 // CanonicalEntity models the registry-level canonical identity used by the control plane.
 type CanonicalEntity struct {
-	ID                string            `json:"id,omitempty"`
-	CanonicalKey      string            `json:"canonical_key"`
-	EntityType        string            `json:"entity_type"`
-	Subtype           string            `json:"subtype,omitempty"`
-	DisplayName       string            `json:"display_name"`
-	OwnerTenantID     string            `json:"owner_tenant_id,omitempty"`
-	OwnerLegalEntityID string           `json:"owner_legal_entity_id,omitempty"`
-	Authority         string            `json:"authority"`
-	Classification    string            `json:"classification"`
-	Status            string            `json:"status"`
-	SchemaVersion     int               `json:"schema_version,omitempty"`
-	EffectiveFrom     time.Time         `json:"effective_from"`
-	EffectiveTo       *time.Time        `json:"effective_to,omitempty"`
-	Metadata          map[string]any    `json:"metadata,omitempty"`
-	Version           int64             `json:"version,omitempty"`
-	CreatedAt         time.Time         `json:"created_at,omitempty"`
-	UpdatedAt         time.Time         `json:"updated_at,omitempty"`
+	ID                 string         `json:"id,omitempty"`
+	CanonicalKey       string         `json:"canonical_key"`
+	EntityType         string         `json:"entity_type"`
+	Subtype            string         `json:"subtype,omitempty"`
+	DisplayName        string         `json:"display_name"`
+	OwnerTenantID      string         `json:"owner_tenant_id,omitempty"`
+	OwnerLegalEntityID string         `json:"owner_legal_entity_id,omitempty"`
+	Authority          string         `json:"authority"`
+	Classification     string         `json:"classification"`
+	Status             string         `json:"status"`
+	SchemaVersion      int            `json:"schema_version,omitempty"`
+	EffectiveFrom      time.Time      `json:"effective_from"`
+	EffectiveTo        *time.Time     `json:"effective_to,omitempty"`
+	Metadata           map[string]any `json:"metadata,omitempty"`
+	Version            int64          `json:"version,omitempty"`
+	CreatedAt          time.Time      `json:"created_at,omitempty"`
+	UpdatedAt          time.Time      `json:"updated_at,omitempty"`
 }
 
 func (c CanonicalEntity) Validate() error {
@@ -77,18 +77,18 @@ func isValidCanonicalClassification(c string) bool {
 }
 
 type CanonicalRelationship struct {
-	ID                 string     `json:"id,omitempty"`
-	SourceEntityID     string     `json:"source_entity_id"`
-	TargetEntityID     string     `json:"target_entity_id"`
-	RelationshipType   string     `json:"relationship_type"`
-	Direction          string     `json:"direction"`
-	EffectiveFrom      time.Time  `json:"effective_from"`
-	EffectiveTo        *time.Time `json:"effective_to,omitempty"`
-	Status             string     `json:"status"`
-	Metadata           map[string]any `json:"metadata,omitempty"`
-	Version            int64      `json:"version,omitempty"`
-	CreatedAt          time.Time  `json:"created_at,omitempty"`
-	UpdatedAt          time.Time  `json:"updated_at,omitempty"`
+	ID               string         `json:"id,omitempty"`
+	SourceEntityID   string         `json:"source_entity_id"`
+	TargetEntityID   string         `json:"target_entity_id"`
+	RelationshipType string         `json:"relationship_type"`
+	Direction        string         `json:"direction"`
+	EffectiveFrom    time.Time      `json:"effective_from"`
+	EffectiveTo      *time.Time     `json:"effective_to,omitempty"`
+	Status           string         `json:"status"`
+	Metadata         map[string]any `json:"metadata,omitempty"`
+	Version          int64          `json:"version,omitempty"`
+	CreatedAt        time.Time      `json:"created_at,omitempty"`
+	UpdatedAt        time.Time      `json:"updated_at,omitempty"`
 }
 
 func (r CanonicalRelationship) Validate() error {
@@ -148,23 +148,23 @@ func isValidResolutionMode(mode string) bool {
 }
 
 type Mapping struct {
-	ID                      string     `json:"id,omitempty"`
-	MappingType             string     `json:"mapping_type"`
-	ResolutionMode          string     `json:"resolution_mode"`
-	CanonicalEntityID       string     `json:"canonical_entity_id"`
-	ExternalReferenceID     string     `json:"external_reference_id,omitempty"`
-	TargetCanonicalEntityID string     `json:"target_canonical_entity_id,omitempty"`
-	ScopeID                 string     `json:"scope_id"`
-	Direction               string     `json:"direction"`
-	Cardinality             string     `json:"cardinality"`
-	Authority               string     `json:"authority"`
-	Confidence              string     `json:"confidence"`
-	ResolutionPriority      int        `json:"resolution_priority,omitempty"`
-	Status                  string     `json:"status"`
-	EffectiveFrom           string     `json:"effective_from"`
-	EffectiveTo             string     `json:"effective_to,omitempty"`
+	ID                      string         `json:"id,omitempty"`
+	MappingType             string         `json:"mapping_type"`
+	ResolutionMode          string         `json:"resolution_mode"`
+	CanonicalEntityID       string         `json:"canonical_entity_id"`
+	ExternalReferenceID     string         `json:"external_reference_id,omitempty"`
+	TargetCanonicalEntityID string         `json:"target_canonical_entity_id,omitempty"`
+	ScopeID                 string         `json:"scope_id"`
+	Direction               string         `json:"direction"`
+	Cardinality             string         `json:"cardinality"`
+	Authority               string         `json:"authority"`
+	Confidence              string         `json:"confidence"`
+	ResolutionPriority      int            `json:"resolution_priority,omitempty"`
+	Status                  string         `json:"status"`
+	EffectiveFrom           string         `json:"effective_from"`
+	EffectiveTo             string         `json:"effective_to,omitempty"`
 	Metadata                map[string]any `json:"metadata,omitempty"`
-	Version                 int64      `json:"version,omitempty"`
+	Version                 int64          `json:"version,omitempty"`
 }
 
 func (m Mapping) Validate() error {

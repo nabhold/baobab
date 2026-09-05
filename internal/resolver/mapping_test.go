@@ -69,7 +69,7 @@ func TestMappingResolverRejectsInactiveMappings(t *testing.T) {
 	resolver := MappingResolverImpl{}
 	_, err := resolver.Resolve(context.Background(), MappingResolutionQuery{
 		CanonicalEntityID: "tenant-123",
-		Context: Context{TenantID: "tenant-123"},
+		Context:           Context{TenantID: "tenant-123"},
 		Candidates: []domain.Mapping{{
 			ID:                      "mapping-inactive",
 			MappingType:             "IDENTITY",

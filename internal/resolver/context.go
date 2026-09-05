@@ -8,12 +8,12 @@ import (
 
 // Context represents a trusted runtime context produced by the resolver layer.
 type Context struct {
-	TenantID      string                 `json:"tenant_id,omitempty"`
-	LegalEntityID string                 `json:"legal_entity_id,omitempty"`
-	MarketID      string                 `json:"market_id,omitempty"`
-	CountryCode   string                 `json:"country_code,omitempty"`
-	CurrencyCode  string                 `json:"currency_code,omitempty"`
-	Locale        string                 `json:"locale,omitempty"`
+	TenantID      string                   `json:"tenant_id,omitempty"`
+	LegalEntityID string                   `json:"legal_entity_id,omitempty"`
+	MarketID      string                   `json:"market_id,omitempty"`
+	CountryCode   string                   `json:"country_code,omitempty"`
+	CurrencyCode  string                   `json:"currency_code,omitempty"`
+	Locale        string                   `json:"locale,omitempty"`
 	Provenance    map[string]ContextSource `json:"provenance,omitempty"`
 }
 

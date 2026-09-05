@@ -39,8 +39,8 @@ func TestCapabilityResolverRejectsUnknownCapability(t *testing.T) {
 	resolver := CapabilityResolverImpl{}
 	_, err := resolver.Resolve(context.Background(), CapabilityResolutionQuery{
 		CapabilityKey: "missing_capability",
-		Context: Context{TenantID: "tenant-123"},
-		Bindings:     nil,
+		Context:       Context{TenantID: "tenant-123"},
+		Bindings:      nil,
 	})
 	if err == nil {
 		t.Fatal("expected missing capability error")

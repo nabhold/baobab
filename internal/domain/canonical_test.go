@@ -4,12 +4,12 @@ import "testing"
 
 func TestCanonicalEntityValidate(t *testing.T) {
 	valid := CanonicalEntity{
-		CanonicalKey: "tenant:zuribeans_za",
-		EntityType:   "TENANT",
-		DisplayName:  "Zuri Beans",
-		Authority:    "baobab",
+		CanonicalKey:   "tenant:zuribeans_za",
+		EntityType:     "TENANT",
+		DisplayName:    "Zuri Beans",
+		Authority:      "baobab",
 		Classification: "INTERNAL",
-		Status:       "ACTIVE",
+		Status:         "ACTIVE",
 	}
 	if err := valid.Validate(); err != nil {
 		t.Fatalf("valid canonical entity rejected: %v", err)
@@ -30,12 +30,12 @@ func TestCanonicalEntityValidate(t *testing.T) {
 
 func TestMappingTypeDefinitionValidate(t *testing.T) {
 	valid := MappingTypeDefinition{
-		MappingType:     "IDENTITY",
-		ResolutionMode:  "SINGLE",
-		Description:     "Direct identity mapping",
-		Status:          "ACTIVE",
+		MappingType:      "IDENTITY",
+		ResolutionMode:   "SINGLE",
+		Description:      "Direct identity mapping",
+		Status:           "ACTIVE",
 		RequiresApproval: false,
-		CrossTenant:     false,
+		CrossTenant:      false,
 	}
 	if err := valid.Validate(); err != nil {
 		t.Fatalf("valid mapping type rejected: %v", err)
