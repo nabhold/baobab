@@ -7,6 +7,7 @@ require (
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/jackc/pgx/v5 v5.10.0
+	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 )
 
 require (

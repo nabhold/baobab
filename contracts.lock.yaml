@@ -2,12 +2,24 @@ schema: nabhold-contract-consumer-lock
 version: "1.0"
 source:
   repository: nabhold/shared
-  commit: 0bc19d2a74459f98e97ecd852d6dac94f0844483
+  commit: 2da1a429602d2f1421c498d412bb6c65a5626127
+# This file previously listed 4 of the ~14 contracts this repository actually
+# implements against - see docs/reconciliation/shared-control-plane-audit.md
+# §6. It must declare every schema/policy file whose shape this repository's
+# Go types, persistence, or HTTP responses are derived from, whether or not a
+# contract-compatibility test (internal/contracttest, run against
+# SHARED_CONTRACTS_DIR - see .github/workflows/ci.yml) exists for it yet.
 contracts:
   - contracts/control-plane/v1/access-token-claims.schema.json
   - contracts/control-plane/v1/context-resolution.schema.json
+  - contracts/control-plane/v1/domain.schema.json
+  - contracts/control-plane/v1/tenant-registration.schema.json
+  - contracts/control-plane/v1/canonical-mapping.schema.json
+  - contracts/control-plane/v1/provisioning-state-machine.yaml
   - contracts/control-plane/v1/openapi.yaml
   - contracts/control-plane/v1/security-policy.yaml
+  - contracts/errors/v1/problem-details.schema.json
+  - contracts/idempotency/v1/policy.yaml
 policy:
   updates: explicit_pull_request
   compatibility: validate_before_merge
