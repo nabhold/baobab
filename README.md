@@ -69,13 +69,13 @@ See [ADR-0003](docs/adr/0003-multi-tenant-control-plane-architecture.md) for the
 | Language / runtime | Go | [ADR-0001](docs/adr/0001-go-control-plane-runtime.md) |
 | HTTP | `net/http` + `chi` router | minimal, idiomatic, no framework lock-in |
 | Database | PostgreSQL 17 via `pgx` | authoritative store; matches `nabhold/infrastructure`'s provisioned topology |
-| Migrations | `golang-migrate` | plain SQL, reviewable diffs |
-| Messaging | RabbitMQ via `amqp091-go` | matches provisioned topology; DLQ support |
-| Gateway integration | APISIX Admin API client | control plane reconciles routes it owns |
+| Migrations | plain SQL, embedded and applied by a small in-repo runner (`internal/store/postgres/migrate.go`) | reviewable diffs, no external migration-tool dependency |
+| Messaging | RabbitMQ + transactional outbox — **planned, not yet implemented** | see [the audit](docs/reconciliation/shared-control-plane-audit.md#5-event-architecture) for current status |
+| Gateway integration | APISIX Admin API client — **planned, not yet implemented** | control plane will reconcile routes it owns |
 | AuthN | OIDC (admin API); infrastructure-terminated mTLS + OIDC workload tokens | see ADR-0003 §7 |
 | Observability | OpenTelemetry (traces, metrics, logs) | org-wide observability contract (`nabhold/shared`) |
 | Config | environment variables, validated at startup | 12-factor, container-friendly |
-| Testing | standard `testing` + Testcontainers (Postgres, RabbitMQ) | real dependencies in CI, not mocks-only |
+| Testing | standard `testing`; a real-PostgreSQL integration test package exists (`internal/repository/postgres_integration_test.go`) | real dependencies over mocks-only where practical |
 | CI/CD | reusable workflows from `nabhold/shared` | org-wide standardisation |
 | Container | multi-stage Dockerfile, distroless final stage | minimal attack surface |
 
@@ -83,30 +83,26 @@ See [ADR-0003](docs/adr/0003-multi-tenant-control-plane-architecture.md) for the
 
 ```
 baobab-cp/
+├── api/                          # HTTP layer: router, handlers, middleware (chi)
 ├── cmd/
-│   └── controlplane/          # main entrypoint
+│   ├── controlplane/             # API server entrypoint
+│   └── migrate/                  # migration-runner entrypoint
 ├── internal/
-│   ├── api/                   # HTTP layer: router, handlers, middleware
-│   │   ├── handlers/
-│   │   └── middleware/
-│   ├── domain/                 # core domain model, framework-free
-│   │   ├── tenant/
-│   │   └── entitlement/
-│   ├── reconcile/               # desired-state reconciliation loop
-│   ├── events/                  # outbox + RabbitMQ publisher
-│   ├── store/
-│   │   ├── postgres/            # repository implementations
-│   │   └── migrations/          # SQL migrations
-│   ├── gateway/                 # APISIX admin API client
-│   └── config/                  # startup configuration + validation
-├── pkg/
-│   └── contracts/                # generated clients from nabhold/shared
+│   ├── auth/                     # OIDC token verification, principal context
+│   ├── config/                   # startup configuration + validation
+│   ├── domain/                   # core domain model, framework-free
+│   ├── reconcile/                # desired-state reconciliation loop
+│   ├── repository/                # mapping/capability/topology repository (Postgres + in-memory)
+│   ├── resolver/                  # context/mapping/capability resolution pipeline
+│   ├── service/                   # application services (canonical entity, resolution)
+│   └── store/
+│       ├── postgres/               # tenant/entitlement store + embedded SQL migrations
+│       └── store.go                # TenantStore interface
 ├── docs/
-│   ├── adr/                      # this repo's local ADR register
-│   └── architecture/
-├── test/
-│   └── integration/
-├── .github/workflows/            # calls nabhold/shared reusable workflows
+│   ├── adr/                        # this repo's local ADR register
+│   ├── architecture/
+│   ├── reconciliation/             # audit of this repo against nabhold/shared
+│   └── security/
 ├── Dockerfile
 ├── Makefile
 ├── go.mod
@@ -114,7 +110,13 @@ baobab-cp/
 └── README.md
 ```
 
-`internal/domain` contains no framework or infrastructure imports — it is the part of this codebase that should be easiest to test and hardest to accidentally couple to a specific database or transport.
+`internal/domain` contains no framework or infrastructure imports — it is the part of this
+codebase that should be easiest to test and hardest to accidentally couple to a specific
+database or transport. There is currently no `pkg/contracts` (generated `nabhold/shared`
+clients) or dedicated `internal/events`/`internal/gateway` package — RabbitMQ publication
+and the APISIX admin client are not yet implemented; see
+[`docs/reconciliation/shared-control-plane-audit.md`](docs/reconciliation/shared-control-plane-audit.md)
+for the current gap list.
 
 ## Getting started
 
