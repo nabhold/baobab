@@ -15,23 +15,27 @@ import (
 	"github.com/nabhold/baobab-cp/internal/store"
 )
 
+const testTenantID = "tn_01k4zuribeans"
+
 type fakeStore struct {
-	calls           int
-	resolveErr      error
-	resolved        domain.ResolvedContext
-	resolvedCalls   int
-	tenant          domain.Tenant
-	tenantErr       error
-	entitlement     domain.Entitlement
-	entitlementErr  error
-	entitlementCall int
-	metadata        store.RequestMetadata
+	calls              int
+	registeredTenantID string
+	resolveErr         error
+	resolved           domain.ResolvedContext
+	resolvedCalls      int
+	tenant             domain.Tenant
+	tenantErr          error
+	entitlement        domain.Entitlement
+	entitlementErr     error
+	entitlementCall    int
+	metadata           store.RequestMetadata
 }
 
 func (f *fakeStore) Ping(context.Context) error { return nil }
 func (f *fakeStore) RegisterTenant(_ context.Context, _ string, metadata store.RequestMetadata, command domain.RegisterTenant) (domain.Operation, error) {
 	f.calls++
 	f.metadata = metadata
+	f.registeredTenantID = command.TenantID
 	return domain.Operation{OperationID: "7c8f131b-d8ba-4d89-b60b-a187d3944074", TenantID: command.TenantID, State: "accepted", Revision: 1}, nil
 }
 func (f *fakeStore) ResolveContext(_ context.Context, metadata store.RequestMetadata, tenantID, productID string) (domain.ResolvedContext, error) {
@@ -71,7 +75,7 @@ func (f *fakeStore) UpdateTenantLifecycle(_ context.Context, tenantID string, ne
 func TestRegisterTenant(t *testing.T) {
 	database := &fakeStore{}
 	handler := New(Dependencies{Store: database, AdminVerifier: fakeVerifier{principal: adminPrincipal()}})
-	body := `{"legal_entity_id":"zuribeans_za","tenant_id":"zuribeans_za","display_name":"Zuri Beans","isolation_strategy":"schema_per_tenant","residency_region":"af-south-1"}`
+	body := `{"legal_entity_id":"THAMANI-GLOBAL","display_name":"Zuri Beans","isolation_strategy":"schema_per_tenant","residency_region":"af-south-1"}`
 	response := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/v1/tenants", strings.NewReader(body))
 	req.Header.Set("Authorization", "Bearer admin-token")
@@ -86,6 +90,29 @@ func TestRegisterTenant(t *testing.T) {
 	}
 	if database.metadata.ActorID != "admin-123" || database.metadata.CorrelationID != "7c8f131b-d8ba-4d89-b60b-a187d3944074" {
 		t.Fatalf("audit metadata not propagated: %#v", database.metadata)
+	}
+	if !domain.ValidTenantID(database.registeredTenantID) {
+		t.Fatalf("expected a Control Plane-minted tenant_id, got %q", database.registeredTenantID)
+	}
+}
+
+func TestRegisterTenantRejectsClientSuppliedTenantID(t *testing.T) {
+	// tenant_id is Control Plane-minted (tenant-registration.schema.json does
+	// not accept it as input); a client that supplies one must be rejected,
+	// not silently honoured.
+	database := &fakeStore{}
+	handler := New(Dependencies{Store: database, AdminVerifier: fakeVerifier{principal: adminPrincipal()}})
+	body := `{"legal_entity_id":"THAMANI-GLOBAL","tenant_id":"tn_client_supplied","display_name":"Zuri Beans","isolation_strategy":"schema_per_tenant","residency_region":"af-south-1"}`
+	response := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/v1/tenants", strings.NewReader(body))
+	req.Header.Set("Authorization", "Bearer admin-token")
+	req.Header.Set("Idempotency-Key", strings.Repeat("x", 16))
+	handler.ServeHTTP(response, req)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected client-supplied tenant_id to be rejected, got status %d: %s", response.Code, response.Body.String())
+	}
+	if database.calls != 0 {
+		t.Fatalf("expected no persistence call for a rejected request, got %d", database.calls)
 	}
 }
 
@@ -131,7 +158,7 @@ func TestResolveContextFailsClosed(t *testing.T) {
 func TestGetTenant(t *testing.T) {
 	store := &fakeStore{}
 	handler := New(Dependencies{Store: store, AdminVerifier: fakeVerifier{principal: adminPrincipal()}})
-	req := httptest.NewRequest(http.MethodGet, "/v1/tenants/zuribeans_za", nil)
+	req := httptest.NewRequest(http.MethodGet, "/v1/tenants/"+testTenantID, nil)
 	req.Header.Set("Authorization", "Bearer admin-token")
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, req)
@@ -146,7 +173,7 @@ func TestGetTenant(t *testing.T) {
 func TestGetEntitlement(t *testing.T) {
 	store := &fakeStore{}
 	handler := New(Dependencies{Store: store, AdminVerifier: fakeVerifier{principal: adminPrincipal()}})
-	req := httptest.NewRequest(http.MethodGet, "/v1/entitlements?tenantId=zuribeans_za&productId=baobab_trade", nil)
+	req := httptest.NewRequest(http.MethodGet, "/v1/entitlements?tenantId="+testTenantID+"&productId=baobab-trade", nil)
 	req.Header.Set("Authorization", "Bearer admin-token")
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, req)
@@ -165,9 +192,9 @@ func TestLifecycleActionEndpoint(t *testing.T) {
 		path   string
 		method string
 	}{
-		{path: "/v1/tenants/zuribeans_za/suspend", method: http.MethodPost},
-		{path: "/v1/tenants/zuribeans_za/activate", method: http.MethodPost},
-		{path: "/v1/tenants/zuribeans_za/decommission", method: http.MethodPost},
+		{path: "/v1/tenants/" + testTenantID + "/suspend", method: http.MethodPost},
+		{path: "/v1/tenants/" + testTenantID + "/activate", method: http.MethodPost},
+		{path: "/v1/tenants/" + testTenantID + "/decommission", method: http.MethodPost},
 	} {
 		req := httptest.NewRequest(tc.method, tc.path, nil)
 		req.Header.Set("Authorization", "Bearer admin-token")
@@ -236,5 +263,5 @@ func adminPrincipal() auth.Principal {
 }
 
 func workloadPrincipal() auth.Principal {
-	return auth.Principal{Subject: "workload-123", ActorType: "workload", TenantID: "zuribeans_za", ClientID: "client-123", TokenID: "token-456", Scopes: map[string]struct{}{"context:resolve": {}}}
+	return auth.Principal{Subject: "workload-123", ActorType: "workload", TenantID: testTenantID, ClientID: "client-123", TokenID: "token-456", Scopes: map[string]struct{}{"context:resolve": {}}}
 }

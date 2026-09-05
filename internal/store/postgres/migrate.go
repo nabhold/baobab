@@ -56,6 +56,7 @@ var canonicalMigrationNames = []string{
 	"000019_tenant_lifecycle.sql",
 	"000020_audit_identity_extensions.sql",
 	"000021_context_resolution_audit_extensions.sql",
+	"000022_canonical_mapping_temporal_integrity.sql",
 }
 
 func LoadMigrations() ([]Migration, error) {
@@ -84,16 +85,36 @@ func ApplyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 	if err != nil {
 		return err
 	}
-	if _, err := pool.Exec(ctx, `CREATE SCHEMA IF NOT EXISTS system; CREATE TABLE IF NOT EXISTS system.schema_migration (version integer PRIMARY KEY, name text NOT NULL, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())`); err != nil {
-		return fmt.Errorf("create migration journal: %w", err)
+
+	// pg_advisory_lock is session-scoped: it must be acquired, held and
+	// released on one physical connection, and nothing it is meant to
+	// protect may run before it is held. pgxpool.Pool.Exec/Begin each borrow
+	// a connection from the pool independently, so calling them directly
+	// (as this function previously did) gives no real mutual exclusion
+	// between two concurrent ApplyMigrations callers (e.g. two replicas of
+	// cmd/migrate, or two test binaries against the same database) - they
+	// can each run on different connections and race on
+	// "CREATE SCHEMA IF NOT EXISTS system" before either has locked
+	// anything, exactly as store_integration_test.go and
+	// postgres_integration_test.go do when run concurrently against one
+	// TEST_DATABASE_URL. Acquire one dedicated connection and run the whole
+	// procedure on it instead.
+	conn, err := pool.Acquire(ctx)
+	if err != nil {
+		return fmt.Errorf("acquire migration connection: %w", err)
 	}
-	if _, err := pool.Exec(ctx, `SELECT pg_advisory_lock(894217301)`); err != nil {
+	defer conn.Release()
+
+	if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock(894217301)`); err != nil {
 		return fmt.Errorf("acquire migration lock: %w", err)
 	}
-	defer pool.Exec(context.Background(), `SELECT pg_advisory_unlock(894217301)`)
+	defer conn.Exec(context.Background(), `SELECT pg_advisory_unlock(894217301)`)
+	if _, err := conn.Exec(ctx, `CREATE SCHEMA IF NOT EXISTS system; CREATE TABLE IF NOT EXISTS system.schema_migration (version integer PRIMARY KEY, name text NOT NULL, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())`); err != nil {
+		return fmt.Errorf("create migration journal: %w", err)
+	}
 	for _, migration := range migrations {
 		var recordedName, checksum string
-		err := pool.QueryRow(ctx, `SELECT name, checksum FROM system.schema_migration WHERE version = $1`, migration.Version).Scan(&recordedName, &checksum)
+		err := conn.QueryRow(ctx, `SELECT name, checksum FROM system.schema_migration WHERE version = $1`, migration.Version).Scan(&recordedName, &checksum)
 		if err == nil {
 			if recordedName != migration.Name || checksum != migration.Checksum {
 				return fmt.Errorf("migration %s checksum mismatch", migration.Name)
@@ -103,7 +124,7 @@ func ApplyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("read migration journal for %s: %w", migration.Name, err)
 		}
-		tx, err := pool.Begin(ctx)
+		tx, err := conn.Begin(ctx)
 		if err != nil {
 			return fmt.Errorf("begin migration %s: %w", migration.Name, err)
 		}

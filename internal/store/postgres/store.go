@@ -110,7 +110,11 @@ func (s *Store) RegisterTenant(ctx context.Context, key string, metadata basesto
 	if _, err = tx.Exec(ctx, `INSERT INTO legal_entities(legal_entity_id)VALUES($1)ON CONFLICT DO NOTHING`, c.LegalEntityID); err != nil {
 		return domain.Operation{}, err
 	}
-	if _, err = tx.Exec(ctx, `INSERT INTO tenants(tenant_id,legal_entity_id,display_name,isolation_strategy,residency_region,metadata)VALUES($1,$2,$3,$4,$5,$6)`, c.TenantID, c.LegalEntityID, c.DisplayName, c.IsolationStrategy, c.ResidencyRegion, c.Metadata); err != nil {
+	// c.Metadata is a nil map on every request that omits "metadata" (it has
+	// no default in domain.RegisterTenant), and pgx's jsonb codec sends a nil
+	// map as SQL NULL rather than "{}" - COALESCE keeps that from tripping the
+	// NOT NULL DEFAULT '{}' constraint on tenants.metadata.
+	if _, err = tx.Exec(ctx, `INSERT INTO tenants(tenant_id,legal_entity_id,display_name,isolation_strategy,residency_region,metadata)VALUES($1,$2,$3,$4,$5,COALESCE($6,'{}'::jsonb))`, c.TenantID, c.LegalEntityID, c.DisplayName, c.IsolationStrategy, c.ResidencyRegion, c.Metadata); err != nil {
 		return domain.Operation{}, err
 	}
 	for _, product := range c.RequestedProducts {

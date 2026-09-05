@@ -8,8 +8,45 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-24.04
+    # A real PostgreSQL 17 instance so the *_integration_test.go suites
+    # (migrations, exclusion constraints, tenant lifecycle) actually run in
+    # CI instead of always hitting their `TEST_DATABASE_URL not set` skip -
+    # see docs/reconciliation/shared-control-plane-audit.md §4, "Database CI
+    # SHALL directly test... against PostgreSQL 17, not an SQLite
+    # substitute" (BCP-DB-001 §24).
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: baobab_cp_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://postgres@localhost:5432/baobab_cp_ci?sslmode=disable
+      SHARED_CONTRACTS_DIR: ${{ github.workspace }}/.shared-contracts
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Pin integrity + contract-compatibility (§16/§10.5 of
+      # docs/reconciliation/shared-control-plane-audit.md): check out
+      # nabhold/shared at exactly the commit contracts.lock.yaml pins, so
+      # internal/contracttest's tests validate this repository's payloads
+      # against the same schemas it declares a dependency on - not
+      # whatever nabhold/shared's default branch happens to contain today.
+      - name: Read pinned nabhold/shared commit
+        id: pin
+        run: echo "commit=$(grep -m1 'commit:' contracts.lock.yaml | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - name: Checkout nabhold/shared at pinned commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: nabhold/shared
+          ref: ${{ steps.pin.outputs.commit }}
+          path: .shared-contracts
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod

@@ -12,6 +12,14 @@ from; nothing here is inferred from the aspirational `Baobab Canonical Mapping M
 document alone, since that document is explicitly `Status: Proposed`, not an accepted ADR.
 **Not in scope:** `baobab-trade`, `baobab-erp`, `baobab-cms`, `baobab-pulse`, `infrastructure`.
 
+**Status update:** the P0 finding in §2.1 and P1 backlog items 3–5 (§10) have since been
+remediated in follow-up commits on this branch, each verified against a real PostgreSQL
+instance and/or a real `nabhold/shared` checkout rather than asserted. §12 records what
+changed, what is intentionally still open, and one additional defect (a column-type
+mismatch in `messaging.outbox`) found while scoping item 6. The findings below are left as
+originally written, as the record of what was found and why; §12 is the record of what was
+then done about it.
+
 ---
 
 ## 1. Executive summary
@@ -417,3 +425,82 @@ to verify against in this environment. Items 3, 4, 5, 6 and 11 in §10 are real,
 gaps, not speculation — but they involve schema and API changes wide enough that making
 them without integration-test verification would trade one unverified state for another.
 They are recorded here, with enough evidence to act on directly, as the next slice of work.
+
+---
+
+## 12. P1 remediation record
+
+Applied in follow-up commits on this branch, each verified rather than asserted:
+
+- **§10 item 1 (P0) / §2.1** — done in the initial pass, and confirmed here as still green:
+  `cmd/migrate` run against a clean PostgreSQL 16/17 creates `tenants`, `legal_entities`,
+  `product_subscriptions`, `provisioning_operations`, `outbox_events` and `audit_events`,
+  and a full `RegisterTenant → GetTenant → ResolveContext → UpdateTenantLifecycle` sequence
+  now passes end-to-end (`internal/store/postgres/store_integration_test.go`). Fixing this
+  also surfaced two further defects, both fixed and covered by a regression test that fails
+  against the pre-fix code: `ApplyMigrations` ran its `CREATE SCHEMA IF NOT EXISTS system`
+  and per-migration DDL through `*pgxpool.Pool.Exec/Begin` *before*, and independently of,
+  its `pg_advisory_lock` call — session-scoped advisory locks require one physical
+  connection for their whole lifetime, but a pool hands out a connection per call, so two
+  concurrent `ApplyMigrations` callers had no real mutual exclusion and could race on
+  schema creation (`migrate_concurrency_test.go`); and `RegisterTenant`'s insert sent a nil
+  Go map for an omitted `metadata` field as SQL `NULL` into a `jsonb NOT NULL DEFAULT '{}'`
+  column, failing every registration that omitted metadata (fixed with `COALESCE`).
+- **§10 item 3 (P1)** — `internal/domain/ids.go` now owns the `tn_`/`map_`/`ref_`/`scope_`
+  grammars and the canonical/legacy-alias legal-entity grammar as the one place they are
+  checked, replacing the inverted `legal_entity_id` check and the ad hoc regexes previously
+  duplicated across `tenant.go`, `context.go` and `router.go`. Fixing this surfaced a
+  further, contract-level defect: `tenant-registration.schema.json` does not accept
+  `tenant_id` as input at all (it is Control Plane-minted per `tenancy.yaml`), but
+  `RegisterTenant` required and trusted a client-supplied one; `tenant_id` is no longer a
+  JSON field on the command, and the HTTP handler mints one via `domain.NewTenantID()`.
+- **§10 item 4 (P1)** — migration `000022_canonical_mapping_temporal_integrity.sql` adds
+  `effective_from`/`effective_to` and `canonical_mapping_source_type_active_excl`, a GiST
+  exclusion constraint rejecting a second active mapping of the same type for the same
+  source entity with an overlapping validity window.
+  `internal/repository/postgres.go`'s `CreateMapping`/`GetMapping`/`ListMappings` now
+  round-trip these fields instead of discarding them on write and fabricating them from
+  `created_at` on read; a constraint violation surfaces as `repository.ErrMappingOverlap`.
+  Verified with `postgres_mapping_test.go` against real PostgreSQL: rejects an overlapping
+  insert, accepts a non-overlapping successor once the prior mapping is retired.
+- **§10 item 5 (P1)** — `contracts.lock.yaml` now declares `domain.schema.json`,
+  `tenant-registration.schema.json`, `canonical-mapping.schema.json`,
+  `provisioning-state-machine.yaml`, `errors/v1/problem-details.schema.json` and
+  `idempotency/v1/policy.yaml` alongside what was already listed. Its pinned commit
+  (`0bc19d2a`) predated `canonical-mapping.schema.json` entirely and has been bumped to
+  `nabhold/shared`'s current HEAD (`2da1a429`). The new `internal/contracttest` package
+  compiles a schema from a local `nabhold/shared` checkout (`SHARED_CONTRACTS_DIR`) and
+  validates a marshaled Go value against it; three tests now pass against the pinned
+  commit — `RegisterTenant` against `tenant-registration.schema.json`, `ResolvedContext`
+  against `context-resolution.schema.json`'s response definition, and the `problem()`
+  error-response helper against the organisation-wide `problem-details.schema.json`
+  (confirming this one was already field-for-field correct). `.github/workflows/ci.yml`
+  now checks out `nabhold/shared` at exactly the pinned commit and adds a `postgres:17`
+  service, so both this and the PostgreSQL integration tests run in CI instead of always
+  skipping.
+- **§10 item 6 (P1) — partially done.** `internal/events` implements the ADR-0004
+  CloudEvents envelope as a validated, typed constructor (`events.New`), failing closed on
+  a malformed type, a missing `correlationid`, or a `tenantid` that isn't a canonical
+  Control Plane identifier, matching the "never invent a default tenant" requirement.
+  `contract_compatibility_test.go` validates both a tenant-scoped and a platform-scoped
+  constructed envelope against the real `contracts/events/v1/envelope.schema.json`. **What
+  remains open, and why:** wiring this into a transactional outbox write surfaced a further
+  defect — `messaging.outbox` (migration `000015`) types `tenant_id` and `aggregate_id` as
+  `uuid`, which cannot store the `tn_`-prefixed opaque strings that are the actual
+  identifier grammar for tenant-provisioning aggregates (`domain.schema.json`'s
+  `tenantId`). That column-type mismatch needs its own migration (widening those columns,
+  or introducing a parallel text-typed identity column) before a tenant-provisioning event
+  can actually be written to this table; making that schema change under this same pass,
+  without also building and testing the write path and a consumer against it, risked
+  trading one unverified state for another, so it is left as a scoped follow-up rather than
+  guessed at. The RabbitMQ publisher itself (reading unpublished `messaging.outbox` rows,
+  publisher confirms, dead-lettering) remains entirely unbuilt: no AMQP broker was
+  available in this environment to verify a publisher against, and per this audit's own
+  standard of not shipping unverified integration code, it was not built blind. The
+  envelope contract and its test coverage are the foundation the next pass needs; the
+  outbox schema fix and the publisher itself are the next two steps, in that order.
+
+Verified together, not just individually: `go build ./...`, `go vet ./...`, `gofmt -l cmd
+internal`, `go test ./...` and `go test -race ./...` all pass with both
+`TEST_DATABASE_URL` (a real PostgreSQL instance) and `SHARED_CONTRACTS_DIR` (a real
+`nabhold/shared` checkout at the pinned commit) set.

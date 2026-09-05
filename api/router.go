@@ -162,6 +162,10 @@ func (a *API) register(w http.ResponseWriter, r *http.Request) {
 		problem(w, r, http.StatusBadRequest, "INVALID_REQUEST", "request body is not valid contract JSON", false)
 		return
 	}
+	// tenant_id is Control Plane-minted, never caller-supplied (see
+	// domain.RegisterTenant and contracts/control-plane/v1/
+	// tenant-registration.schema.json, which does not accept it as input).
+	command.TenantID = domain.NewTenantID()
 	if err := command.Validate(); err != nil {
 		problem(w, r, http.StatusBadRequest, "VALIDATION_FAILED", err.Error(), false)
 		return
@@ -183,7 +187,7 @@ func (a *API) register(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) getTenant(w http.ResponseWriter, r *http.Request) {
 	tenantID := chi.URLParam(r, "tenantID")
-	if !domain.ValidResource(tenantID) {
+	if !domain.ValidTenantID(tenantID) {
 		problem(w, r, 400, "invalid_tenant_id", "tenant_id is invalid", false)
 		return
 	}

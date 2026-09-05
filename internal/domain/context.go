@@ -2,18 +2,15 @@ package domain
 
 import (
 	"errors"
-	"regexp"
 	"time"
 )
-
-var productID = regexp.MustCompile(`^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$`)
 
 type ResolveContext struct {
 	ProductID string `json:"product_id"`
 }
 
 func (c ResolveContext) Validate() error {
-	if len(c.ProductID) < 3 || len(c.ProductID) > 63 || !productID.MatchString(c.ProductID) {
+	if !ValidProductID(c.ProductID) {
 		return errors.New("product_id must be a canonical product identifier")
 	}
 	return nil
