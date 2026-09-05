@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:17.11-alpine3.24
+    container_name: baobab-cp-postgres
+    environment:
+      POSTGRES_DB: baobab_control_plane
+      POSTGRES_USER: baobab
+      POSTGRES_PASSWORD: baobab
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U baobab -d baobab_control_plane']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4.3.5-management-alpine
+    container_name: baobab-cp-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: baobab
+      RABBITMQ_DEFAULT_PASS: baobab
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:

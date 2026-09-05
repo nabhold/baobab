@@ -124,7 +124,7 @@ for the current gap list.
 git clone https://github.com/nabhold/baobab-cp.git
 cd baobab-cp
 cp .env.example .env
-make dev-up      # starts local Postgres + RabbitMQ via nabhold/infrastructure compose topology
+make dev-up      # starts local Postgres 17 + RabbitMQ via this repo's docker-compose.yml
 make migrate
 make run
 ```
@@ -133,7 +133,7 @@ Run tests:
 
 ```bash
 make test              # unit tests
-make test-integration  # Testcontainers-backed integration tests
+make test-integration  # runs the *_integration_test.go suites against `make dev-up`'s Postgres
 ```
 
 ## Relationship with other repositories
