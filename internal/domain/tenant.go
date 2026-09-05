@@ -7,36 +7,25 @@ import (
 	"time"
 )
 
-var resourceID = regexp.MustCompile(`^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$`)
 var regionID = regexp.MustCompile(`^[a-z]{2}-[a-z]+-[0-9]+$`)
 
 type NotFoundError string
 
 func (e NotFoundError) Error() string { return string(e) }
 
+// RegisterTenant is the register-tenant command. tenant_id is intentionally
+// absent from the JSON wire shape: per contracts/control-plane/v1/
+// tenant-registration.schema.json, tenant_id is minted by the Control Plane
+// (see NewTenantID), never supplied by the caller. TenantID is populated by
+// the HTTP handler after decoding and before Validate/persistence.
 type RegisterTenant struct {
 	LegalEntityID     string            `json:"legal_entity_id"`
-	TenantID          string            `json:"tenant_id"`
+	TenantID          string            `json:"-"`
 	DisplayName       string            `json:"display_name"`
 	IsolationStrategy string            `json:"isolation_strategy"`
 	ResidencyRegion   string            `json:"residency_region"`
 	RequestedProducts []string          `json:"requested_products,omitempty"`
 	Metadata          map[string]string `json:"metadata,omitempty"`
-}
-
-type ResolveContextRequest struct {
-	TenantID  string `json:"tenant_id"`
-	ProductID string `json:"product_id,omitempty"`
-}
-
-func (c ResolveContextRequest) Validate() error {
-	if !validResource(c.TenantID) {
-		return errors.New("tenant_id must be a canonical resource identifier")
-	}
-	if c.ProductID != "" && !validResource(c.ProductID) {
-		return errors.New("product_id is invalid")
-	}
-	return nil
 }
 
 type Tenant struct {
@@ -57,11 +46,11 @@ type EntitlementQuery struct {
 }
 
 func (q EntitlementQuery) Validate() error {
-	if !validResource(q.TenantID) {
-		return errors.New("tenant_id must be a canonical resource identifier")
+	if !ValidTenantID(q.TenantID) {
+		return errors.New("tenant_id must be a canonical Control Plane tenant identifier")
 	}
-	if !validResource(q.ProductID) {
-		return errors.New("product_id must be a canonical resource identifier")
+	if !ValidProductID(q.ProductID) {
+		return errors.New("product_id must be a canonical product identifier")
 	}
 	return nil
 }
@@ -79,8 +68,8 @@ type LifecycleAction struct {
 }
 
 func (a LifecycleAction) Validate() error {
-	if !validResource(a.TenantID) {
-		return errors.New("tenant_id must be a canonical resource identifier")
+	if !ValidTenantID(a.TenantID) {
+		return errors.New("tenant_id must be a canonical Control Plane tenant identifier")
 	}
 	switch a.Action {
 	case "activate", "suspend", "decommission":
@@ -132,8 +121,13 @@ func TransitionLifecycle(from, to LifecycleStatus) (LifecycleStatus, bool) {
 }
 
 func (c RegisterTenant) Validate() error {
-	if !validResource(c.LegalEntityID) || !validResource(c.TenantID) {
-		return errors.New("legal_entity_id and tenant_id must be canonical resource identifiers")
+	if !ValidLegalEntityID(c.LegalEntityID) {
+		return errors.New("legal_entity_id must be a canonical legal-entity identifier (e.g. THAMANI-GLOBAL) or an accepted legacy alias")
+	}
+	if !ValidTenantID(c.TenantID) {
+		// TenantID is minted by NewTenantID before Validate runs, so this
+		// guards a programming error, not caller input.
+		return errors.New("tenant_id must be a canonical Control Plane tenant identifier")
 	}
 	if n := len(strings.TrimSpace(c.DisplayName)); n < 1 || n > 255 {
 		return errors.New("display_name must contain 1 to 255 characters")
@@ -149,7 +143,7 @@ func (c RegisterTenant) Validate() error {
 	}
 	seen := map[string]struct{}{}
 	for _, product := range c.RequestedProducts {
-		if !validResource(product) {
+		if !ValidProductID(product) {
 			return errors.New("requested_products contains an invalid identifier")
 		}
 		if _, ok := seen[product]; ok {
@@ -164,9 +158,6 @@ func (c RegisterTenant) Validate() error {
 	}
 	return nil
 }
-func validResource(v string) bool { return ValidResource(v) }
-
-func ValidResource(v string) bool { return len(v) >= 3 && len(v) <= 63 && resourceID.MatchString(v) }
 
 type Operation struct {
 	OperationID string    `json:"operation_id"`
